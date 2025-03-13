@@ -1,173 +1,267 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>URL Blocker DevTools Panel</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 15px;
-      overflow: hidden;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    .container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      gap: 15px;
-    }
-    .section {
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 15px;
-    }
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    h1, h2 {
-      margin: 0;
-    }
-    h1 {
-      font-size: 18px;
-    }
-    h2 {
-      font-size: 16px;
-    }
-    .url-manager {
-      flex: 0 0 auto;
-    }
-    .blocked-logs {
-      flex: 1 1 auto;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .log-container {
-      overflow-y: auto;
-      flex-grow: 1;
-      border: 1px solid #eee;
-      padding: 10px;
-      border-radius: 4px;
-    }
-    .log-entry {
-      padding: 8px;
-      border-bottom: 1px solid #eee;
-      display: flex;
-      align-items: center;
-    }
-    .log-entry:nth-child(odd) {
-      background-color: #f9f9f9;
-    }
-    .log-url {
-      flex-grow: 1;
-      word-break: break-all;
-    }
-    .log-time {
-      color: #666;
-      font-size: 12px;
-      margin-right: 10px;
-    }
-    input {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      width: 250px;
-    }
-    button {
-      padding: 8px 12px;
-      background-color: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #3367d6;
-    }
-    .blocked-urls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .url-tag {
-      background-color: #f1f1f1;
-      padding: 5px 10px;
-      border-radius: 15px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .url-tag button {
-      background-color: transparent;
-      color: #666;
-      padding: 0;
-      font-size: 14px;
-      height: 20px;
-      width: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-    }
-    .url-tag button:hover {
-      background-color: #ddd;
-    }
-    .refresh-btn {
-      padding: 5px 10px;
-      font-size: 12px;
-    }
-    .clear-btn {
-      background-color: #f44336;
-      margin-left: 10px;
-    }
-    .clear-btn:hover {
-      background-color: #d32f2f;
-    }
-    .no-logs {
-      color: #666;
-      font-style: italic;
-      padding: 10px 0;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>URL Blocker DevTools Panel</h1>
-    
-    <div class="section url-manager">
-      <div class="section-header">
-        <h2>Manage Blocked URLs</h2>
-      </div>
-      <div>
-        <input type="text" id="urlInput" placeholder="Enter URL to block (e.g., example.com)" />
-        <button id="addButton">Block URL</button>
-      </div>
-      <div class="blocked-urls" id="blockedUrlsList">
-        <!-- Blocked URLs will be displayed here -->
-      </div>
+  <head>
+    <title>URL Blocker DevTools Panel</title>
+    <style>
+      :root {
+        --text-color: #6dd58c;
+        --background-color: #202124;
+        --secondary-bg: #292b2f;
+        --border-color: #3c4043;
+        --hover-color: #3c4043;
+        --button-color: #3a6d45;
+        --button-hover: #458951;
+        --sidebar-width: 200px;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        height: 100vh;
+        display: flex;
+        background-color: var(--background-color);
+        color: var(--text-color);
+      }
+
+      .sidebar {
+        width: var(--sidebar-width);
+        background-color: var(--secondary-bg);
+        border-right: 1px solid var(--border-color);
+        overflow-y: auto;
+        flex-shrink: 0;
+      }
+
+      .sidebar-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .sidebar-item:hover {
+        background-color: var(--hover-color);
+      }
+
+      .sidebar-item.active {
+        background-color: rgba(109, 213, 140, 0.2);
+        font-weight: 500;
+      }
+
+      .main-content {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        gap: 20px;
+      }
+
+      .section {
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 15px;
+        background-color: var(--secondary-bg);
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        color: var(--text-color);
+      }
+
+      h1 {
+        font-size: 18px;
+        margin-bottom: 20px;
+      }
+
+      h2 {
+        font-size: 16px;
+      }
+
+      .url-manager {
+        flex: 0 0 auto;
+      }
+
+      .blocked-logs {
+        flex: 1 1 auto;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .log-container {
+        overflow-y: auto;
+        flex-grow: 1;
+        border: 1px solid var(--border-color);
+        padding: 10px;
+        border-radius: 4px;
+        background-color: var(--background-color);
+      }
+
+      .log-entry {
+        padding: 10px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+      }
+
+      .log-entry:nth-child(odd) {
+        background-color: rgba(60, 64, 67, 0.5);
+      }
+
+      .log-url {
+        flex-grow: 1;
+        word-break: break-all;
+      }
+
+      .log-time {
+        color: #aaa;
+        font-size: 12px;
+        margin-right: 10px;
+      }
+
+      input {
+        padding: 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        width: 300px;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        margin-right: 10px;
+      }
+
+      button {
+        padding: 8px 12px;
+        background-color: var(--button-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: var(--button-hover);
+      }
+
+      .blocked-urls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .url-tag {
+        background-color: rgba(109, 213, 140, 0.15);
+        padding: 6px 12px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(109, 213, 140, 0.3);
+      }
+
+      .url-tag button {
+        background-color: transparent;
+        color: var(--text-color);
+        padding: 0;
+        font-size: 14px;
+        height: 20px;
+        width: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+      }
+
+      .url-tag button:hover {
+        background-color: rgba(109, 213, 140, 0.3);
+      }
+
+      .refresh-btn {
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+
+      .clear-btn {
+        background-color: #c53929;
+        margin-left: 10px;
+      }
+
+      .clear-btn:hover {
+        background-color: #e64a19;
+      }
+
+      .no-logs {
+        color: #aaa;
+        font-style: italic;
+        padding: 15px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <div class="sidebar-item active">URL Blocking</div>
+      <div class="sidebar-item">Settings</div>
+      <div class="sidebar-item">Statistics</div>
+      <div class="sidebar-item">Advanced</div>
     </div>
-    
-    <div class="section blocked-logs">
-      <div class="section-header">
-        <h2>Blocked Requests Log</h2>
-        <div>
-          <button id="refreshButton" class="refresh-btn">Refresh</button>
-          <button id="clearLogsButton" class="refresh-btn clear-btn">Clear Logs</button>
+
+    <div class="main-content">
+      <h1>URL Blocker</h1>
+
+      <div class="container">
+        <div class="section url-manager">
+          <div class="section-header">
+            <h2>Manage Blocked URLs</h2>
+          </div>
+          <div>
+            <input
+              type="text"
+              id="urlInput"
+              placeholder="Enter URL to block (e.g., example.com)"
+            />
+            <button id="addButton">Block URL</button>
+          </div>
+          <div class="blocked-urls" id="blockedUrlsList">
+            <!-- Blocked URLs will be displayed here -->
+          </div>
+        </div>
+
+        <div class="section blocked-logs">
+          <div class="section-header">
+            <h2>Blocked Requests Log</h2>
+            <div>
+              <button id="refreshButton" class="refresh-btn">Refresh</button>
+              <button id="clearLogsButton" class="refresh-btn clear-btn">
+                Clear Logs
+              </button>
+            </div>
+          </div>
+          <div class="log-container" id="logsContainer">
+            <!-- Logs will be displayed here -->
+            <div class="no-logs" id="noLogsMessage">
+              No blocked requests logged yet.
+            </div>
+          </div>
         </div>
       </div>
-      <div class="log-container" id="logsContainer">
-        <!-- Logs will be displayed here -->
-        <div class="no-logs" id="noLogsMessage">No blocked requests logged yet.</div>
-      </div>
     </div>
-  </div>
-  
-  <script src="panel.js"></script>
-</body>
+
+    <script src="panel.js"></script>
+  </body>
 </html>

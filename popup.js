@@ -1,23 +1,23 @@
-document.addEventListener('DOMContentLoaded', function() {
-  const urlInput = document.getElementById('urlInput');
-  const addButton = document.getElementById('addButton');
-  const urlList = document.getElementById('urlList');
+document.addEventListener("DOMContentLoaded", function () {
+  const urlInput = document.getElementById("urlInput");
+  const addButton = document.getElementById("addButton");
+  const urlList = document.getElementById("urlList");
 
   // Load blocked URLs when popup opens
   loadBlockedUrls();
 
   // Add URL to block list
-  addButton.addEventListener('click', function() {
+  addButton.addEventListener("click", function () {
     const url = urlInput.value.trim();
     if (url) {
       addUrlToBlockList(url);
-      urlInput.value = '';
+      urlInput.value = "";
     }
   });
 
   // Allow Enter key to add URL
-  urlInput.addEventListener('keyup', function(event) {
-    if (event.key === 'Enter') {
+  urlInput.addEventListener("keyup", function (event) {
+    if (event.key === "Enter") {
       addButton.click();
     }
   });
@@ -26,22 +26,23 @@ document.addEventListener('DOMContentLoaded', function() {
   function addUrlToBlockList(url) {
     // Normalize URL format (remove http://, https://, www. if present)
     const normalizedUrl = normalizeUrl(url);
-    
+
     // Get current blocked URLs
-    chrome.storage.local.get(['blockedUrls'], function(result) {
+    chrome.storage.local.get(["blockedUrls"], function (result) {
       const blockedUrls = result.blockedUrls || [];
-      
+
       // Check if URL is already in the list
       if (blockedUrls.includes(normalizedUrl)) {
-        alert('This URL is already blocked.');
+        alert("This URL is already blocked.");
         return;
       }
-      
+
       // Add URL to the list
       blockedUrls.push(normalizedUrl);
-      
-      // Save updated list
-      chrome.storage.local.set({blockedUrls: blockedUrls}, function() {
+
+      // Save updated list - this will trigger the storage listener in background.js
+      // which will update the declarative rules
+      chrome.storage.local.set({ blockedUrls: blockedUrls }, function () {
         // Update UI
         loadBlockedUrls();
       });
@@ -50,11 +51,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Function to remove URL from block list
   function removeUrlFromBlockList(url) {
-    chrome.storage.local.get(['blockedUrls'], function(result) {
+    chrome.storage.local.get(["blockedUrls"], function (result) {
       const blockedUrls = result.blockedUrls || [];
-      const updatedList = blockedUrls.filter(item => item !== url);
-      
-      chrome.storage.local.set({blockedUrls: updatedList}, function() {
+      const updatedList = blockedUrls.filter((item) => item !== url);
+
+      chrome.storage.local.set({ blockedUrls: updatedList }, function () {
         // Update UI
         loadBlockedUrls();
       });
@@ -63,32 +64,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Function to load and display blocked URLs
   function loadBlockedUrls() {
-    chrome.storage.local.get(['blockedUrls'], function(result) {
+    chrome.storage.local.get(["blockedUrls"], function (result) {
       const blockedUrls = result.blockedUrls || [];
-      
+
       // Clear current list
-      urlList.innerHTML = '';
-      
+      urlList.innerHTML = "";
+
       if (blockedUrls.length === 0) {
-        urlList.innerHTML = '<p style="color: #666; font-style: italic;">No URLs blocked yet.</p>';
+        urlList.innerHTML =
+          '<p style="color: #666; font-style: italic;">No URLs blocked yet.</p>';
         return;
       }
-      
+
       // Add each URL to the list
-      blockedUrls.forEach(function(url) {
-        const urlItem = document.createElement('div');
-        urlItem.className = 'url-item';
-        
-        const urlText = document.createElement('span');
+      blockedUrls.forEach(function (url) {
+        const urlItem = document.createElement("div");
+        urlItem.className = "url-item";
+
+        const urlText = document.createElement("span");
         urlText.textContent = url;
-        
-        const removeButton = document.createElement('button');
-        removeButton.className = 'remove-btn';
-        removeButton.textContent = 'Remove';
-        removeButton.addEventListener('click', function() {
+
+        const removeButton = document.createElement("button");
+        removeButton.className = "remove-btn";
+        removeButton.textContent = "Remove";
+        removeButton.addEventListener("click", function () {
           removeUrlFromBlockList(url);
         });
-        
+
         urlItem.appendChild(urlText);
         urlItem.appendChild(removeButton);
         urlList.appendChild(urlItem);
@@ -99,11 +101,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // Helper function to normalize URL format
   function normalizeUrl(url) {
     // Remove protocol if present
-    let normalizedUrl = url.replace(/^(https?:\/\/)?(www\.)?/, '');
-    
+    let normalizedUrl = url.replace(/^(https?:\/\/)?(www\.)?/, "");
+
     // Remove trailing slash if present
-    normalizedUrl = normalizedUrl.replace(/\/$/, '');
-    
+    normalizedUrl = normalizedUrl.replace(/\/$/, "");
+
     return normalizedUrl;
   }
 });

@@ -3,16 +3,8 @@
   "name": "URL Blocker",
   "version": "1.0.0",
   "description": "Block specific URLs from loading",
-  "permissions": [
-    "storage",
-    "webRequest",
-    "webRequestBlocking",
-    "tabs",
-    "scripting"
-  ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
+  "permissions": ["storage", "declarativeNetRequest", "tabs", "scripting"],
+  "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
