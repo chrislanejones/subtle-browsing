@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>URL Blocker DevTools Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 15px;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      gap: 15px;
+    }
+    .section {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    h1, h2 {
+      margin: 0;
+    }
+    h1 {
+      font-size: 18px;
+    }
+    h2 {
+      font-size: 16px;
+    }
+    .url-manager {
+      flex: 0 0 auto;
+    }
+    .blocked-logs {
+      flex: 1 1 auto;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .log-container {
+      overflow-y: auto;
+      flex-grow: 1;
+      border: 1px solid #eee;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .log-entry {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+    }
+    .log-entry:nth-child(odd) {
+      background-color: #f9f9f9;
+    }
+    .log-url {
+      flex-grow: 1;
+      word-break: break-all;
+    }
+    .log-time {
+      color: #666;
+      font-size: 12px;
+      margin-right: 10px;
+    }
+    input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 250px;
+    }
+    button {
+      padding: 8px 12px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #3367d6;
+    }
+    .blocked-urls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .url-tag {
+      background-color: #f1f1f1;
+      padding: 5px 10px;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .url-tag button {
+      background-color: transparent;
+      color: #666;
+      padding: 0;
+      font-size: 14px;
+      height: 20px;
+      width: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+    .url-tag button:hover {
+      background-color: #ddd;
+    }
+    .refresh-btn {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+    .clear-btn {
+      background-color: #f44336;
+      margin-left: 10px;
+    }
+    .clear-btn:hover {
+      background-color: #d32f2f;
+    }
+    .no-logs {
+      color: #666;
+      font-style: italic;
+      padding: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>URL Blocker DevTools Panel</h1>
+    
+    <div class="section url-manager">
+      <div class="section-header">
+        <h2>Manage Blocked URLs</h2>
+      </div>
+      <div>
+        <input type="text" id="urlInput" placeholder="Enter URL to block (e.g., example.com)" />
+        <button id="addButton">Block URL</button>
+      </div>
+      <div class="blocked-urls" id="blockedUrlsList">
+        <!-- Blocked URLs will be displayed here -->
+      </div>
+    </div>
+    
+    <div class="section blocked-logs">
+      <div class="section-header">
+        <h2>Blocked Requests Log</h2>
+        <div>
+          <button id="refreshButton" class="refresh-btn">Refresh</button>
+          <button id="clearLogsButton" class="refresh-btn clear-btn">Clear Logs</button>
+        </div>
+      </div>
+      <div class="log-container" id="logsContainer">
+        <!-- Logs will be displayed here -->
+        <div class="no-logs" id="noLogsMessage">No blocked requests logged yet.</div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="panel.js"></script>
+</body>
+</html>
