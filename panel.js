@@ -6,6 +6,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const refreshButton = document.getElementById("refreshButton");
   const clearLogsButton = document.getElementById("clearLogsButton");
   const noLogsMessage = document.getElementById("noLogsMessage");
+  const selectorButton = document.getElementById("selectorButton");
+  const stopSelectorButton = document.getElementById("stopSelectorButton");
+  const openInspectorButton = document.getElementById("openInspectorButton");
+
+  // URL display configuration
+  const MAX_DISPLAYED_URLS = 10;
+  let showAllUrls = false;
 
   // Load blocked URLs and logs when panel opens
   loadBlockedUrls();
@@ -35,6 +42,42 @@ document.addEventListener("DOMContentLoaded", function () {
   // Clear logs button
   clearLogsButton.addEventListener("click", function () {
     clearBlockedLogs();
+  });
+
+  // Element selector button
+  selectorButton.addEventListener("click", function () {
+    // Send message to background script to start the selector
+    chrome.runtime.sendMessage(
+      { action: "startSelector" },
+      function (response) {
+        if (response && response.status === "Selector activated") {
+          selectorButton.style.display = "none";
+          stopSelectorButton.style.display = "inline-flex";
+          selectorButton.classList.add("active");
+        }
+      }
+    );
+  });
+
+  // Stop element selector button
+  stopSelectorButton.addEventListener("click", function () {
+    // Send message to background script to stop the selector
+    chrome.runtime.sendMessage({ action: "stopSelector" }, function (response) {
+      if (response && response.status === "Selector deactivated") {
+        selectorButton.style.display = "inline-flex";
+        stopSelectorButton.style.display = "none";
+        selectorButton.classList.remove("active");
+      }
+    });
+  });
+
+  // Open inspector button
+  openInspectorButton.addEventListener("click", function () {
+    // Chrome DevTools has no API to programmatically switch to another panel,
+    // so we'll show instructions to the user
+    alert(
+      "To use the element selector, click on the 'Select Element to Block' button, then click on the ad element you want to block on the page."
+    );
   });
 
   // Function to add URL to block list
@@ -90,8 +133,13 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
+      // Determine how many URLs to show
+      const displayedUrls = showAllUrls
+        ? blockedUrls
+        : blockedUrls.slice(0, MAX_DISPLAYED_URLS);
+
       // Add each URL to the list
-      blockedUrls.forEach(function (url) {
+      displayedUrls.forEach(function (url) {
         const urlTag = document.createElement("div");
         urlTag.className = "url-tag";
 
@@ -109,6 +157,20 @@ document.addEventListener("DOMContentLoaded", function () {
         urlTag.appendChild(removeButton);
         blockedUrlsList.appendChild(urlTag);
       });
+
+      // Add "Show more" / "Show less" button if there are more than MAX_DISPLAYED_URLS
+      if (blockedUrls.length > MAX_DISPLAYED_URLS) {
+        const showMoreButton = document.createElement("button");
+        showMoreButton.className = "show-more-btn";
+        showMoreButton.textContent = showAllUrls
+          ? "Show fewer URLs"
+          : `Show all URLs (${blockedUrls.length})`;
+        showMoreButton.addEventListener("click", function () {
+          showAllUrls = !showAllUrls;
+          loadBlockedUrls();
+        });
+        blockedUrlsList.appendChild(showMoreButton);
+      }
     });
   }
 

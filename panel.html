@@ -211,6 +211,82 @@
         font-style: italic;
         padding: 15px 0;
       }
+
+      .button-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .selector-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .selector-btn.active {
+        background-color: #c75f00;
+      }
+
+      .selector-btn.active:hover {
+        background-color: #e67700;
+      }
+
+      .selector-icon {
+        width: 16px;
+        height: 16px;
+        display: inline-block;
+        position: relative;
+      }
+
+      .selector-icon:before,
+      .selector-icon:after {
+        content: "";
+        position: absolute;
+        background-color: white;
+      }
+
+      .selector-icon:before {
+        width: 10px;
+        height: 10px;
+        border: 2px solid white;
+        border-radius: 2px;
+        left: 0;
+        top: 0;
+      }
+
+      .selector-icon:after {
+        width: 6px;
+        height: 6px;
+        background-color: var(--button-color);
+        right: 0;
+        bottom: 0;
+        border-radius: 50%;
+      }
+
+      .inspector-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background-color: #4285f4;
+      }
+
+      .inspector-btn:hover {
+        background-color: #3367d6;
+      }
+
+      .show-more-btn {
+        margin-top: 10px;
+        background-color: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        text-align: center;
+        width: 100%;
+      }
+
+      .show-more-btn:hover {
+        background-color: rgba(109, 213, 140, 0.1);
+      }
     </style>
   </head>
   <body>
@@ -228,6 +304,9 @@
         <div class="section url-manager">
           <div class="section-header">
             <h2>Manage Blocked URLs</h2>
+            <button id="openInspectorButton" class="inspector-btn">
+              Open Inspector
+            </button>
           </div>
           <div>
             <input
@@ -236,6 +315,19 @@
               placeholder="Enter URL to block (e.g., example.com)"
             />
             <button id="addButton">Block URL</button>
+          </div>
+          <div class="button-row">
+            <button id="selectorButton" class="selector-btn">
+              <span class="selector-icon"></span>
+              Select Element to Block
+            </button>
+            <button
+              id="stopSelectorButton"
+              class="selector-btn"
+              style="display: none"
+            >
+              Cancel Selection
+            </button>
           </div>
           <div class="blocked-urls" id="blockedUrlsList">
             <!-- Blocked URLs will be displayed here -->

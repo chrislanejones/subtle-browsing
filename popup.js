@@ -2,6 +2,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const urlInput = document.getElementById("urlInput");
   const addButton = document.getElementById("addButton");
   const urlList = document.getElementById("urlList");
+  const selectorButton = document.getElementById("selectorButton");
+  const stopSelectorButton = document.getElementById("stopSelectorButton");
+
+  // URL display configuration
+  const MAX_DISPLAYED_URLS = 5;
+  let showAllUrls = false;
 
   // Load blocked URLs when popup opens
   loadBlockedUrls();
@@ -20,6 +26,55 @@ document.addEventListener("DOMContentLoaded", function () {
     if (event.key === "Enter") {
       addButton.click();
     }
+  });
+
+  // Element selector button
+  selectorButton.addEventListener("click", function () {
+    // Get active tab
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      if (tabs[0]) {
+        // Send message to start selector
+        chrome.tabs.sendMessage(
+          tabs[0].id,
+          { action: "startSelector" },
+          function (response) {
+            if (chrome.runtime.lastError) {
+              console.log("Error: ", chrome.runtime.lastError.message);
+            }
+
+            if (response && response.status === "Selector activated") {
+              selectorButton.style.display = "none";
+              stopSelectorButton.style.display = "block";
+              selectorButton.classList.add("active");
+            }
+          }
+        );
+
+        // Close popup to see the page
+        window.close();
+      }
+    });
+  });
+
+  // Stop element selector button
+  stopSelectorButton.addEventListener("click", function () {
+    // Get active tab
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      if (tabs[0]) {
+        // Send message to stop selector
+        chrome.tabs.sendMessage(
+          tabs[0].id,
+          { action: "stopSelector" },
+          function (response) {
+            if (response && response.status === "Selector deactivated") {
+              selectorButton.style.display = "block";
+              stopSelectorButton.style.display = "none";
+              selectorButton.classList.remove("active");
+            }
+          }
+        );
+      }
+    });
   });
 
   // Function to add URL to block list
@@ -76,8 +131,13 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
+      // Determine how many URLs to show
+      const displayedUrls = showAllUrls
+        ? blockedUrls
+        : blockedUrls.slice(0, MAX_DISPLAYED_URLS);
+
       // Add each URL to the list
-      blockedUrls.forEach(function (url) {
+      displayedUrls.forEach(function (url) {
         const urlItem = document.createElement("div");
         urlItem.className = "url-item";
 
@@ -95,6 +155,20 @@ document.addEventListener("DOMContentLoaded", function () {
         urlItem.appendChild(removeButton);
         urlList.appendChild(urlItem);
       });
+
+      // Add "Show more" / "Show less" button if there are more than MAX_DISPLAYED_URLS
+      if (blockedUrls.length > MAX_DISPLAYED_URLS) {
+        const showMoreButton = document.createElement("button");
+        showMoreButton.className = "show-more-btn";
+        showMoreButton.textContent = showAllUrls
+          ? "Show fewer URLs"
+          : `Show all URLs (${blockedUrls.length})`;
+        showMoreButton.addEventListener("click", function () {
+          showAllUrls = !showAllUrls;
+          loadBlockedUrls();
+        });
+        urlList.appendChild(showMoreButton);
+      }
     });
   }
 

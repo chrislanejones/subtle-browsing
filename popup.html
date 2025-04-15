@@ -1,80 +1,152 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>URL Blocker</title>
-  <style>
-    body {
-      width: 300px;
-      padding: 15px;
-      font-family: Arial, sans-serif;
-    }
-    .container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    h1 {
-      font-size: 18px;
-      margin-top: 0;
-    }
-    input {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    button {
-      padding: 8px 12px;
-      background-color: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #3367d6;
-    }
-    .url-list {
-      margin-top: 10px;
-      max-height: 200px;
-      overflow-y: auto;
-      border: 1px solid #eee;
-      padding: 10px;
-      border-radius: 4px;
-    }
-    .url-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 5px 0;
-      border-bottom: 1px solid #eee;
-    }
-    .url-item:last-child {
-      border-bottom: none;
-    }
-    .remove-btn {
-      background-color: #f44336;
-      padding: 4px 8px;
-      font-size: 12px;
-    }
-    .remove-btn:hover {
-      background-color: #d32f2f;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>URL Blocker</h1>
-    <div>
-      <input type="text" id="urlInput" placeholder="Enter URL to block (e.g., example.com)" />
-      <button id="addButton">Block URL</button>
-    </div>
-    <div>
-      <h2 style="font-size: 16px;">Blocked URLs:</h2>
-      <div id="urlList" class="url-list">
-        <!-- Blocked URLs will be displayed here -->
+  <head>
+    <title>URL Blocker</title>
+    <style>
+      body {
+        width: 300px;
+        padding: 15px;
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      h1 {
+        font-size: 18px;
+        margin-top: 0;
+      }
+      input {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        padding: 8px 12px;
+        background-color: #4285f4;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #3367d6;
+      }
+      .url-list {
+        margin-top: 10px;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        padding: 10px;
+        border-radius: 4px;
+      }
+      .url-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 0;
+        border-bottom: 1px solid #eee;
+      }
+      .url-item:last-child {
+        border-bottom: none;
+      }
+      .remove-btn {
+        background-color: #f44336;
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+      .remove-btn:hover {
+        background-color: #d32f2f;
+      }
+      .selector-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background-color: #009688;
+        margin-top: 10px;
+      }
+      .selector-btn:hover {
+        background-color: #00796b;
+      }
+      .selector-btn.active {
+        background-color: #c75f00;
+      }
+      .selector-btn.active:hover {
+        background-color: #e67700;
+      }
+      .selector-icon {
+        width: 16px;
+        height: 16px;
+        display: inline-block;
+        position: relative;
+      }
+      .selector-icon:before,
+      .selector-icon:after {
+        content: "";
+        position: absolute;
+        background-color: white;
+      }
+      .selector-icon:before {
+        width: 10px;
+        height: 10px;
+        border: 2px solid white;
+        border-radius: 2px;
+        left: 0;
+        top: 0;
+      }
+      .selector-icon:after {
+        width: 6px;
+        height: 6px;
+        background-color: #009688;
+        right: 0;
+        bottom: 0;
+        border-radius: 50%;
+      }
+      .show-more-btn {
+        margin-top: 5px;
+        background-color: #f5f5f5;
+        color: #333;
+        border: 1px solid #ddd;
+        text-align: center;
+        width: 100%;
+      }
+      .show-more-btn:hover {
+        background-color: #e0e0e0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>URL Blocker</h1>
+      <div>
+        <input
+          type="text"
+          id="urlInput"
+          placeholder="Enter URL to block (e.g., example.com)"
+        />
+        <button id="addButton">Block URL</button>
+      </div>
+      <div>
+        <button id="selectorButton" class="selector-btn">
+          <span class="selector-icon"></span>
+          Select Element to Block
+        </button>
+        <button
+          id="stopSelectorButton"
+          class="selector-btn"
+          style="display: none"
+        >
+          Cancel Selection
+        </button>
+      </div>
+      <div>
+        <h2 style="font-size: 16px">Blocked URLs:</h2>
+        <div id="urlList" class="url-list">
+          <!-- Blocked URLs will be displayed here -->
+        </div>
       </div>
     </div>
-  </div>
-  <script src="popup.js"></script>
-</body>
+    <script src="popup.js"></script>
+  </body>
 </html>

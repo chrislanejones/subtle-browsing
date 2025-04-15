@@ -3,7 +3,13 @@
   "name": "URL Blocker",
   "version": "1.0.0",
   "description": "Block specific URLs from loading",
-  "permissions": ["storage", "declarativeNetRequest", "tabs", "scripting"],
+  "permissions": [
+    "storage",
+    "declarativeNetRequest",
+    "tabs",
+    "scripting",
+    "contextMenus"
+  ],
   "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
@@ -17,6 +23,13 @@
     "service_worker": "background.js"
   },
   "devtools_page": "devtools.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "icons": {
     "16": "images/icon16.png",
     "48": "images/icon48.png",
