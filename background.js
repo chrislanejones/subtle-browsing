@@ -77,8 +77,9 @@ function queue(task) {
   return pending;
 }
 
-// 1.5.0 moved these from storage.local to storage.sync. Copies anything
-// still in local, unless sync already has a value from another computer.
+// 1.5.0 moved these from storage.local to storage.sync. On a second
+// computer sync may already hold the first one's data: lists are merged so
+// neither computer loses entries, and the synced switches win.
 const SYNCED_KEYS = ["blockedUrls", "settings", "pausedSites"];
 async function moveSettingsToSync() {
   const local = await chrome.storage.local.get(SYNCED_KEYS);
@@ -86,11 +87,16 @@ async function moveSettingsToSync() {
   if (keys.length === 0) return;
 
   const synced = await chrome.storage.sync.get(keys);
-  const missing = Object.fromEntries(
-    keys.filter((key) => synced[key] === undefined).map((key) => [key, local[key]])
-  );
+  const updates = {};
+  for (const key of keys) {
+    if (synced[key] === undefined) {
+      updates[key] = local[key];
+    } else if (Array.isArray(synced[key]) && Array.isArray(local[key])) {
+      updates[key] = [...new Set([...synced[key], ...local[key]])];
+    }
+  }
   // If this throws (sync full), local keeps the data for the next try
-  if (Object.keys(missing).length > 0) await chrome.storage.sync.set(missing);
+  if (Object.keys(updates).length > 0) await chrome.storage.sync.set(updates);
   await chrome.storage.local.remove(keys);
 }
 
