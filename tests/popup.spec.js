@@ -52,14 +52,15 @@ test.describe("popup", () => {
     await expect(page.locator("#heavyAdsToggle")).not.toBeChecked();
     await expect(page.locator("#annoyanceRulesToggle")).not.toBeChecked();
 
+    await page.locator("#extraProtections summary").click();
     await page.locator("#annoyanceRulesToggle").check();
     await page.locator("#autoplayGuardToggle").uncheck();
     await expect
       .poll(async () => (await ext.getSync("settings")).settings)
-      .toEqual({ videoAdRules: true, autoplayGuard: false, heavyAds: false, annoyanceRules: true });
+      .toEqual({ videoAdRules: true, autoplayGuard: false, heavyAds: false, annoyanceRules: true, notificationRules: false, aggressiveHeavyAds: false });
     // The worker applies them
     await expect.poll(() => ext.enabledRulesets()).toEqual(["annoyances", "video_ads"]);
-    await expect.poll(() => ext.registeredScripts()).toEqual([]);
+    await expect.poll(() => ext.registeredScripts()).toEqual(["cosmetic"]);
   });
 
   test("blocks a typed URL, normalized, and flags a repeat", async ({ ext, page }) => {

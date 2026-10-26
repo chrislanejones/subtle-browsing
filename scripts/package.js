@@ -12,6 +12,7 @@ const output = `dist/url-blocker-${version}.zip`;
 // Everything in the repo that Chrome doesn't need
 const DEV_ONLY = [
   "tests",
+  "artifacts",
   "docs",
   "scripts",
   "*.md",

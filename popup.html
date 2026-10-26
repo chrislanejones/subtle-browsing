@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>URL Blocker</title>
     <link rel="stylesheet" href="ui.css" />
+    <link rel="stylesheet" href="controls.css" />
     <style>
       body {
         width: 360px;
@@ -47,13 +48,15 @@
     <label id="siteRow" class="card row site-row" hidden>
       <span class="row-text">
         <span class="row-title">Pause on <b id="siteName"></b></span>
-        <span class="row-desc">Turns blocking off here and reloads the tab</span>
+        <span class="row-desc"
+          >Turns blocking off here and reloads the tab</span
+        >
       </span>
       <input type="checkbox" id="pauseSiteToggle" class="switch" />
     </label>
 
     <fieldset class="group">
-      <legend class="section-label">Block</legend>
+      <legend class="section-label">Block by default</legend>
       <div class="card">
         <label class="row">
           <span class="row-text">
@@ -76,15 +79,39 @@
           </span>
           <input type="checkbox" id="heavyAdsToggle" class="switch" />
         </label>
-        <label class="row">
-          <span class="row-text">
-            <span class="row-title">Pop-ups and prompts</span>
-            <span class="row-desc">Newsletters, notification requests</span>
-          </span>
-          <input type="checkbox" id="annoyanceRulesToggle" class="switch" />
-        </label>
+        <details id="extraProtections" class="protections">
+          <summary>Offers, prompts and broader limits</summary>
+          <label class="row">
+            <span class="row-text">
+              <span class="row-title">Newsletter offers</span>
+              <span class="row-desc"
+                >Newsletter sign-ups and promotional overlays</span
+              >
+            </span>
+            <input type="checkbox" id="annoyanceRulesToggle" class="switch" />
+          </label>
+          <label class="row"
+            ><span class="row-text"
+              ><span class="row-title">Notification requests</span
+              ><span class="row-desc">Website push-prompt tools</span></span
+            ><input type="checkbox" id="notificationRulesToggle" class="switch"
+          /></label>
+          <label class="row"
+            ><span class="row-text"
+              ><span class="row-title">All heavy third-party embeds</span
+              ><span class="row-desc"
+                >Broader Heavy ads mode; may stop legitimate content</span
+              ></span
+            ><input
+              type="checkbox"
+              id="aggressiveHeavyAdsToggle"
+              class="switch"
+          /></label>
+        </details>
       </div>
     </fieldset>
+
+    <details id="siteControls" class="protections" hidden></details>
 
     <section>
       <label for="urlInput" class="section-label">Block a URL</label>
@@ -93,7 +120,13 @@
         <button id="addButton" class="btn btn-primary">Block</button>
       </div>
       <button id="selectorButton" class="btn btn-secondary">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
+        >
           <path
             d="M6 2.5H3.5a1 1 0 0 0-1 1V6M10 2.5h2.5a1 1 0 0 1 1 1V6M2.5 10v2.5a1 1 0 0 0 1 1H6"
             stroke="currentColor"
@@ -119,8 +152,20 @@
         <span class="row-title">Blocked URLs and paused sites</span>
         <span id="manageSummary" class="row-desc"></span>
       </span>
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <path d="M6 3.5L10.5 8 6 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M6 3.5L10.5 8 6 12.5"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
     </button>
 

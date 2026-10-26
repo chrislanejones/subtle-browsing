@@ -1,0 +1,8 @@
+[
+  {"id": 19, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||onesignal.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
+  {"id": 20, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||pushengage.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
+  {"id": 21, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||izooto.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
+  {"id": 22, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||webpushr.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
+  {"id": 23, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||aimtell.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
+  {"id": 24, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||pushcrew.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}}
+]

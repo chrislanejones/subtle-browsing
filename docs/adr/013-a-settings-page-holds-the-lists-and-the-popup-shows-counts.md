@@ -34,3 +34,6 @@ checked by hand, or the two copies of the switches drift and one page
 shows a switch the other doesn't.
 Early warning sign to watch for: the popup's measured height passing
 about 580 px, or a switch added to one page's HTML but not the other.
+
+## 1.6.0 follow-up
+1.6.0 adds per-site controls to the popup and DevTools, plus saved hidden elements and site overrides in settings and DevTools. See [ADR-017](017-site-protections-use-tab-session-rules.md).

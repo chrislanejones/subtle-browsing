@@ -9,6 +9,9 @@ import {
   onPausedSitesChanged,
   onSettingsChanged,
   setSitePaused,
+  getSiteSettings,
+  setSiteSetting,
+  validSite,
 } from "./settings.js";
 
 const RESOURCE_TYPES = [
@@ -65,7 +68,6 @@ chrome.runtime.onStartup.addListener(setUpBadge);
 onBlockedUrlsChanged(() => queue(syncDynamicRules));
 onPausedSitesChanged(() => queue(syncDynamicRules));
 onSettingsChanged((settings) => {
-  heavyAdsOn = settings.heavyAds;
   queue(() => applySettings(settings));
 });
 
@@ -73,8 +75,9 @@ onSettingsChanged((settings) => {
 // quick changes from overwriting each other.
 let pending = Promise.resolve();
 function queue(task) {
-  pending = pending.then(task).catch((error) => console.error(error));
-  return pending;
+  const result = pending.then(task);
+  pending = result.catch((error) => console.error(error));
+  return result;
 }
 
 // 1.5.0 moved these from storage.local to storage.sync. On a second
@@ -120,7 +123,7 @@ async function syncDynamicRules() {
     .filter(Boolean)
     .map((urlFilter, index) => ({
       id: index + 1, // Rule IDs must be > 0
-      priority: 1,
+      priority: 3,
       action: { type: "block" },
       condition: { urlFilter, resourceTypes: RESOURCE_TYPES },
     }));
@@ -130,7 +133,7 @@ async function syncDynamicRules() {
   if (pausedSites.length > 0) {
     addRules.push({
       id: PAUSED_SITES_RULE_ID,
-      priority: 2,
+      priority: 10,
       action: { type: "allowAllRequests" },
       condition: {
         requestDomains: pausedSites,
@@ -146,10 +149,19 @@ async function syncDynamicRules() {
   });
 }
 
-async function applySettings({ videoAdRules, autoplayGuard, annoyanceRules, heavyAds }) {
+async function applySettings({
+  videoAdRules,
+  autoplayGuard,
+  annoyanceRules,
+  notificationRules,
+  heavyAds,
+}) {
+  const overrides = Object.values(await getSiteSettings());
+  heavyAdsOn = heavyAds || overrides.some((s) => s.heavyAds);
   const rulesets = {
     [VIDEO_AD_RULESET_ID]: videoAdRules,
     [ANNOYANCES_RULESET_ID]: annoyanceRules,
+    notifications: notificationRules,
   };
   const ids = Object.keys(rulesets);
   await chrome.declarativeNetRequest.updateEnabledRulesets({
@@ -157,37 +169,64 @@ async function applySettings({ videoAdRules, autoplayGuard, annoyanceRules, heav
     disableRulesetIds: ids.filter((id) => !rulesets[id]),
   });
 
-  await setFrameScript(AUTOPLAY_GUARD_ID, "autoplay-guard.js", autoplayGuard);
-  await setFrameScript(HEAVY_AD_GUARD_ID, "heavy-ad-guard.js", heavyAds);
+  await setFrameScript(
+    AUTOPLAY_GUARD_ID,
+    "autoplay-guard.js",
+    autoplayGuard || overrides.some((s) => s.autoplayGuard),
+  );
+  await setFrameScript(
+    HEAVY_AD_GUARD_ID,
+    "heavy-ad-guard.js",
+    heavyAds || overrides.some((s) => s.heavyAds),
+  );
   // Both of those can unload a frame and ask its parent to hide the box
-  await setFrameScript(FRAME_COLLAPSE_ID, "frame-collapse.js", autoplayGuard || heavyAds);
+  await setFrameScript(
+    FRAME_COLLAPSE_ID,
+    "frame-collapse.js",
+    autoplayGuard ||
+      heavyAds ||
+      overrides.some((s) => s.autoplayGuard || s.heavyAds),
+  );
+  await setFrameScript("cosmetic", "cosmetic.js", true);
+  await syncSiteRules();
 }
 
 // Registered rather than listed in the manifest, so turning one off removes
-// it from every page
+// it from future pages; existing listeners consult the shared live policy
 async function setFrameScript(id, file, enabled) {
-  const registered = await chrome.scripting.getRegisteredContentScripts({ ids: [id] });
+  const registered = await chrome.scripting.getRegisteredContentScripts({
+    ids: [id],
+  });
   if (enabled && registered.length === 0) {
     await chrome.scripting.registerContentScripts([
       {
         id,
-        js: [file],
+        js: ["page-policy.js", file],
         matches: ["<all_urls>"],
         allFrames: true, // Ads usually run inside iframes
         matchOriginAsFallback: true, // Includes about:blank ad frames
         runAt: "document_start",
       },
     ]);
+  } else if (enabled) {
+    await chrome.scripting.updateContentScripts([
+      { id, js: ["page-policy.js", file] },
+    ]);
   } else if (!enabled && registered.length > 0) {
     await chrome.scripting.unregisterContentScripts({ ids: [id] });
   }
 }
 
-chrome.declarativeNetRequest.onRuleMatchedDebug?.addListener(({ request, rule }) => {
-  // The paused-sites rule lets requests through; it doesn't block them
-  if (rule.rulesetId === "_dynamic" && rule.ruleId === PAUSED_SITES_RULE_ID) return;
-  logBlockedUrl(request.url);
-});
+chrome.declarativeNetRequest.onRuleMatchedDebug?.addListener(
+  ({ request, rule }) => {
+    // The paused-sites rule lets requests through; it doesn't block them
+    if (rule.rulesetId === "_dynamic" && rule.ruleId === PAUSED_SITES_RULE_ID)
+      return;
+    if (rule.rulesetId === "_session" && sessionAllowIds.has(rule.ruleId))
+      return;
+    logBlockedUrl(request.url);
+  },
+);
 
 // Local date, so "today" rolls over at the user's midnight
 function today() {
@@ -215,7 +254,9 @@ async function setUpBadge() {
     return;
   }
   await chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
-  await chrome.action.setBadgeText({ text: badgeText(await getBlockedToday()) });
+  await chrome.action.setBadgeText({
+    text: badgeText(await getBlockedToday()),
+  });
 }
 
 // Clears the badge at local midnight instead of waiting for the first block
@@ -262,7 +303,10 @@ async function flushLogs() {
 // The listener has to be added at startup to wake the worker, so the
 // setting is checked inside it.
 let heavyAdsOn = true;
-getSettings().then((settings) => (heavyAdsOn = settings.heavyAds));
+Promise.all([getSettings(), getSiteSettings()]).then(([settings, sites]) => {
+  heavyAdsOn =
+    settings.heavyAds || Object.values(sites).some((s) => s.heavyAds);
+});
 
 const frameTrees = new Map(); // tabId -> { parents, bytes, removed }
 const MAX_FRAME_DEPTH = 20;
@@ -272,16 +316,16 @@ chrome.tabs.onRemoved.addListener((tabId) => frameTrees.delete(tabId));
 chrome.webRequest.onHeadersReceived.addListener(
   countFrameBytes,
   { urls: ["<all_urls>"] },
-  ["responseHeaders"]
+  ["responseHeaders"],
 );
 
 function countFrameBytes(details) {
-  if (!heavyAdsOn || details.tabId < 0) return;
+  if (details.tabId < 0) return;
   if (details.type === "main_frame") {
     frameTrees.delete(details.tabId); // New page, new frames
     return;
   }
-  if (details.frameId === 0) return; // The page's own requests
+  if (!heavyAdsOn || details.frameId === 0) return; // The page's own requests
 
   let tree = frameTrees.get(details.tabId);
   if (!tree) {
@@ -299,7 +343,7 @@ function countFrameBytes(details) {
   if (tree.removed.has(adFrame)) return;
 
   const header = details.responseHeaders?.find(
-    (h) => h.name.toLowerCase() === "content-length"
+    (h) => h.name.toLowerCase() === "content-length",
   );
   const size = Number(header?.value) || 0;
   if (size === 0) return;
@@ -315,37 +359,90 @@ function countFrameBytes(details) {
 }
 
 async function removeHeavyFrame(tabId, frameId, bytes) {
-  const [{ result: url } = {}] = await chrome.scripting.executeScript({
+  await chrome.scripting.executeScript({
     target: { tabId, frameIds: [frameId] },
-    func: unloadThirdPartyFrame,
-    args: [await getPausedSites()],
+    func: (reason) => {
+      if (window.top === window || navigator.userActivation.hasBeenActive)
+        return;
+      parent.postMessage(
+        { type: "subtle:heavy", reason, url: location.href },
+        "*",
+      );
+    },
+    args: [`${(bytes / 1048576).toFixed(1)} MB`],
   });
-  if (url) logBlockedUrl(`Heavy ad (${(bytes / 1048576).toFixed(1)} MB): ${url}`);
 }
 
-// Runs inside the frame. Returns its URL if it was unloaded.
-function unloadThirdPartyFrame(pausedSites) {
-  const siteOf = (origin) => new URL(origin).hostname.replace(/^www\./, "");
-  let frameSite = "";
-  let topSite = "";
-  try {
-    frameSite = siteOf(self.origin);
-    topSite = siteOf(location.ancestorOrigins[location.ancestorOrigins.length - 1]);
-  } catch {
-    // Opaque origin: a sandboxed ad frame
+// Tab-scoped exceptions also cover third-party subframes. A broad site pause
+// still wins; personal URL rules outrank these category-only allows.
+let sessionAllowIds = new Set();
+const categoryFiles = {
+  videoAdRules: "video-ads",
+  annoyanceRules: "annoyances",
+  notificationRules: "notifications",
+};
+const builtinRules = Promise.all(
+  Object.entries(categoryFiles).map(async ([key, name]) => [
+    key,
+    await (await fetch(chrome.runtime.getURL(`rules/${name}.json`))).json(),
+  ]),
+);
+function overridesFor(host, sites) {
+  return Object.assign(
+    {},
+    ...Object.entries(sites)
+      .filter(([site]) => host === site || host.endsWith(`.${site}`))
+      .sort(([a], [b]) => a.length - b.length)
+      .map(([, value]) => value),
+  );
+}
+async function syncSiteRules() {
+  const [settings, sites, tabs, old, lists] = await Promise.all([
+    getSettings(),
+    getSiteSettings(),
+    chrome.tabs.query({}),
+    chrome.declarativeNetRequest.getSessionRules(),
+    builtinRules,
+  ]);
+  const rules = [];
+  const allows = new Set();
+  for (const tab of tabs) {
+    if (!/^https?:/.test(tab.url ?? "")) continue;
+    const custom = overridesFor(
+      new URL(tab.url).hostname.replace(/^www\./, ""),
+      sites,
+    );
+    for (const [key, list] of lists) {
+      if (typeof custom[key] !== "boolean" || custom[key] === settings[key])
+        continue;
+      for (const rule of list) {
+        const id = rules.length + 1;
+        if (!custom[key]) allows.add(id);
+        rules.push({
+          ...rule,
+          id,
+          priority: custom[key] ? 1 : 2,
+          action: custom[key] ? rule.action : { type: "allow" },
+          condition: { ...rule.condition, tabIds: [tab.id] },
+        });
+      }
+    }
   }
-  const sameSite =
-    frameSite &&
-    (frameSite === topSite || frameSite.endsWith(`.${topSite}`) || topSite.endsWith(`.${frameSite}`));
-  const paused = pausedSites.some((site) => topSite === site || topSite.endsWith(`.${site}`));
-  // A frame the user clicked (a video they started) is never unloaded
-  if (sameSite || paused || navigator.userActivation.hasBeenActive) return null;
-
-  const url = location.href;
-  parent.postMessage("url-blocker:collapse-frame", "*"); // frame-collapse.js hides the box
-  location.replace("about:blank"); // Stops every script and download in it
-  return url;
+  await chrome.declarativeNetRequest.updateSessionRules({
+    removeRuleIds: old.map((r) => r.id),
+    addRules: rules,
+  });
+  sessionAllowIds = allows;
 }
+chrome.tabs.onUpdated.addListener((id, change) => {
+  if (change.url || change.status === "loading") queue(syncSiteRules);
+});
+chrome.tabs.onRemoved.addListener(() => queue(syncSiteRules));
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "sync" && changes.siteSettings)
+    queue(async () => applySettings(await getSettings()));
+});
+queue(syncSiteRules);
 
 // The picker only loads into a page when it's needed, which keeps every other
 // tab lighter. content.js guards against being loaded twice.
@@ -368,19 +465,60 @@ async function pauseSite(site, paused, tabId) {
 chrome.commands.onCommand.addListener(async (command, tab) => {
   if (command !== PICKER_COMMAND || !(tab?.id >= 0)) return;
   sendToTab(tab.id, { action: "startSelector" }).catch((error) =>
-    console.warn("Can't start the selector on this page:", error.message)
+    console.warn("Can't start the selector on this page:", error.message),
   );
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== CONTEXT_MENU_ID || !(tab?.id >= 0)) return;
   sendToTab(tab.id, { action: "startSelector" }).catch((error) =>
-    console.warn("Can't start the selector on this page:", error.message)
+    console.warn("Can't start the selector on this page:", error.message),
   );
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
+    case "setSiteSetting":
+      queue(async () => {
+        await setSiteSetting(message.site, message.key, message.value);
+        await applySettings(await getSettings());
+        if (Number.isInteger(message.tabId))
+          await chrome.tabs.reload(message.tabId);
+      })
+        .then(() => sendResponse({ ok: true }))
+        .catch((error) => sendResponse({ error: error.message }));
+      return true;
+
+    case "hideElement":
+      // The host comes from the sender, never from page-supplied text.
+      queue(async () => {
+        const site = new URL(sender.url).hostname.replace(/^www\./, "");
+        if (
+          !validSite(site) ||
+          typeof message.selector !== "string" ||
+          message.selector.length > 2000 ||
+          /[{}]/.test(message.selector)
+        )
+          throw new Error("Invalid element rule.");
+        const { hiddenElements = [] } =
+          await chrome.storage.sync.get("hiddenElements");
+        if (
+          !hiddenElements.some(
+            (r) => r.site === site && r.selector === message.selector,
+          )
+        ) {
+          await chrome.storage.sync.set({
+            hiddenElements: [
+              ...hiddenElements,
+              { site, selector: message.selector },
+            ],
+          });
+        }
+      })
+        .then(() => sendResponse({ ok: true }))
+        .catch((error) => sendResponse({ error: error.message }));
+      return true;
+
     case "blockUrl":
       addBlockedUrl(message.url)
         .then((added) => sendResponse({ added }))

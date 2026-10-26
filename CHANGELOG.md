@@ -1,10 +1,65 @@
 # Changelog
 
 Every version of URL Blocker, newest first. Dates are MM-DD-YYYY. The
-version number is the one in `manifest.json`. None of these were tagged
-or published as GitHub releases; each one maps to the commits listed.
+version number is the one in `manifest.json`. Versions before 1.6.0 were not
+tagged or published as GitHub releases; they map to the commits listed.
+Version 1.6.0 is identified by the source tag `v1.6.0` on both remotes.
 
 Why things work the way they do: [docs/adr/](docs/adr/README.md).
+
+## 1.6.0 — 10-26-2026
+
+Stricter resource control with recovery, and independent choices for each site.
+Published source is mirrored to GitHub and Codeberg. Source tag: `v1.6.0`.
+
+### Added
+- **Restore this content** after heavy-content removal. The parent saves the
+  iframe attributes, replaces its source with about:blank to stop work, and
+  restores it on request. The restored element is exempt until page reload.
+- **Controls for this site** in both the toolbar popup and real Chrome DevTools
+  panel. Each feature supports Default/On/Off, with hostname inheritance.
+  Changing a control applies the rules and reloads the relevant tab.
+- **Hide on this site** in the picker, including URL-less elements. Rules
+  persist as hostname-scoped CSS, apply to later matching elements, and can
+  be undone in settings or DevTools without touching global URL blocks.
+- **All heavy third-party embeds**, an optional broader mode for noisy sites.
+  It requires Heavy ads and includes unrecognized embeds; the UI explains
+  that legitimate videos and tools can be removed too.
+- Independent **Newsletter offers** and **Notification requests** switches.
+  The existing 24 handmade annoyance rules are split into 18 and 6 rules;
+  no new upstream filter list is bundled. An older enabled annoyance switch
+  still enables both categories until an explicit choice is saved.
+- Backups and sync include site overrides and hidden selectors; import
+  merges them, deduplicates selectors and rejects invalid CSS rule text.
+- Automated regression coverage for exceptions, restore, ordinary banners,
+  legitimate heavy embeds, per-site hiding, migration, backups and actual
+  browser UI surfaces. Read-only live checks pair baseline/protected sessions
+  across news, shopping, sports and streaming pages.
+
+### Changed
+- Heavy-content removal now requires a recognized ad hostname, explicit
+  publisher ad-slot attribute, known ad-frame ID or advertising frame title
+  unless broader mode is enabled. Limits remain 4 MB of declared responses
+  or 5 seconds of long tasks per 30 seconds.
+- Personal URL blocks have higher priority than per-category site exceptions.
+  Full site pause remains the highest priority and disables cosmetic hiding too.
+- The popup keeps the three main protections visible and folds optional
+  prompts and broader mode into an expandable group. DevTools has defaults,
+  inspected-site controls, saved rules, URL management and the request log.
+- Existing registered scripts are refreshed on extension updates, so new
+  helper dependencies are not omitted on upgrade.
+
+### Verification and limits
+- See [Testing and compatibility](docs/Testing.md) for exact commands and live
+  observations. Unavailable ads/video are recorded as inconclusive, not passes.
+- These controls cannot stop CPU/GPU work in the top-level page or guarantee
+  quiet fans. Content-Length misses streamed bytes, long tasks are a proxy
+  for CPU pressure, and conservative ad identification can miss ads.
+- Site exceptions refresh asynchronously on navigation. CSS hiding does not
+  block downloads, unlock scroll, or reach closed shadow roots. A page
+  redesign can invalidate structural selectors.
+
+Decisions: [016–020](docs/adr/README.md).
 
 ## 1.5.1 — 10-26-2026
 

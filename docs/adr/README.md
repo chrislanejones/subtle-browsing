@@ -28,3 +28,8 @@ for a new one.
 | [013](013-a-settings-page-holds-the-lists-and-the-popup-shows-counts.md) | A settings page holds the lists, and the popup shows counts | Draft (shipped 1.5.0) | 2026-10-26 |
 | [014](014-an-unloading-frame-asks-its-parent-to-hide-its-own-box.md) | An unloading frame asks its parent to hide its own box | Draft (shipped 1.5.0) | 2026-10-26 |
 | [015](015-end-to-end-tests-run-on-playwright-1-64-0-as-the-first-dev-dependency.md) | End-to-end tests run on `@playwright/test` 1.64.0, the repo's first dev dependency | Draft (1.5.1) | 2026-10-26 |
+| [016](016-heavy-content-needs-ad-evidence-and-can-be-restored.md) | Heavy content needs ad evidence and can be restored | Draft (1.6.0) | 2026-10-26 |
+| [017](017-site-protections-use-tab-session-rules.md) | Site protections use tab-scoped session rules | Draft (1.6.0) | 2026-10-26 |
+| [018](018-picker-hiding-is-host-scoped-css.md) | Picker hiding is hostname-scoped CSS | Draft (1.6.0) | 2026-10-26 |
+| [019](019-newsletter-and-notification-lists-are-independent.md) | Newsletter and notification lists are independent | Draft (1.6.0) | 2026-10-26 |
+| [020](020-live-site-checks-are-separate-from-regression-tests.md) | Live-site checks are separate from regression tests | Draft (1.6.0) | 2026-10-26 |

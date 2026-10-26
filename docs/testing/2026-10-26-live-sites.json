@@ -1,0 +1,224 @@
+[
+  {
+    "category": "news",
+    "url": "https://www.pcworld.com/",
+    "enabled": false,
+    "checkedAt": "2026-10-26T06:23:44.518Z",
+    "status": 200,
+    "observed": {
+      "title": "PCWorld",
+      "visibleImages": 9,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 11,
+    "blockedRequests": 0
+  },
+  {
+    "category": "news",
+    "url": "https://www.pcworld.com/",
+    "enabled": true,
+    "checkedAt": "2026-10-26T06:23:55.173Z",
+    "status": 200,
+    "observed": {
+      "title": "PCWorld",
+      "visibleImages": 9,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 10,
+    "blockedRequests": 0,
+    "extensionLog": []
+  },
+  {
+    "category": "shopping",
+    "url": "https://www.bestbuy.com/",
+    "enabled": false,
+    "checkedAt": "2026-10-26T06:24:05.927Z",
+    "status": 200,
+    "observed": {
+      "title": "Best Buy | Official Online Store | Shop Now & Save",
+      "visibleImages": 21,
+      "adSlots": [
+        {
+          "tag": "IFRAME",
+          "visible": true
+        }
+      ],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerCheck": "Ad slots observed; visibility alone does not prove a creative rendered.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 17,
+    "blockedRequests": 0
+  },
+  {
+    "category": "shopping",
+    "url": "https://www.bestbuy.com/",
+    "enabled": true,
+    "checkedAt": "2026-10-26T06:24:45.001Z",
+    "status": 200,
+    "observed": {
+      "title": "Best Buy | Official Online Store | Shop Now & Save",
+      "visibleImages": 21,
+      "adSlots": [
+        {
+          "tag": "IFRAME",
+          "visible": true
+        }
+      ],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerCheck": "Ad slots observed; visibility alone does not prove a creative rendered.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 19,
+    "blockedRequests": 0,
+    "extensionLog": []
+  },
+  {
+    "category": "sports",
+    "url": "https://www.espn.com/",
+    "enabled": false,
+    "checkedAt": "2026-10-26T06:25:24.531Z",
+    "status": 200,
+    "observed": {
+      "title": "ESPN - Serving Sports Fans. Anytime. Anywhere.",
+      "visibleImages": 111,
+      "adSlots": [
+        {
+          "tag": "IFRAME",
+          "visible": false
+        },
+        {
+          "tag": "IFRAME",
+          "visible": true
+        },
+        {
+          "tag": "IFRAME",
+          "visible": true
+        }
+      ],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerCheck": "Ad slots observed; visibility alone does not prove a creative rendered.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 8,
+    "blockedRequests": 0
+  },
+  {
+    "category": "sports",
+    "url": "https://www.espn.com/",
+    "enabled": true,
+    "checkedAt": "2026-10-26T06:25:34.712Z",
+    "status": 200,
+    "observed": {
+      "title": "ESPN - Serving Sports Fans. Anytime. Anywhere.",
+      "visibleImages": 111,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 1,
+    "blockedRequests": 0,
+    "extensionLog": []
+  },
+  {
+    "category": "streaming",
+    "url": "https://vimeo.com/watch",
+    "enabled": false,
+    "checkedAt": "2026-10-26T06:25:45.084Z",
+    "status": 200,
+    "observed": {
+      "title": "Watch Free Videos, Films, and Shorts - No Ads",
+      "visibleImages": 64,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 0,
+    "blockedRequests": 0
+  },
+  {
+    "category": "streaming",
+    "url": "https://vimeo.com/watch",
+    "enabled": true,
+    "checkedAt": "2026-10-26T06:25:55.319Z",
+    "status": 200,
+    "observed": {
+      "title": "Watch Free Videos, Films, and Shorts - No Ads",
+      "visibleImages": 64,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 0,
+    "blockedRequests": 0,
+    "extensionLog": []
+  },
+  {
+    "category": "streaming-player",
+    "url": "https://player.vimeo.com/video/76979871",
+    "enabled": false,
+    "checkedAt": "2026-10-26T06:28:06.313Z",
+    "status": 200,
+    "observed": {
+      "title": "The New Vimeo Player (You Know, For Videos) on Vimeo",
+      "visibleImages": 1,
+      "adSlots": [],
+      "videos": [
+        {
+          "paused": true,
+          "muted": false,
+          "readyState": 0,
+          "hasSource": true
+        }
+      ],
+      "restoredPlaceholders": 0
+    },
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Clicked the player's Play button: [{\"paused\":false,\"time\":1.012894,\"readyState\":4}]",
+    "failedRequests": 3,
+    "blockedRequests": 0
+  },
+  {
+    "category": "streaming-player",
+    "url": "https://player.vimeo.com/video/76979871",
+    "enabled": true,
+    "checkedAt": "2026-10-26T06:28:18.974Z",
+    "status": 200,
+    "observed": {
+      "title": "The New Vimeo Player (You Know, For Videos) on Vimeo",
+      "visibleImages": 1,
+      "adSlots": [],
+      "videos": [
+        {
+          "paused": true,
+          "muted": false,
+          "readyState": 0,
+          "hasSource": true
+        }
+      ],
+      "restoredPlaceholders": 0
+    },
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Clicked the player's Play button: [{\"paused\":false,\"time\":1.00822,\"readyState\":4}]",
+    "failedRequests": 2,
+    "blockedRequests": 0,
+    "extensionLog": []
+  }
+]

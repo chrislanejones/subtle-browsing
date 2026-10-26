@@ -40,3 +40,6 @@ pages pay for a worker that never sleeps.
 Early warning sign to watch for: "Heavy ad (... of CPU)" log entries for
 frames from ordinary ad networks on a slow machine, or the service
 worker never going idle in `chrome://serviceworker-internals`.
+
+## 1.6.0 follow-up
+1.6.0 keeps these thresholds but adds ad identification, an optional broader mode and restoration. See [ADR-016](016-heavy-content-needs-ad-evidence-and-can-be-restored.md).

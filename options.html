@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <title>URL Blocker settings</title>
     <link rel="stylesheet" href="ui.css" />
+    <link rel="stylesheet" href="controls.css" />
     <style>
       body {
         max-width: 640px;
@@ -95,7 +96,10 @@
         <label class="row">
           <span class="row-text">
             <span class="row-title">Video ad companies</span>
-            <span class="row-desc">Connatix, Primis, Teads and similar, plus Google's video ad engine</span>
+            <span class="row-desc"
+              >Connatix, Primis, Teads and similar, plus Google's video ad
+              engine</span
+            >
           </span>
           <input type="checkbox" id="videoAdRulesToggle" class="switch" />
         </label>
@@ -115,11 +119,27 @@
         </label>
         <label class="row">
           <span class="row-text">
-            <span class="row-title">Pop-ups and prompts</span>
-            <span class="row-desc">Newsletters, notification requests</span>
+            <span class="row-title">Newsletter offers</span>
+            <span class="row-desc"
+              >Newsletter sign-ups and promotional overlays</span
+            >
           </span>
           <input type="checkbox" id="annoyanceRulesToggle" class="switch" />
         </label>
+        <label class="row"
+          ><span class="row-text"
+            ><span class="row-title">Notification requests</span
+            ><span class="row-desc">Website push-prompt tools</span></span
+          ><input type="checkbox" id="notificationRulesToggle" class="switch"
+        /></label>
+        <label class="row"
+          ><span class="row-text"
+            ><span class="row-title">All heavy third-party embeds</span
+            ><span class="row-desc"
+              >Broader Heavy ads mode; may stop legitimate content</span
+            ></span
+          ><input type="checkbox" id="aggressiveHeavyAdsToggle" class="switch"
+        /></label>
       </div>
     </fieldset>
 
@@ -129,10 +149,20 @@
         <span id="blockedCount" class="count"></span>
       </div>
       <div class="tools">
-        <input type="text" id="urlInput" placeholder="Add a URL or domain, e.g. example.com" aria-label="URL to block" />
+        <input
+          type="text"
+          id="urlInput"
+          placeholder="Add a URL or domain, e.g. example.com"
+          aria-label="URL to block"
+        />
         <button id="addButton" class="btn btn-primary">Block</button>
       </div>
-      <input type="text" id="searchInput" placeholder="Search your list" aria-label="Search blocked URLs" />
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search your list"
+        aria-label="Search blocked URLs"
+      />
       <p id="blockedStatus" class="status" role="status"></p>
       <div id="urlList" class="card list"></div>
     </section>
@@ -142,8 +172,20 @@
         <h2 id="pausedHeading" class="section-label">Paused sites</h2>
         <span id="pausedCount" class="count"></span>
       </div>
-      <p class="note">Nothing is blocked on these sites. Pause a site from the popup while you're on it.</p>
+      <p class="note">
+        Nothing is blocked on these sites. Pause a site from the popup while
+        you're on it.
+      </p>
       <div id="pausedList" class="card list"></div>
+    </section>
+
+    <section>
+      <h2 class="section-label">Hidden elements and site overrides</h2>
+      <p class="note">
+        Unhide restores matching elements immediately. Reset site restores
+        inherited defaults; reload existing pages afterward.
+      </p>
+      <div id="savedRules"></div>
     </section>
 
     <section aria-labelledby="shortcutHeading">
@@ -160,13 +202,19 @@
     <section aria-labelledby="backupHeading">
       <h2 id="backupHeading" class="section-label">Backup</h2>
       <p class="note">
-        Your list, paused sites and switches already sync to every Chrome you're signed into. A backup file
-        is for moving them somewhere sync doesn't reach. Importing adds to what's here; nothing is removed.
+        Your list, paused sites and switches already sync to every Chrome you're
+        signed into. A backup file is for moving them somewhere sync doesn't
+        reach. Importing adds to what's here; nothing is removed.
       </p>
       <div class="tools">
         <button id="exportButton" class="btn btn-plain">Export backup</button>
         <button id="importButton" class="btn btn-plain">Import backup</button>
-        <input type="file" id="importFile" accept="application/json,.json" hidden />
+        <input
+          type="file"
+          id="importFile"
+          accept="application/json,.json"
+          hidden
+        />
       </div>
       <p id="backupStatus" class="status" role="status"></p>
     </section>

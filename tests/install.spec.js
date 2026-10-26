@@ -5,10 +5,11 @@ test.describe("fresh install", () => {
     expect(await ext.enabledRulesets()).toEqual(["video_ads"]);
   });
 
-  test("registers the three frame scripts", async ({ ext }) => {
+  test("registers the frame scripts", async ({ ext }) => {
     const scripts = await ext.sw.evaluate(() => chrome.scripting.getRegisteredContentScripts());
     expect(scripts.map((s) => s.id).sort()).toEqual([
       "autoplay-guard",
+      "cosmetic",
       "frame-collapse",
       "heavy-ad-guard",
     ]);

@@ -1,3 +1,4 @@
+import { mountSiteControls, mountSavedRules } from "./controls.js";
 import {
   addBlockedUrl,
   getBlockedUrls,
@@ -14,6 +15,9 @@ import {
   setSitePaused,
   siteKey,
   updateSettings,
+  getSiteSettings,
+  validSite,
+  FEATURES,
 } from "./settings.js";
 
 const $ = (id) => document.getElementById(id);
@@ -29,15 +33,25 @@ const toggles = {
   videoAdRules: $("videoAdRulesToggle"),
   autoplayGuard: $("autoplayGuardToggle"),
   heavyAds: $("heavyAdsToggle"),
+  notificationRules: document.getElementById("notificationRulesToggle"),
+  aggressiveHeavyAds: document.getElementById("aggressiveHeavyAdsToggle"),
   annoyanceRules: $("annoyanceRulesToggle"),
 };
 function renderToggles(settings) {
-  for (const [key, checkbox] of Object.entries(toggles)) checkbox.checked = settings[key];
+  for (const [key, checkbox] of Object.entries(toggles))
+    checkbox.checked = settings[key];
 }
 renderToggles(await getSettings());
 onSettingsChanged(renderToggles);
 for (const [key, checkbox] of Object.entries(toggles)) {
-  checkbox.addEventListener("change", () => updateSettings({ [key]: checkbox.checked }));
+  checkbox.addEventListener("change", async () => {
+    try {
+      await updateSettings({ [key]: checkbox.checked });
+    } catch (error) {
+      checkbox.checked = !checkbox.checked;
+      blockedStatus.textContent = error.message;
+    }
+  });
 }
 
 function listRow(text, buttonLabel, onClick) {
@@ -66,17 +80,22 @@ function emptyRow(text) {
 let blockedUrls = await getBlockedUrls();
 function renderBlockedUrls() {
   const query = searchInput.value.trim().toLowerCase();
-  const shown = blockedUrls.toReversed().filter((url) => url.toLowerCase().includes(query));
+  const shown = blockedUrls
+    .toReversed()
+    .filter((url) => url.toLowerCase().includes(query));
   $("blockedCount").textContent = query
     ? `${shown.length} of ${blockedUrls.length}`
     : `${blockedUrls.length} total`;
 
   if (shown.length === 0) {
-    $("urlList").replaceChildren(emptyRow(query ? "Nothing matches." : "No URLs blocked yet."));
+    $("urlList").replaceChildren(
+      emptyRow(query ? "Nothing matches." : "No URLs blocked yet."),
+    );
     return;
   }
   const rows = document.createDocumentFragment();
-  for (const url of shown) rows.append(listRow(url, "Remove", () => removeBlockedUrl(url)));
+  for (const url of shown)
+    rows.append(listRow(url, "Remove", () => removeBlockedUrl(url)));
   $("urlList").replaceChildren(rows);
 }
 renderBlockedUrls();
@@ -110,7 +129,8 @@ function renderPausedSites(sites) {
     return;
   }
   const rows = document.createDocumentFragment();
-  for (const site of sites) rows.append(listRow(site, "Unpause", () => setSitePaused(site, false)));
+  for (const site of sites)
+    rows.append(listRow(site, "Unpause", () => setSitePaused(site, false)));
   $("pausedList").replaceChildren(rows);
 }
 renderPausedSites(await getPausedSites());
@@ -119,7 +139,9 @@ onPausedSitesChanged(renderPausedSites);
 // Keyboard shortcut: Chrome only lets the user change it on its own page
 async function renderShortcut() {
   const commands = await chrome.commands.getAll();
-  const shortcut = commands.find((command) => command.name === "start-picker")?.shortcut;
+  const shortcut = commands.find(
+    (command) => command.name === "start-picker",
+  )?.shortcut;
   const desc = $("shortcutDesc");
   if (shortcut) {
     const key = document.createElement("kbd");
@@ -131,7 +153,7 @@ async function renderShortcut() {
 }
 renderShortcut();
 $("shortcutButton").addEventListener("click", () =>
-  chrome.tabs.create({ url: "chrome://extensions/shortcuts" })
+  chrome.tabs.create({ url: "chrome://extensions/shortcuts" }),
 );
 // Picks up a change made on that page when the user comes back
 document.addEventListener("visibilitychange", () => {
@@ -147,8 +169,13 @@ $("exportButton").addEventListener("click", async () => {
     blockedUrls: await getBlockedUrls(),
     pausedSites: await getPausedSites(),
     settings: await getSettings(),
+    siteSettings: await getSiteSettings(),
+    hiddenElements:
+      (await chrome.storage.sync.get("hiddenElements")).hiddenElements ?? [],
   };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {
+    type: "application/json",
+  });
   const link = document.createElement("a");
   const [year, month, day] = new Date().toLocaleDateString("en-CA").split("-");
   link.href = URL.createObjectURL(blob);
@@ -173,15 +200,68 @@ $("importFile").addEventListener("change", async (event) => {
     backupStatus.textContent = "That file isn't a URL Blocker backup.";
     return;
   }
-  const strings = (value) => (Array.isArray(value) ? value.filter((item) => typeof item === "string") : []);
-  const incomingUrls = strings(backup.blockedUrls).map(normalizeUrl).filter(Boolean);
-  const incomingSites = strings(backup.pausedSites).map((site) => siteKey(site.trim().toLowerCase())).filter(Boolean);
+  if (!backup || typeof backup !== "object" || Array.isArray(backup)) {
+    backupStatus.textContent = "That file isn't a URL Blocker backup.";
+    return;
+  }
+  const incomingOverrides = {};
+  for (const [site, values] of Object.entries(backup.siteSettings ?? {})) {
+    if (!validSite(site) || !values || typeof values !== "object") continue;
+    const clean = Object.fromEntries(
+      Object.entries(values).filter(
+        ([key, value]) => key in FEATURES && typeof value === "boolean",
+      ),
+    );
+    if (Object.keys(clean).length) incomingOverrides[site] = clean;
+  }
+  const incomingHidden = (
+    Array.isArray(backup.hiddenElements) ? backup.hiddenElements : []
+  )
+    .filter((rule) => {
+      if (
+        !rule ||
+        !validSite(rule.site) ||
+        typeof rule.selector !== "string" ||
+        rule.selector.length > 2000 ||
+        /[{}]/.test(rule.selector)
+      )
+        return false;
+      try {
+        document.querySelector(rule.selector);
+        return Boolean(rule.selector);
+      } catch {
+        return false;
+      }
+    })
+    .map(({ site, selector }) => ({ site, selector }));
+  const strings = (value) =>
+    Array.isArray(value)
+      ? value.filter((item) => typeof item === "string")
+      : [];
+  const incomingUrls = strings(backup.blockedUrls)
+    .map(normalizeUrl)
+    .filter(Boolean);
+  const incomingSites = strings(backup.pausedSites)
+    .map((site) => siteKey(site.trim().toLowerCase()))
+    .filter(Boolean);
   const incomingSettings = Object.fromEntries(
     Object.keys(toggles)
       .filter((key) => typeof backup.settings?.[key] === "boolean")
-      .map((key) => [key, backup.settings[key]])
+      .map((key) => [key, backup.settings[key]]),
   );
-  if (incomingUrls.length + incomingSites.length + Object.keys(incomingSettings).length === 0) {
+  if (
+    typeof backup.settings?.annoyanceRules === "boolean" &&
+    typeof backup.settings.notificationRules !== "boolean"
+  )
+    incomingSettings.notificationRules = backup.settings.annoyanceRules;
+  if (
+    incomingUrls.length +
+      incomingSites.length +
+      Object.keys(incomingSettings).length +
+      incomingHidden.length +
+      Object.keys(incomingOverrides).length ===
+    0
+  ) {
     backupStatus.textContent = "That file isn't a URL Blocker backup.";
     return;
   }
@@ -189,14 +269,32 @@ $("importFile").addEventListener("change", async (event) => {
   const currentUrls = await getBlockedUrls();
   const currentSites = await getPausedSites();
   // De-duplicated first, so the count matches what's stored
-  const newUrls = [...new Set(incomingUrls)].filter((url) => !currentUrls.includes(url));
-  const newSites = [...new Set(incomingSites)].filter((site) => !currentSites.includes(site));
+  const newUrls = [...new Set(incomingUrls)].filter(
+    (url) => !currentUrls.includes(url),
+  );
+  const newSites = [...new Set(incomingSites)].filter(
+    (site) => !currentSites.includes(site),
+  );
+  const currentOverrides = await getSiteSettings();
+  for (const [site, values] of Object.entries(incomingOverrides))
+    currentOverrides[site] = { ...currentOverrides[site], ...values };
+  const hidden =
+    (await chrome.storage.sync.get("hiddenElements")).hiddenElements ?? [];
+  for (const rule of incomingHidden)
+    if (
+      !hidden.some((r) => r.site === rule.site && r.selector === rule.selector)
+    )
+      hidden.push(rule);
   try {
     // One write, so background.js rebuilds its rules once
     await chrome.storage.sync.set({
       blockedUrls: [...currentUrls, ...newUrls],
       pausedSites: [...currentSites, ...newSites],
       settings: { ...(await getSettings()), ...incomingSettings },
+      ...(Object.keys(currentOverrides).length
+        ? { siteSettings: currentOverrides }
+        : {}),
+      ...(hidden.length ? { hiddenElements: hidden } : {}),
     });
   } catch {
     backupStatus.textContent = SYNC_FULL_MESSAGE;
@@ -205,3 +303,5 @@ $("importFile").addEventListener("change", async (event) => {
   backupStatus.className = "status ok";
   backupStatus.textContent = `Imported ${newUrls.length} URLs and ${newSites.length} paused sites.`;
 });
+
+await mountSavedRules(document.getElementById("savedRules"));

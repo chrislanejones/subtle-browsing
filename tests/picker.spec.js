@@ -27,7 +27,7 @@ test.describe("element picker", () => {
   test("picking a box offers its cross-site domains first and blocks the first one on Enter", async ({ ext, page }) => {
     await startPicker(ext, page);
     expect((await pickerUi(page)).toasts).toContain(
-      "Element selector activated. Click on an element to block its source URL. Press Esc to cancel."
+      "Element selector activated. Click an element to hide it here or block its source URL. Press Esc to cancel."
     );
 
     await page.mouse.move(ADBOX.x, ADBOX.y);
@@ -97,11 +97,11 @@ test.describe("element picker", () => {
     await expect.poll(async () => (await pickerUi(page)).hosts, { timeout: 5000 }).toBe(0);
   });
 
-  test("an element without URLs says so", async ({ ext, page }) => {
+  test("an element without URLs still offers a hide dialog", async ({ ext, page }) => {
     await startPicker(ext, page);
     await page.mouse.click(250, 340); // #plain
-    await expect.poll(async () => (await pickerUi(page)).toasts).toContain("No URLs found in this element.");
-    expect(await openDialog(page)).toBeUndefined();
+    await expect.poll(() => openDialog(page)).toBeTruthy();
+    expect((await openDialog(page)).sections["Exact URL"]).toEqual([]);
   });
 
   test("starting twice still gives one picker and one dialog", async ({ ext, page }) => {

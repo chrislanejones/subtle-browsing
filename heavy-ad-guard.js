@@ -2,7 +2,8 @@
 // spins up the laptop fan. background.js registers this in every frame while
 // the heavy ads setting is on, and checks download size itself. The script
 // stops right away in the page itself and in frames from the same site.
-(() => {
+(async () => {
+  await subtlePolicy.ready;
   if (window.top === window) return;
 
   // Chrome's own heavy ad rule allows 15s of CPU per 30s. That's well past
@@ -15,7 +16,9 @@
   let topSite = "";
   try {
     frameSite = siteOf(self.origin); // about:blank frames inherit their parent's
-    topSite = siteOf(location.ancestorOrigins[location.ancestorOrigins.length - 1]);
+    topSite = siteOf(
+      location.ancestorOrigins[location.ancestorOrigins.length - 1],
+    );
   } catch {
     // Sandboxed ad frames have an opaque origin: treat them as third-party
   }
@@ -26,17 +29,13 @@
       topSite.endsWith(`.${frameSite}`));
   if (sameSite) return;
 
-  let siteIsPaused = false;
-  chrome.storage.sync.get("pausedSites").then(({ pausedSites = [] }) => {
-    siteIsPaused = pausedSites.some(
-      (site) => topSite === site || topSite.endsWith(`.${site}`)
-    );
-  });
-
   const recentTasks = [];
   const observer = new PerformanceObserver((list) => {
     for (const task of list.getEntries()) {
-      recentTasks.push({ end: task.startTime + task.duration, duration: task.duration });
+      recentTasks.push({
+        end: task.startTime + task.duration,
+        duration: task.duration,
+      });
     }
     const now = performance.now();
     while (recentTasks.length > 0 && now - recentTasks[0].end > CPU_WINDOW_MS) {
@@ -45,22 +44,23 @@
 
     const busyMs = recentTasks.reduce((sum, task) => sum + task.duration, 0);
     // A frame the user clicked (a video they started) is never unloaded
-    if (busyMs < CPU_LIMIT_MS || siteIsPaused || navigator.userActivation.hasBeenActive) {
+    if (
+      busyMs < CPU_LIMIT_MS ||
+      !subtlePolicy.enabled("heavyAds") ||
+      navigator.userActivation.hasBeenActive
+    ) {
       return;
     }
 
     observer.disconnect();
-    chrome.runtime
-      .sendMessage({
-        action: "heavyAdRemoved",
+    parent.postMessage(
+      {
+        type: "subtle:heavy",
         url: location.href,
         reason: `${(busyMs / 1000).toFixed(1)}s of CPU`,
-      })
-      .catch(() => {});
-    // frame-collapse.js in the parent hides the box, then a new blank
-    // document stops every script and download in the frame
-    parent.postMessage("url-blocker:collapse-frame", "*");
-    location.replace("about:blank");
+      },
+      "*",
+    );
   });
   observer.observe({ type: "longtask", buffered: true });
 })();

@@ -76,7 +76,7 @@ test.describe("settings page", () => {
     await expect(page.locator("#annoyanceRulesToggle")).toBeChecked();
 
     await page.locator("#videoAdRulesToggle").uncheck();
-    await expect.poll(() => ext.enabledRulesets()).toEqual(["annoyances"]);
+    await expect.poll(() => ext.enabledRulesets()).toEqual(["annoyances", "notifications"]);
   });
 
   test("exports a dated backup of the lists and switches", async ({ page }, testInfo) => {
@@ -93,9 +93,11 @@ test.describe("settings page", () => {
       app: "subtle-browsing",
       version,
       exportedAt: expect.any(String),
+      siteSettings: {},
+      hiddenElements: [],
       blockedUrls: ["connatix.com", "teads.tv", "primis.tech"],
       pausedSites: ["example.org"],
-      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: false },
+      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: false, notificationRules: false, aggressiveHeavyAds: false },
     });
     expect(new Date(backup.exportedAt).toISOString()).toBe(backup.exportedAt);
     await expect(page.locator("#backupStatus")).toHaveText("Backup saved to your downloads.");
@@ -114,12 +116,12 @@ test.describe("settings page", () => {
     expect(await ext.getSync()).toEqual({
       blockedUrls: ["connatix.com", "teads.tv", "primis.tech", "anyclip.com"],
       pausedSites: ["example.org", "news.example"],
-      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: true },
+      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: true, notificationRules: true, aggressiveHeavyAds: false },
     });
     // The page and the worker both pick it up
     await expect(rows(page, "urlList").first()).toHaveText("anyclip.com");
     await expect(page.locator("#annoyanceRulesToggle")).toBeChecked();
-    await expect.poll(() => ext.enabledRulesets()).toEqual(["annoyances", "video_ads"]);
+    await expect.poll(() => ext.enabledRulesets()).toEqual(["annoyances", "notifications", "video_ads"]);
     await expect
       .poll(async () => (await ext.dynamicRules()).find((r) => r.action.type === "allowAllRequests")?.condition.requestDomains)
       .toEqual(["example.org", "news.example"]);

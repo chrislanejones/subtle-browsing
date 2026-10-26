@@ -1,4 +1,9 @@
 import {
+  mountSiteControls,
+  mountGlobalControls,
+  mountSavedRules,
+} from "./controls.js";
+import {
   addBlockedUrl,
   getBlockedUrls,
   onBlockedUrlsChanged,
@@ -81,7 +86,7 @@ urlInput.addEventListener("keyup", (event) => {
 
 refreshButton.addEventListener("click", loadBlockedLogs);
 clearLogsButton.addEventListener("click", () =>
-  chrome.storage.local.set({ blockedUrlLogs: [] })
+  chrome.storage.local.set({ blockedUrlLogs: [] }),
 );
 
 function setSelectorActive(isActive) {
@@ -219,4 +224,12 @@ function renderBlockedLogs(logs) {
   logsContainer.replaceChildren(rows);
   noLogsMessage.hidden = true;
   logsContainer.hidden = false;
+}
+
+await mountGlobalControls(document.getElementById("globalControls"));
+await mountSavedRules(document.getElementById("savedRules"));
+if (chrome.devtools?.inspectedWindow) {
+  const tab = await chrome.tabs.get(chrome.devtools.inspectedWindow.tabId);
+  await mountSiteControls(document.getElementById("siteControls"), tab);
+  chrome.devtools.network.onNavigated.addListener(() => location.reload());
 }

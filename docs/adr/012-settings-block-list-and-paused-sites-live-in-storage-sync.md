@@ -45,3 +45,6 @@ fail with an error, and the only way out is deleting entries or writing
 the chunking that was skipped.
 Early warning sign to watch for: the sync-full message showing up, or a
 block list over 200 entries in any backup file.
+
+## 1.6.0 follow-up
+1.6.0 also syncs siteSettings and hiddenElements, each under its own per-item quota. Both are included in backups. See [ADR-017](017-site-protections-use-tab-session-rules.md) and [ADR-018](018-picker-hiding-is-host-scoped-css.md).

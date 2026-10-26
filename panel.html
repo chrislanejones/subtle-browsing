@@ -1,8 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>URL Blocker DevTools Panel</title>
+    <link rel="stylesheet" href="controls.css" />
     <style>
       /* Hallmark · surface: DevTools panel · tone: technical, native to DevTools
        * neutral grays, 12px UI / 11px mono, one blue accent for the primary action
@@ -11,10 +12,12 @@
 
       :root {
         color-scheme: light dark;
-        --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
-          Cantarell, sans-serif;
-        --font-mono: ui-monospace, Menlo, Consolas, "DejaVu Sans Mono",
-          "Liberation Mono", monospace;
+        --font-ui:
+          system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell,
+          sans-serif;
+        --font-mono:
+          ui-monospace, Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono",
+          monospace;
 
         --color-bg: oklch(100% 0 0);
         --color-toolbar: oklch(96.5% 0.002 260);
@@ -358,7 +361,13 @@
   <body>
     <div class="toolbar">
       <button id="selectorButton" class="tb-btn">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
+        >
           <path
             d="M6 2.5H3.5a1 1 0 0 0-1 1V6M10 2.5h2.5a1 1 0 0 1 1 1V6M2.5 10v2.5a1 1 0 0 0 1 1H6"
             stroke="currentColor"
@@ -376,7 +385,13 @@
         Select element to block
       </button>
       <button id="stopSelectorButton" class="tb-btn is-active" hidden>
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
+        >
           <path
             d="M6 2.5H3.5a1 1 0 0 0-1 1V6M10 2.5h2.5a1 1 0 0 1 1 1V6M2.5 10v2.5a1 1 0 0 0 1 1H6"
             stroke="currentColor"
@@ -395,11 +410,23 @@
       </button>
       <span class="tb-sep" aria-hidden="true"></span>
       <label for="urlInput" class="visually-hidden">URL to block</label>
-      <input type="text" id="urlInput" placeholder="Block a URL, e.g. example.com" />
+      <input
+        type="text"
+        id="urlInput"
+        placeholder="Block a URL, e.g. example.com"
+      />
       <button id="addButton" class="tb-btn primary">Block</button>
       <p id="statusMessage" class="status" role="status"></p>
     </div>
 
+    <div class="panel-controls">
+      <details id="globalControls" class="protections"></details>
+      <details id="siteControls" class="protections" hidden></details>
+      <details class="protections">
+        <summary>Hidden elements and site overrides</summary>
+        <div id="savedRules"></div>
+      </details>
+    </div>
     <main class="split">
       <section class="pane pane-urls" aria-labelledby="urlsHeading">
         <div class="pane-head">

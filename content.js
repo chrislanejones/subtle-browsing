@@ -131,7 +131,7 @@
     });
 
     showNotification(
-      "Element selector activated. Click on an element to block its source URL. Press Esc to cancel."
+      "Element selector activated. Click an element to hide it here or block its source URL. Press Esc to cancel.",
     );
   }
 
@@ -160,7 +160,7 @@
           (element) =>
             element !== host &&
             element !== document.documentElement &&
-            element !== document.body
+            element !== document.body,
         ) ?? null
     );
   }
@@ -204,11 +204,7 @@
     if (!element) return;
 
     const urls = extractUrls(element);
-    if (urls.length > 0) {
-      showUrlSelectionDialog(urls);
-    } else {
-      showNotification("No URLs found in this element.");
-    }
+    showUrlSelectionDialog(urls, element);
   }
 
   function handleKeyDown(e) {
@@ -236,7 +232,10 @@
 
     // Picking a huge container would otherwise freeze the page while every
     // child's style is read
-    const nodes = [element, ...element.querySelectorAll("*")].slice(0, MAX_SCANNED_ELEMENTS);
+    const nodes = [element, ...element.querySelectorAll("*")].slice(
+      0,
+      MAX_SCANNED_ELEMENTS,
+    );
     for (const node of nodes) {
       addUrl(node.currentSrc || node.src); // img, video, iframe, script
       addUrl(node.href);
@@ -250,7 +249,9 @@
       }
 
       const { backgroundImage } = getComputedStyle(node);
-      for (const [, url] of backgroundImage.matchAll(/url\(["']?(.*?)["']?\)/g)) {
+      for (const [, url] of backgroundImage.matchAll(
+        /url\(["']?(.*?)["']?\)/g,
+      )) {
         addUrl(url);
       }
     }
@@ -283,13 +284,15 @@
     return list;
   }
 
-  function showUrlSelectionDialog(urls) {
+  function showUrlSelectionDialog(urls, selectedElement) {
     const dialog = createElement("dialog");
 
     // Ad URLs usually carry tracking numbers that change on every load, so
     // blocking the whole domain is listed first
     const domains = [
-      ...new Set(urls.map((url) => new URL(url).hostname.replace(/^www\./, ""))),
+      ...new Set(
+        urls.map((url) => new URL(url).hostname.replace(/^www\./, "")),
+      ),
     ].filter((host) => !isPageSite(host));
     const domainChoices = domains.map((host) => ({
       label: [createElement("b", "", host)],
@@ -300,7 +303,11 @@
     const urlChoices = urls.map((url) => {
       const { protocol, host, pathname, search, hash } = new URL(url); // host keeps the port
       return {
-        label: [`${protocol}//`, createElement("b", "", host), pathname + search + hash],
+        label: [
+          `${protocol}//`,
+          createElement("b", "", host),
+          pathname + search + hash,
+        ],
         value: url,
       };
     });
@@ -308,12 +315,51 @@
     dialog.append(
       createElement("h2", "", "Select what to block"),
       ...(domainChoices.length > 0
-        ? [createElement("h3", "", "Whole domain"), createChoiceList(domainChoices, dialog)]
+        ? [
+            createElement("h3", "", "Whole domain"),
+            createChoiceList(domainChoices, dialog),
+          ]
         : []),
       createElement("h3", "", "Exact URL"),
-      createChoiceList(urlChoices, dialog)
+      createChoiceList(urlChoices, dialog),
     );
 
+    const hideButton = createElement("button", "cancel", "Hide on this site");
+    hideButton.type = "button";
+    hideButton.addEventListener("click", async () => {
+      hideButton.disabled = true;
+      try {
+        const selector = selectorFor(selectedElement);
+        const response = await chrome.runtime.sendMessage({
+          action: "hideElement",
+          selector,
+        });
+        if (response?.error) throw new Error(response.error);
+        dialog.close();
+        showNotification(
+          "Hidden on this site. Undo from Hidden elements in settings or DevTools.",
+        );
+      } catch (error) {
+        showNotification(error.message);
+        hideButton.disabled = false;
+      }
+    });
+    dialog.append(
+      createElement(
+        "p",
+        "",
+        "Hide only this element here, or block a URL on every site.",
+      ),
+      hideButton,
+    );
+    if (!urls.length)
+      dialog.append(
+        createElement(
+          "p",
+          "",
+          "No source URLs found. You can still hide this element.",
+        ),
+      );
     const cancelButton = createElement("button", "cancel", "Cancel");
     cancelButton.type = "button";
     cancelButton.addEventListener("click", () => dialog.close());
@@ -329,6 +375,33 @@
     dialog.showModal();
   }
 
+  function selectorFor(element) {
+    const parts = [];
+    for (
+      let node = element;
+      node && node !== document.documentElement;
+      node = node.parentElement
+    ) {
+      if (
+        node.id &&
+        document.querySelectorAll(`#${CSS.escape(node.id)}`).length === 1
+      ) {
+        parts.unshift(`#${CSS.escape(node.id)}`);
+        break;
+      }
+      const siblings = [...node.parentElement.children].filter(
+        (child) => child.tagName === node.tagName,
+      );
+      parts.unshift(
+        `${node.localName}:nth-of-type(${siblings.indexOf(node) + 1})`,
+      );
+    }
+    const selector = parts.join(" > ");
+    if (!selector || document.querySelectorAll(selector).length !== 1)
+      throw new Error("Choose a smaller, unique element.");
+    return selector;
+  }
+
   async function blockUrl(url) {
     try {
       const { added, error } = await chrome.runtime.sendMessage({
@@ -336,7 +409,8 @@
         url,
       });
       if (error) showNotification(error);
-      else showNotification(added ? `Blocked: ${url}` : "That's already blocked.");
+      else
+        showNotification(added ? `Blocked: ${url}` : "That's already blocked.");
     } catch {
       showNotification("Failed to block URL");
     }

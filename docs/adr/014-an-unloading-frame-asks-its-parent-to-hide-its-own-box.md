@@ -37,3 +37,6 @@ layout depends on the ad iframe's box, and `display: none` shifts or
 collapses the page around it, which looks worse than the blank box did.
 Early warning sign to watch for: content jumping or overlapping right
 after a "Heavy ad" entry appears in the DevTools log.
+
+## 1.6.0 follow-up
+1.6.0 changes the heavy-ad path to parent-owned removal and Restore. Autoplay collapse still uses the original message. See [ADR-016](016-heavy-content-needs-ad-evidence-and-can-be-restored.md).

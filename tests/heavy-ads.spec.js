@@ -81,7 +81,7 @@ test.describe("heavy ads: downloads", () => {
 
   test("switched off, a cross-site 5 MB frame is kept", async ({ ext, page }) => {
     await ext.setSettings({ heavyAds: false });
-    expect(await ext.registeredScripts()).toEqual(["autoplay-guard", "frame-collapse"]);
+    expect(await ext.registeredScripts()).toEqual(["autoplay-guard", "cosmetic", "frame-collapse"]);
     await page.goto(`${FIRST}/heavy-net-page.html`);
     const netThird = page.frame({ name: "netThird" });
     await expect.poll(() => quietEval(netThird, () => document.getElementById("got").textContent)).toBe("5242880");

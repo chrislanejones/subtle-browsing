@@ -1,0 +1,66 @@
+details.protections {
+  padding: 8px;
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+}
+details.protections summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.site-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+}
+.site-control span {
+  min-width: 0;
+}
+.site-control select {
+  max-width: 145px;
+  font: inherit;
+  color: var(--color-ink);
+  background: var(--color-bg);
+  padding: 4px;
+  border: 1px solid var(--color-control-edge);
+  border-radius: 4px;
+}
+.site-control select:focus-visible,
+details summary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.saved-rule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+}
+.saved-rule span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.saved-rule button {
+  flex: none;
+  cursor: pointer;
+}
+.panel-controls {
+  flex: none;
+  max-height: 45vh;
+  overflow: auto;
+  padding: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: 8px;
+}
+.panel-controls > details {
+  flex: 1 1 240px;
+}
+button:disabled,
+select:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}

@@ -34,7 +34,7 @@ test("pausing a site lets blocked requests and autoplay through, unpausing resto
   expect(await ext.getSync("pausedSites")).toEqual({ pausedSites: ["127.0.0.1"] });
   const allow = (await ext.dynamicRules()).find((r) => r.id === PAUSED_SITES_RULE_ID);
   expect(allow).toMatchObject({
-    priority: 2,
+    priority: 10,
     action: { type: "allowAllRequests" },
     condition: { requestDomains: ["127.0.0.1"], resourceTypes: ["main_frame", "sub_frame"] },
   });

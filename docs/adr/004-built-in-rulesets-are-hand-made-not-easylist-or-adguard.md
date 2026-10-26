@@ -44,3 +44,6 @@ paths, nobody noticed, and the switch reads "on" while blocking less
 every month.
 Early warning sign to watch for: the blocked-today count on a known
 video-heavy site (PCWorld) drifting toward zero.
+
+## 1.6.0 follow-up
+1.6.0 splits the handmade annoyance rules into newsletter and notification lists. See [ADR-019](019-newsletter-and-notification-lists-are-independent.md).

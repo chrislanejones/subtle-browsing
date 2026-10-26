@@ -9,3 +9,6 @@ playwright-report/
 
 # Web Store zip (pnpm run package)
 dist/
+
+# Opt-in live-site evidence and UI previews
+artifacts/

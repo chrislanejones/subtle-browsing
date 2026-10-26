@@ -4,13 +4,31 @@
 
 # URL Blocker
 
-**Version 1.5.1** (10-26-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
+**Version 1.6.0** (10-26-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
 
 A Chrome extension that goes after the ads people actually hate (autoplay
 video, pop-ups, ads that spin up your fan) and leaves normal banner ads
 alone. You can also block any URL yourself, or click an ad on the page to
 block where it came from. Your list and switches follow your Chrome sign-in
 to every computer.
+
+## Latest update: 1.6.0
+
+Heavy ads now need ad evidence before removal, and a **Restore this content**
+button brings them back. For especially noisy sites, **All heavy third-party
+embeds** extends the same limits to unrecognized embeds. It is off by default
+because it can stop legitimate videos and tools too.
+
+The toolbar popup and Chrome DevTools panel now have independent site controls.
+You can allow autoplay on one site while leaving video-ad and personal URL
+blocking on. The picker can **Hide on this site**, and newsletter offers and
+notification requests have separate switches. Saved site overrides and hidden
+elements sync, export and import with the other settings.
+
+Detailed changes: [Changelog](CHANGELOG.md#160--10-26-2026).
+Implementation decisions: [ADRs 016–020](docs/adr/README.md).
+Live news, shopping, sports and streaming checks, including limitations:
+[Testing and compatibility](docs/Testing.md).
 
 ## Contents
 
@@ -45,8 +63,12 @@ on every bad ad by hand.
 | --- | --- | --- |
 | Video ad blocking | Blocks the companies that serve video ads (Connatix, Primis, AnyClip, Teads and others), and swaps Google's video ad engine for a stand-in that says "no ads". Banner ads still show | Yes |
 | Autoplay stopper | Pauses muted videos that start before you click anything, and hides paused ads that float in a corner. Videos you start play normally | Yes |
-| Heavy ad removal | Unloads ads that download more than 4 MB or keep the CPU busy, the ones that spin up your fan, and hides the box they leave | Yes |
-| Pop-ups and prompts | Blocks pop-up, newsletter and "allow notifications?" tools | No |
+| Heavy ad removal | Stops identified third-party ads at 4 MB or 5 seconds of long tasks in 30 seconds; offers Restore | Yes |
+| Broader heavy-embed mode | Applies those limits to unrecognized third-party embeds too; may stop legitimate content | No |
+| Newsletter offers | Blocks newsletter and promotional overlay tools | No |
+| Notification requests | Blocks website push-prompt tools independently | No |
+| Site controls | Override individual protections for a site and its subdomains | Inherit defaults |
+| Hide on this site | Hide a picked element only on its hostname; undo in settings or DevTools | — |
 | Pause on this site | Turns everything off for one site, in case it breaks | — |
 | Blocked-today counter | The toolbar icon shows how many requests were blocked today | — |
 | Block a URL | Type a URL to block it on every site | — |
@@ -73,15 +95,19 @@ on every bad ad by hand.
 
 ### What gets blocked
 
-All four switches are in the popup under **Block**. Three are on when you
-install; pop-ups is off until you turn it on.
+The popup shows the three default-on protections under **Block by default**.
+Expand **Offers, prompts and broader limits** for the three default-off
+choices. The settings page and DevTools **Default protections** expose the
+same choices.
 
 | Switch | How it works |
 | --- | --- |
 | **Video ad companies** | Uses the list in `rules/video-ads.json`. Blocks whole video-ad companies, plus only the video parts of bigger networks (Taboola's video player, Amazon's video ads), so their regular ads still show. Also swaps in the Google IMA stand-in. |
 | **Muted autoplay videos** | Stops any muted video that starts on its own. Video ads start muted because Chrome won't autoplay sound. Click play and the video runs. |
-| **Heavy ads** | Unloads a third-party ad frame once it has downloaded 4 MB or spent 5 seconds of busy CPU in any 30. |
-| **Pop-ups and prompts** | Uses `rules/annoyances.json`: OptinMonster, Privy, Justuno, Sumo, Klaviyo forms, OneSignal and similar. |
+| **Heavy ads** | Stops an identified third-party ad frame at 4 MB of declared downloads or 5 seconds of long tasks in 30 seconds. |
+| **All heavy third-party embeds** | Broadens Heavy ads to unrecognized third-party frames. Heavy ads must also be on. |
+| **Newsletter offers** | Uses `rules/annoyances.json`: OptinMonster, Privy, Justuno, Sumo, Klaviyo forms and similar. |
+| **Notification requests** | Uses `rules/notifications.json`: OneSignal, PushEngage, iZooto, Webpushr, Aimtell and PushCrew. |
 
 More on each:
 
@@ -96,14 +122,34 @@ More on each:
   the frame's box is hidden too. A paused ad floating in a corner of the
   window is hidden as well. A muted video paused on the page itself keeps
   its box, so you can still click it to play.
-- **Heavy ads:** 4 MB is Chrome's own heavy ad limit. The CPU limit is a
-  third of Chrome's, because Chrome's is already fan territory. The frame
-  goes blank, which stops every script and download in it, and its box is
-  hidden so it doesn't leave a hole in the page. Frames you've
-  clicked (a video you started) and frames from the site itself are never
-  unloaded. Removed ads show up in the DevTools log.
-- **Pop-ups and prompts:** blocks the script that draws the pop-up, so
-  pop-ups a site builds itself still show.
+- **Heavy ads:** the limits stay at 4 MB and 5 seconds of long tasks per
+  30 seconds. The parent frame requires a known ad hostname or an explicit
+  ad-slot marker before removal. It blanks the frame to stop its scripts
+  and downloads, then shows a compact restore button. Restoring exempts that
+  frame element until the page reloads. Frames you interacted with and
+  first-party frames are spared. Removal events appear in the DevTools log.
+- **All heavy third-party embeds:** opt into this on especially troublesome
+  sites to remove heavy embeds even without an ad marker. It can remove
+  legitimate content, so use Restore or turn Heavy ads off for that site.
+  Neither mode stops scripts running directly in the top-level page.
+- **Newsletter offers / Notification requests:** these block the third-party
+  tools, not every overlay a site builds itself. On upgrade, an old enabled
+  **Pop-ups and prompts** setting enables both categories until you change
+  their separate switches.
+
+### Controls for one site
+
+Open **Controls for (site)** in the toolbar popup or the Chrome DevTools
+panel. Each protection has **Default**, **On**, and **Off**. For example,
+turn **Muted autoplay videos** off here and leave **Video ad companies**
+on. Your personal URL blocks stay active.
+
+- Changes reload the inspected/active tab after the rules are applied.
+- Choices cover that hostname (without `www.`) and its subdomains. A more
+  specific site's choice wins; Default inherits the parent or global choice.
+- **Pause on this site** still disables everything, including hidden elements.
+- Remove overrides with **Reset site** in settings or DevTools; reload open
+  pages afterward. Content that was already removed needs Restore or reload.
 
 ### Pausing a site
 
@@ -143,11 +189,17 @@ If a site breaks, open the popup on that site and turn on
 4. Your cursor turns into a crosshair. Hover over things to highlight them.
 5. Click the ad. Ads inside iframes work too, and the click never reaches
    the ad. Press Esc to cancel.
-6. A dialog lists the domains and URLs found in that element.
+6. A dialog offers **Hide on this site**, plus any domains and URLs found in that element.
 7. Pick a **whole domain** (best for ads, whose URLs change on every load)
    or one **exact URL**. The site you're on isn't offered as a domain,
    since that would block the site itself.
-8. It goes on your block list.
+8. A URL choice goes on your global block list. **Hide on this site** instead
+   saves a CSS selector for the clicked element on that hostname. It also
+   works when there are no source URLs. It hides rather than stops downloads.
+9. Undo hiding with **Unhide** under **Hidden elements and site overrides**
+   in settings or DevTools. The element reappears without reloading if the
+   page has not removed it itself. Hiding an overlay does not repair a site's
+   scroll lock, and a structural selector can need updating after a redesign.
 
 ### Using the keyboard shortcut
 
@@ -173,7 +225,8 @@ Open it either way:
 
 | Section | What you can do |
 | --- | --- |
-| Block | The same four switches as the popup |
+| Block | The same six default switches as the popup |
+| Hidden elements and site overrides | Unhide elements and reset per-site choices |
 | Blocked URLs | Add a URL, search your list, remove entries |
 | Paused sites | See every paused site and **Unpause** any of them |
 | Keyboard shortcut | See the picker shortcut; **Change** opens Chrome's shortcut page |
@@ -184,6 +237,8 @@ Open it either way:
 1. Open Chrome DevTools (F12 or Ctrl+Shift+I).
 2. Click the **URL Blocker** tab.
 3. From there you can:
+   - Change default protections or individual controls for the inspected site
+   - Unhide elements and reset site overrides
    - See and manage your blocked URLs
    - See the log of blocked requests
    - Start the element picker
@@ -193,7 +248,7 @@ Open it either way:
 
 | What | Where it's kept |
 | --- | --- |
-| Block list, paused sites, switches | Synced: follows your Chrome sign-in to every computer |
+| Block list, paused sites, switches, site overrides, hidden elements | Synced: follows your Chrome sign-in to every computer |
 | Request log, blocked-today count | This computer only |
 
 - Chrome does the syncing, through your Google account. The extension
@@ -211,7 +266,10 @@ Open it either way:
   `url-blocker-backup-MM-DD-YYYY.json` to your downloads.
 - **Import backup** adds the file's URLs and paused sites to what you
   already have. Nothing gets removed. The switches take the file's
-  settings.
+  settings. Site overrides merge by hostname and feature; hidden selectors
+  merge without duplicates. Older backups remain supported. Each new list
+  has its own sync item quota; a failed save is reported rather than silently
+  discarding existing rules.
 
 ## Ad lists
 
@@ -226,8 +284,8 @@ EasyList blocks everything, which is the opposite of the point.
 | [Better Ads Standards](https://www.betterads.org/standards/) (Coalition for Better Ads) | Not a blocklist. It defines the formats people hate: autoplay video with sound, pop-ups, countdown screens, large sticky ads | The best spec for what counts as "annoying" |
 | [`@adguard/dnr-rulesets`](https://www.npmjs.com/package/@adguard/dnr-rulesets) (npm) | AdGuard's lists already converted to Chrome's built-in blocking format (Manifest V3 rules) | The easiest way in, but GPL-3.0-only, so it isn't bundled here |
 
-None of these ship inside the extension. The two built-in lists
-(`rules/video-ads.json`, `rules/annoyances.json`) are small and hand-made:
+None of these ship inside the extension. The three built-in lists
+(`rules/video-ads.json`, `rules/annoyances.json`, `rules/notifications.json`) are small and hand-made:
 
 - AdGuard's rulesets are GPL-3.0-only and this repo is MIT.
 - Most annoyance filters hide page elements with CSS, which Chrome's
@@ -243,10 +301,11 @@ The full reasoning is in [ADR-004](docs/adr/004-built-in-rulesets-are-hand-made-
 | --- | --- |
 | Blocking | Runs inside Chrome's own network layer, so it costs nothing per page |
 | Video ad list | Built in, so Chrome reads it once at install instead of on every page |
-| Autoplay stopper | One small event listener per page. Turning it off removes it from every page |
-| Heavy ad removal | A long-task observer inside third-party frames, plus adding up download sizes in the background. Turning it off removes the frame script |
+| Autoplay stopper | One small event listener per page. Turning it off stops enforcement on open pages and unregisters future injection unless a site enables it |
+| Heavy ad removal | A long-task observer inside third-party frames, plus adding up download sizes in the background. Turning it off stops enforcement; site overrides can keep the guard enabled |
 | Element picker | Only loads into a tab when you use it, and takes its overlay off the page when you're done |
-| Box hiding | One small message listener per frame while the autoplay stopper or heavy ad removal is on |
+| Box hiding and restore | One message listener per frame while autoplay or heavy-ad removal is enabled globally or on a site |
+| Site policy and element hiding | A shared settings cache and a small CSS injector per frame; no polling or mutation observer |
 | Google IMA stand-in | Only loads on pages that ask for Google's video ad engine, in place of the real one |
 
 ## Privacy
@@ -256,7 +315,7 @@ This extension:
 - Works locally in your browser
 - Doesn't collect any data
 - Doesn't send anything to servers of its own. Your block list, paused
-  sites and switches sync through your Google account the way Chrome
+  sites, switches, site overrides and hidden selectors sync through your Google account the way Chrome
   syncs any extension's settings. The log and today's count never leave
   your computer.
 - Blocks only the URLs you add and the built-in lists you leave on
@@ -265,7 +324,7 @@ This extension:
 
 | Permission | What it's for |
 | --- | --- |
-| `storage` | Your block list, switches, paused sites, the log and today's count |
+| `storage` | Your block list, switches, paused sites, site overrides, hidden elements, the log and today's count |
 | `declarativeNetRequest` | The blocking rules, the pause rule and the IMA swap |
 | `declarativeNetRequestFeedback` | Seeing which requests were blocked, for the log and today's count (unpacked installs only) |
 | `scripting` | Loading the picker, the autoplay stopper and the heavy ad check into pages |
@@ -286,7 +345,18 @@ This extension:
   clicking it.
 - An ad frame blocked outright never loads, so it can't hide its own box
   and may leave an empty space.
-- The video ad list has only been checked against PCWorld so far.
+- Live compatibility checks now cover PCWorld, Best Buy, ESPN and Vimeo,
+  with a direct Vimeo playback check. These are bounded smoke checks, not
+  a guarantee of every ad or playback path. See [the results](docs/Testing.md).
+- Ad identification is conservative and can miss unmarked ads; broader mode
+  trades that selectivity for more aggressive third-party embed removal.
+- Download counting uses Content-Length, so streamed responses can escape it.
+  CPU counting measures long tasks, not all CPU/GPU usage or hardware fan speed.
+- Site network exceptions use per-tab session rules; navigation updates are
+  asynchronous, so the earliest request after a cross-site navigation can
+  precede the refresh. Reload after changing a site setting.
+- Hiding cannot reach inside closed shadow roots, and structural selectors
+  can target the wrong element after a site changes its layout.
 - The IMA stand-in covers `ima3.js` only, not Google's live-stream ad
   engine (`ima3_dai.js`).
 - The block list holds about 300 URLs, the most Chrome sync allows.
@@ -297,6 +367,7 @@ This extension:
 
 | Version | Date | Highlights |
 | --- | --- | --- |
+| 1.6.0 | 10-26-2026 | Selective heavy-ad removal with Restore, broader embed mode, site controls, site-only hiding, separate prompt lists, live-site checks |
 | 1.5.1 | 10-26-2026 | Second-computer sync merge fix, picker shows ports, one entry per domain regardless of case, end-to-end test suite |
 | 1.5.0 | 10-26-2026 | Settings sync, settings page with backups, Alt+Shift+K shortcut, Google IMA stand-in, no more blank ad boxes |
 | 1.4.0 | 10-26-2026 | Heavy ad removal; redesigned popup and DevTools panel |
@@ -326,8 +397,10 @@ pnpm install
 pnpm test
 ```
 
-- 74 end-to-end tests load the extension into Chromium and run it
-  against local test pages. A run takes about a minute.
+- 85 end-to-end tests load the extension into Chromium and run it
+  against local test pages, plus the actual toolbar and DevTools surfaces.
+  A run takes about a minute. Live checks run separately: `pnpm run test:live`.
+  See [Testing and compatibility](docs/Testing.md) for scope and results.
 - The setup is in `playwright.config.js`; the tests and their pages are
   in `tests/`.
 - For a Chrome Web Store zip, commit your changes and run

@@ -50,13 +50,14 @@ export function registeredScripts(sw) {
 export function expectedScripts({ autoplayGuard, heavyAds }) {
   return [
     autoplayGuard && "autoplay-guard",
+    "cosmetic",
     (autoplayGuard || heavyAds) && "frame-collapse",
     heavyAds && "heavy-ad-guard",
   ].filter(Boolean);
 }
 
-export function expectedRulesets({ videoAdRules, annoyanceRules }) {
-  return [annoyanceRules && "annoyances", videoAdRules && "video_ads"].filter(Boolean);
+export function expectedRulesets({ videoAdRules, annoyanceRules, notificationRules }) {
+  return [annoyanceRules && "annoyances", (notificationRules ?? annoyanceRules) && "notifications", videoAdRules && "video_ads"].filter(Boolean);
 }
 
 // The worker turns these block list entries into these URL filters

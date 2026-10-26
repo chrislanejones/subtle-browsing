@@ -36,3 +36,6 @@ still gets paused or an ad frame unloaded. "Pause" stops meaning
 "everything off."
 Early warning sign to watch for: a paused site where autoplay video
 still stops on its own.
+
+## 1.6.0 follow-up
+1.6.0 raises full-pause priority to 10, above personal blocks (3) and category exceptions (2). See [ADR-017](017-site-protections-use-tab-session-rules.md).
