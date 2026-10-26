@@ -6,6 +6,7 @@ A powerful Chrome extension that allows you to selectively block specific URLs, 
 
 - **Video Ad Blocking**: Blocks the companies that serve video ads (Connatix, Primis, AnyClip, Teads and others) out of the box, and leaves banner ads alone
 - **Autoplay Stopper**: Pauses muted videos that start before you click anything, and hides paused ads that float in a corner. Videos you start play normally
+- **Heavy Ad Removal**: Unloads ads that download more than 4 MB or keep the CPU busy, the ones that spin up your fan
 - **Annoyance Blocking**: Optional switch for pop-up, newsletter and "allow notifications?" prompt tools
 - **Pause on This Site**: Turn everything off for one site from the popup, in case it breaks
 - **Blocked-Today Counter**: The toolbar icon shows how many requests were blocked today
@@ -49,10 +50,11 @@ _(Coming soon)_
 
 ### What gets blocked
 
-Video ad blocking and the autoplay stopper are on when you install. Pop-ups are off until you turn them on. All three switches are in the popup under **Block**.
+Video ad blocking, the autoplay stopper and heavy ad removal are on when you install. Pop-ups are off until you turn them on. All four switches are in the popup under **Block**.
 
 - **Block video ad companies** uses the list in `rules/video-ads.json`. It blocks whole video-ad companies, plus only the video parts of bigger networks (Taboola's video player, Amazon's video ads), so their regular ads still show.
 - **Pause muted autoplay videos** stops any muted video that starts on its own. Video ads start muted because Chrome won't autoplay sound. Click play and the video runs. If an ad player keeps restarting itself, its video gets unloaded after the third try, so it can't turn into a tug-of-war that slows the page down. A paused ad floating in a corner of the window is hidden too.
+- **Heavy ads** unloads a third-party ad frame once it has downloaded 4 MB (Chrome's own heavy ad limit) or spent 5 seconds of busy CPU in any 30 (a third of Chrome's limit, because that's already fan territory). The frame goes blank, which stops every script and download in it. Frames you've clicked, like a video you started, and frames from the site itself are never unloaded. Removed ads show up in the DevTools log.
 - **Pop-ups, newsletters, notification prompts** uses `rules/annoyances.json`: tools like OptinMonster, Privy, Justuno, Sumo, Klaviyo forms and OneSignal. It blocks the script that draws the pop-up, so pop-ups a site builds itself still show.
 
 ### Pausing a site
@@ -105,7 +107,7 @@ The number on the toolbar icon is how many requests were blocked today, across e
 
 ## Memory use
 
-Blocking runs inside Chrome's own network layer, so it costs nothing per page. The video ad list is built in, so Chrome reads it once at install instead of on every page. The autoplay stopper is one small event listener per page, and turning it off removes it from every page. The element picker only loads into a tab when you use it and leaves the page when you're done.
+Blocking runs inside Chrome's own network layer, so it costs nothing per page. The video ad list is built in, so Chrome reads it once at install instead of on every page. The autoplay stopper is one small event listener per page, and turning it off removes it from every page. Heavy ad removal adds a long-task observer inside third-party frames and adds up download sizes in the background; turning it off removes the frame script. The element picker only loads into a tab when you use it and leaves the page when you're done.
 
 ## Privacy
 

@@ -1,5 +1,9 @@
 # Parking Lot
 
+- **Heavy ads and shared clicks:** Chrome shares "the user clicked" between frames from the same origin, so clicking one ad frame spares that ad company's other frames on the page from heavy-ad removal.
+- **Heavy ad sizes come from Content-Length:** streamed or chunked responses without that header aren't counted, so some heavy ads slip under the 4 MB limit.
+- **Removed heavy ads leave a blank box:** the frame goes to about:blank but its box stays. Collapsing it means finding the iframe element from the parent page.
+- **webRequest wakes the worker per request:** the download count listens to every response header. Cheap per event, but it keeps the service worker awake on busy pages even with the switch off, because the listener has to be added at startup.
 - **Why not AdGuard's annoyance lists:** `@adguard/dnr-rulesets` is GPL-3.0-only, and this repo is MIT, so bundling it would relicense the project. Most of its annoyance filters are also element-hiding (CSS) rules, which Chrome's blocking rules can't apply. `rules/annoyances.json` is a small hand-made list instead. Cookie banners are left out on purpose: blocking a consent tool can leave the page scroll-locked.
 - **In-page ad boxes:** the autoplay stopper only hides paused ads that float (`position: fixed`). An in-article ad player that's paused or blocked can still leave an empty box.
 - **Blocked-today badge can lag at midnight:** the count resets on the first block after midnight, so yesterday's number can show until then. A `chrome.alarms` timer would fix it, at the cost of one more permission.
