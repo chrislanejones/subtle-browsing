@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "URL Blocker",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Block specific URLs from loading",
   "minimum_chrome_version": "121",
   "permissions": [
