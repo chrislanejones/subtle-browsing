@@ -5,6 +5,7 @@
   if (globalThis.urlBlockerPickerLoaded) return;
   globalThis.urlBlockerPickerLoaded = true;
 
+  const MAX_SCANNED_ELEMENTS = 2000;
   const STYLES = `
     :host { all: initial; }
     .shield {
@@ -163,9 +164,19 @@
     );
   }
 
+  // elementsFromPoint forces a layout, so look up at most once per frame
+  let lastPointer = null;
+  let frameRequested = false;
   function handleMouseMove(e) {
-    hoveredElement = elementAt(e.clientX, e.clientY);
-    updateHighlight();
+    lastPointer = { x: e.clientX, y: e.clientY };
+    if (frameRequested) return;
+    frameRequested = true;
+    requestAnimationFrame(() => {
+      frameRequested = false;
+      if (!isActive) return;
+      hoveredElement = elementAt(lastPointer.x, lastPointer.y);
+      updateHighlight();
+    });
   }
 
   function updateHighlight() {
@@ -222,7 +233,10 @@
       }
     };
 
-    for (const node of [element, ...element.querySelectorAll("*")]) {
+    // Picking a huge container would otherwise freeze the page while every
+    // child's style is read
+    const nodes = [element, ...element.querySelectorAll("*")].slice(0, MAX_SCANNED_ELEMENTS);
+    for (const node of nodes) {
       addUrl(node.currentSrc || node.src); // img, video, iframe, script
       addUrl(node.href);
       addUrl(node.poster);
