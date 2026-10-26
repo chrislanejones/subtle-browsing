@@ -28,6 +28,7 @@ onBlockedUrlsChanged(renderBlockedUrls);
 const toggles = {
   videoAdRules: document.getElementById("videoAdRulesToggle"),
   autoplayGuard: document.getElementById("autoplayGuardToggle"),
+  heavyAds: document.getElementById("heavyAdsToggle"),
   annoyanceRules: document.getElementById("annoyanceRulesToggle"),
 };
 const settings = await getSettings();
@@ -66,7 +67,9 @@ if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
     const count = record?.date === today ? record.count : 0;
     const number = document.createElement("b");
     number.textContent = count.toLocaleString();
-    blockedToday.replaceChildren("Blocked today: ", number);
+    const label = document.createElement("span");
+    label.textContent = "blocked today";
+    blockedToday.replaceChildren(number, " ", label);
   };
   renderBlockedToday((await chrome.storage.local.get("blockedToday")).blockedToday);
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -127,10 +130,12 @@ function renderBlockedUrls(blockedUrls) {
 
     const urlText = document.createElement("span");
     urlText.textContent = url;
+    urlText.title = url;
 
     const removeButton = document.createElement("button");
     removeButton.className = "remove-btn";
     removeButton.textContent = "Remove";
+    removeButton.setAttribute("aria-label", `Remove ${url}`);
     removeButton.addEventListener("click", () => removeBlockedUrl(url));
 
     urlItem.append(urlText, removeButton);
