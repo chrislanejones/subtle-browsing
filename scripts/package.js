@@ -32,7 +32,13 @@ execFileSync("git", [
   ...DEV_ONLY.map((path) => `:(exclude)${path}`),
 ]);
 
-const files = execFileSync("git", ["ls-tree", "-r", "--name-only", "HEAD", "--", ".", ...DEV_ONLY.map((path) => `:(exclude)${path}`)], { encoding: "utf8" })
+// ls-tree doesn't take :(exclude), so filter the same way by hand
+const isDevOnly = (file) =>
+  DEV_ONLY.some((path) =>
+    path.startsWith("*") ? file.endsWith(path.slice(1)) : file === path || file.startsWith(`${path}/`)
+  );
+const files = execFileSync("git", ["ls-tree", "-r", "--name-only", "HEAD"], { encoding: "utf8" })
   .trim()
-  .split("\n");
+  .split("\n")
+  .filter((file) => !isDevOnly(file));
 console.log(`${output}: ${files.length} files\n  ${files.join("\n  ")}`);
