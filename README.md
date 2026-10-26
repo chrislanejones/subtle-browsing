@@ -330,9 +330,11 @@ pnpm test
   against local test pages. A run takes about a minute.
 - The setup is in `playwright.config.js`; the tests and their pages are
   in `tests/`.
-- Leave `node_modules/`, `tests/`, `package.json` and the other test
-  files out of any Chrome Web Store zip. Chrome ignores them when you
-  load the folder unpacked, but they don't belong in a release.
+- For a Chrome Web Store zip, commit your changes and run
+  `pnpm run package`. It writes `dist/url-blocker-<version>.zip` with only
+  the files the extension uses: no tests, docs, notes or `node_modules/`.
+  Chrome ignores those when you load the folder unpacked, but they don't
+  belong in a release.
 
 ## License
 

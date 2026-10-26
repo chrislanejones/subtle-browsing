@@ -6,3 +6,6 @@ _metadata/
 node_modules/
 test-results/
 playwright-report/
+
+# Web Store zip (pnpm run package)
+dist/
