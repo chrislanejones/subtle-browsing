@@ -4,6 +4,8 @@ A powerful Chrome extension that allows you to selectively block specific URLs, 
 
 ## Features
 
+- **Video Ad Blocking**: Blocks the companies that serve video ads (Connatix, Primis, AnyClip, Teads and others) out of the box, and leaves banner ads alone
+- **Autoplay Stopper**: Pauses muted videos that start before you click anything. Videos you start play normally
 - **URL Blocking**: Manually enter URLs to block across all websites
 - **Element Selector Tool**: Click on any element (like ads) to identify and block its source URL
 - **DevTools Integration**: Track blocked requests and manage URLs from Chrome DevTools
@@ -41,6 +43,13 @@ _(Coming soon)_
 5. The URL Blocker extension is now installed and ready to use
 
 ## How to Use
+
+### Video ads
+
+Both are on when you install. Turn either one off in the popup under **Video ads**.
+
+- **Block video ad companies** uses the list in `rules/video-ads.json`. It blocks whole video-ad companies, plus only the video parts of bigger networks (Taboola's video player, Amazon's video ads, Google's video ad SDK), so their regular ads still show.
+- **Pause muted autoplay videos** stops any muted video that starts on its own. Video ads start muted because Chrome won't autoplay sound. Click play and the video runs.
 
 ### Blocking URLs Manually
 
@@ -84,7 +93,7 @@ _(Coming soon)_
 
 ## Memory use
 
-Blocking runs inside Chrome's own network layer, so it costs nothing per page. The element picker only loads into a tab when you use it and leaves the page when you're done, so the tabs you never pick in carry no extra script.
+Blocking runs inside Chrome's own network layer, so it costs nothing per page. The video ad list is built in, so Chrome reads it once at install instead of on every page. The autoplay stopper is one small event listener per page, and turning it off removes it from every page. The element picker only loads into a tab when you use it and leaves the page when you're done.
 
 ## Privacy
 
