@@ -1,0 +1,3 @@
+# Chrome writes compiled copies of the static rulesets here when the
+# extension is loaded unpacked
+_metadata/
