@@ -1,367 +1,428 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
+    <meta charset="utf-8" />
     <title>URL Blocker DevTools Panel</title>
     <style>
+      /* Hallmark · surface: DevTools panel · tone: technical, native to DevTools
+       * neutral grays, 12px UI / 11px mono, one blue accent for the primary action
+       * themes: follows the DevTools theme via prefers-color-scheme · contrast: AA
+       * performance: no continuous animation, fixed-height rows, content-visibility */
+
       :root {
-        --text-color: #6dd58c;
-        --background-color: #202124;
-        --secondary-bg: #292b2f;
-        --border-color: #3c4043;
-        --hover-color: #3c4043;
-        --button-color: #3a6d45;
-        --button-hover: #458951;
-        --sidebar-width: 200px;
+        color-scheme: light dark;
+        --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
+          Cantarell, sans-serif;
+        --font-mono: ui-monospace, Menlo, Consolas, "DejaVu Sans Mono",
+          "Liberation Mono", monospace;
+
+        --color-bg: oklch(100% 0 0);
+        --color-toolbar: oklch(96.5% 0.002 260);
+        --color-line: oklch(88% 0.003 260);
+        --color-control-edge: oklch(62% 0.005 260);
+        --color-ink: oklch(25% 0.005 260);
+        --color-ink-2: oklch(47% 0.006 260);
+        --color-stripe: oklch(97.8% 0.002 260);
+        --color-hover: oklch(93.5% 0.012 260);
+        --color-accent: oklch(49% 0.2 262);
+        --color-accent-hover: oklch(44% 0.19 262);
+        --color-on-accent: oklch(100% 0 0);
+        --color-accent-soft: oklch(93% 0.035 262);
+        --color-warn: oklch(49% 0.12 65);
+        --color-danger: oklch(50% 0.19 27);
+        --color-focus: var(--color-accent);
+
+        --row-h: 20px;
+        --time-col: 100px;
+        --radius: 4px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --color-bg: oklch(27% 0 0);
+          --color-toolbar: oklch(30.5% 0 0);
+          --color-line: oklch(39% 0 0);
+          --color-control-edge: oklch(58% 0 0);
+          --color-ink: oklch(91% 0 0);
+          --color-ink-2: oklch(73% 0 0);
+          --color-stripe: oklch(29.5% 0 0);
+          --color-hover: oklch(35% 0.012 260);
+          --color-accent: oklch(81% 0.08 260);
+          --color-accent-hover: oklch(86% 0.065 260);
+          --color-on-accent: oklch(25% 0.06 262);
+          --color-accent-soft: oklch(36% 0.05 262);
+          --color-warn: oklch(84% 0.12 82);
+          --color-danger: oklch(76% 0.14 25);
+        }
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        height: 100vh;
         display: flex;
-        background-color: var(--background-color);
-        color: var(--text-color);
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--color-bg);
+        color: var(--color-ink);
+        font: 12px/1.4 var(--font-ui);
+      }
+
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      /* Toolbar */
+      .toolbar {
+        flex: none;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 6px;
+        min-height: 31px;
+        padding: 3px 6px;
+        background: var(--color-toolbar);
+        border-bottom: 1px solid var(--color-line);
+      }
+      .tb-sep {
+        width: 1px;
+        height: 16px;
+        margin: 0 2px;
+        background: var(--color-line);
+      }
+      .tb-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 24px;
+        padding: 0 8px;
+        border: 1px solid transparent;
+        border-radius: var(--radius);
+        background: transparent;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+      .tb-btn:hover {
+        background: var(--color-hover);
+      }
+      .tb-btn:focus-visible,
+      .url-row button:focus-visible,
+      .show-more-btn:focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 1px;
+      }
+      .tb-btn svg {
+        flex: none;
+        color: var(--color-ink-2);
+      }
+      .tb-btn.outlined {
+        border-color: var(--color-line);
+      }
+      .tb-btn.primary {
+        background: var(--color-accent);
+        color: var(--color-on-accent);
+        font-weight: 500;
+      }
+      .tb-btn.primary:hover {
+        background: var(--color-accent-hover);
+      }
+      .tb-btn.is-active {
+        background: var(--color-accent-soft);
+      }
+      .tb-btn.is-active svg {
+        color: var(--color-accent);
+      }
+
+      input[type="text"] {
+        flex: 0 1 300px;
+        min-width: 150px;
+        height: 24px;
+        padding: 0 6px;
+        background: var(--color-bg);
+        border: 1px solid var(--color-control-edge);
+        border-radius: var(--radius);
+      }
+      input[type="text"]::placeholder {
+        color: var(--color-ink-2);
+      }
+      input[type="text"]:focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: -1px;
+        border-color: var(--color-focus);
       }
 
       .status {
-        margin: 0 0 12px;
-        color: #f5c26b;
+        margin: 0 0 0 4px;
+        color: var(--color-warn);
       }
       .status:empty {
         display: none;
       }
 
-      .sidebar {
-        width: var(--sidebar-width);
-        background-color: var(--secondary-bg);
-        border-right: 1px solid var(--border-color);
-        overflow-y: auto;
-        flex-shrink: 0;
-      }
-
-      .sidebar-item {
-        padding: 12px 16px;
-        cursor: pointer;
-        border-bottom: 1px solid var(--border-color);
-      }
-
-      .sidebar-item:hover {
-        background-color: var(--hover-color);
-      }
-
-      .sidebar-item.active {
-        background-color: rgba(109, 213, 140, 0.2);
-        font-weight: 500;
-      }
-
-      .main-content {
+      /* Two panes: blocked URLs | request log */
+      .split {
         flex: 1;
-        overflow: hidden;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(200px, 300px) minmax(0, 1fr);
+      }
+      .pane {
         display: flex;
         flex-direction: column;
-        padding: 20px;
+        min-width: 0;
+        min-height: 0;
       }
-
-      .container {
+      .pane-urls {
+        border-right: 1px solid var(--color-line);
+      }
+      .pane-head {
+        flex: none;
         display: flex;
-        flex-direction: column;
-        height: 100%;
-        gap: 20px;
-      }
-
-      .section {
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        padding: 15px;
-        background-color: var(--secondary-bg);
-      }
-
-      .section-header {
-        display: flex;
-        justify-content: space-between;
         align-items: center;
-        margin-bottom: 15px;
+        gap: 6px;
+        height: 28px;
+        padding: 0 4px 0 8px;
+        background: var(--color-toolbar);
+        border-bottom: 1px solid var(--color-line);
       }
-
-      h1,
       h2 {
         margin: 0;
-        color: var(--text-color);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .count {
+        color: var(--color-ink-2);
+        font-variant-numeric: tabular-nums;
+      }
+      .spacer {
+        flex: 1;
+      }
+      .pane-head .tb-btn {
+        height: 22px;
       }
 
-      h1 {
-        font-size: 18px;
-        margin-bottom: 20px;
+      .url-rows {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
       }
-
-      h2 {
-        font-size: 16px;
-      }
-
-      .url-manager {
-        flex: 0 0 auto;
-      }
-
-      .blocked-logs {
-        flex: 1 1 auto;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .log-container {
-        overflow-y: auto;
-        flex-grow: 1;
-        border: 1px solid var(--border-color);
-        padding: 10px;
-        border-radius: 4px;
-        background-color: var(--background-color);
-      }
-
-      .log-entry {
-        padding: 10px;
-        border-bottom: 1px solid var(--border-color);
+      .url-row {
         display: flex;
         align-items: center;
+        gap: 4px;
+        height: 24px;
+        padding: 0 2px 0 8px;
       }
-
-      .log-entry:nth-child(odd) {
-        background-color: rgba(60, 64, 67, 0.5);
+      .url-row:hover {
+        background: var(--color-hover);
       }
-
-      .log-url {
-        flex-grow: 1;
-        word-break: break-all;
+      .url-row span {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font: 11px/24px var(--font-mono);
       }
-
-      .log-time {
-        color: #aaa;
-        font-size: 12px;
-        margin-right: 10px;
-      }
-
-      input {
-        padding: 8px 12px;
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        width: 300px;
-        background-color: var(--background-color);
-        color: var(--text-color);
-        margin-right: 10px;
-      }
-
-      button {
-        padding: 8px 12px;
-        background-color: var(--button-color);
-        color: white;
-        border: none;
-        border-radius: 4px;
+      .url-row button {
+        flex: none;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: 0;
+        border-radius: 3px;
+        background: transparent;
+        color: var(--color-ink-2);
+        font-size: 14px;
+        line-height: 1;
         cursor: pointer;
       }
-
-      button:hover {
-        background-color: var(--button-hover);
+      .url-row button:hover {
+        color: var(--color-danger);
+        background: var(--color-bg);
       }
-
-      .blocked-urls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 15px;
-      }
-
-      .url-tag {
-        background-color: rgba(109, 213, 140, 0.15);
-        padding: 6px 12px;
-        border-radius: 15px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        border: 1px solid rgba(109, 213, 140, 0.3);
-      }
-
-      .url-tag button {
-        background-color: transparent;
-        color: var(--text-color);
-        padding: 0;
-        font-size: 14px;
-        height: 20px;
-        width: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-      }
-
-      .url-tag button:hover {
-        background-color: rgba(109, 213, 140, 0.3);
-      }
-
-      .refresh-btn {
-        padding: 5px 10px;
-        font-size: 12px;
-      }
-
-      .clear-btn {
-        background-color: #c53929;
-        margin-left: 10px;
-      }
-
-      .clear-btn:hover {
-        background-color: #e64a19;
-      }
-
-      .no-logs {
-        color: #aaa;
-        font-style: italic;
-        padding: 15px 0;
-      }
-
-      .button-row {
-        display: flex;
-        gap: 10px;
-        margin-top: 10px;
-      }
-
-      .selector-btn {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-      }
-
-      .selector-btn.active {
-        background-color: #c75f00;
-      }
-
-      .selector-btn.active:hover {
-        background-color: #e67700;
-      }
-
-      .selector-icon {
-        width: 16px;
-        height: 16px;
-        display: inline-block;
-        position: relative;
-      }
-
-      .selector-icon:before,
-      .selector-icon:after {
-        content: "";
-        position: absolute;
-        background-color: white;
-      }
-
-      .selector-icon:before {
-        width: 10px;
-        height: 10px;
-        border: 2px solid white;
-        border-radius: 2px;
-        left: 0;
-        top: 0;
-      }
-
-      .selector-icon:after {
-        width: 6px;
-        height: 6px;
-        background-color: var(--button-color);
-        right: 0;
-        bottom: 0;
-        border-radius: 50%;
-      }
-
-      .inspector-btn {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        background-color: #4285f4;
-      }
-
-      .inspector-btn:hover {
-        background-color: #3367d6;
-      }
-
       .show-more-btn {
-        margin-top: 10px;
-        background-color: transparent;
-        border: 1px solid var(--border-color);
-        color: var(--text-color);
-        text-align: center;
+        display: block;
         width: 100%;
+        height: 24px;
+        padding: 0 8px;
+        border: 0;
+        border-top: 1px solid var(--color-line);
+        background: transparent;
+        color: var(--color-accent);
+        text-align: left;
+        cursor: pointer;
+      }
+      .show-more-btn:hover {
+        background: var(--color-hover);
+      }
+      .show-more-btn:focus-visible {
+        outline-offset: -2px;
       }
 
-      .show-more-btn:hover {
-        background-color: rgba(109, 213, 140, 0.1);
+      .grid-head,
+      .log-entry {
+        display: grid;
+        grid-template-columns: var(--time-col) minmax(0, 1fr);
+      }
+      .grid-head {
+        flex: none;
+        height: var(--row-h);
+        line-height: var(--row-h);
+        border-bottom: 1px solid var(--color-line);
+        color: var(--color-ink-2);
+      }
+      .grid-head span,
+      .log-entry span {
+        padding: 0 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .grid-head span + span,
+      .log-url {
+        border-left: 1px solid var(--color-line);
+      }
+
+      .log-rows {
+        flex: 1;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        overflow: auto;
+        list-style: none;
+        contain: strict;
+      }
+      .log-entry {
+        height: var(--row-h);
+        font: 11px / var(--row-h) var(--font-mono);
+        content-visibility: auto;
+        contain-intrinsic-size: auto var(--row-h);
+      }
+      .log-entry:nth-child(even) {
+        background: var(--color-stripe);
+      }
+      .log-entry:hover {
+        background: var(--color-hover);
+      }
+      .log-time {
+        color: var(--color-ink-2);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .empty {
+        margin: 0;
+        padding: 10px 8px;
+        color: var(--color-ink-2);
+      }
+
+      /* Docked to the side: stack the panes */
+      @media (max-width: 640px) {
+        .split {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: auto minmax(0, 1fr);
+        }
+        .pane-urls {
+          max-height: 40vh;
+          border-right: 0;
+          border-bottom: 1px solid var(--color-line);
+        }
+        input[type="text"] {
+          flex: 1 1 150px;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="sidebar">
-      <div class="sidebar-item active">URL Blocking</div>
-      <div class="sidebar-item">Settings</div>
-      <div class="sidebar-item">Statistics</div>
-      <div class="sidebar-item">Advanced</div>
-    </div>
-
-    <div class="main-content">
-      <h1>URL Blocker</h1>
+    <div class="toolbar">
+      <button id="selectorButton" class="tb-btn">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path
+            d="M6 2.5H3.5a1 1 0 0 0-1 1V6M10 2.5h2.5a1 1 0 0 1 1 1V6M2.5 10v2.5a1 1 0 0 0 1 1H6"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+          <path
+            d="M8.5 8.5l5.25 1.9-2.3.95-.95 2.3z"
+            fill="currentColor"
+            stroke="currentColor"
+            stroke-width="1"
+            stroke-linejoin="round"
+          />
+        </svg>
+        Select element to block
+      </button>
+      <button id="stopSelectorButton" class="tb-btn is-active" hidden>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path
+            d="M6 2.5H3.5a1 1 0 0 0-1 1V6M10 2.5h2.5a1 1 0 0 1 1 1V6M2.5 10v2.5a1 1 0 0 0 1 1H6"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+          <path
+            d="M8.5 8.5l5.25 1.9-2.3.95-.95 2.3z"
+            fill="currentColor"
+            stroke="currentColor"
+            stroke-width="1"
+            stroke-linejoin="round"
+          />
+        </svg>
+        Cancel selection
+      </button>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <label for="urlInput" class="visually-hidden">URL to block</label>
+      <input type="text" id="urlInput" placeholder="Block a URL, e.g. example.com" />
+      <button id="addButton" class="tb-btn primary">Block</button>
       <p id="statusMessage" class="status" role="status"></p>
-
-      <div class="container">
-        <div class="section url-manager">
-          <div class="section-header">
-            <h2>Manage Blocked URLs</h2>
-            <button id="openInspectorButton" class="inspector-btn">
-              Open Inspector
-            </button>
-          </div>
-          <div>
-            <input
-              type="text"
-              id="urlInput"
-              placeholder="Enter URL to block (e.g., example.com)"
-            />
-            <button id="addButton">Block URL</button>
-          </div>
-          <div class="button-row">
-            <button id="selectorButton" class="selector-btn">
-              <span class="selector-icon"></span>
-              Select Element to Block
-            </button>
-            <button
-              id="stopSelectorButton"
-              class="selector-btn"
-              style="display: none"
-            >
-              Cancel Selection
-            </button>
-          </div>
-          <div class="blocked-urls" id="blockedUrlsList">
-            <!-- Blocked URLs will be displayed here -->
-          </div>
-        </div>
-
-        <div class="section blocked-logs">
-          <div class="section-header">
-            <h2>Blocked Requests Log</h2>
-            <div>
-              <button id="refreshButton" class="refresh-btn">Refresh</button>
-              <button id="clearLogsButton" class="refresh-btn clear-btn">
-                Clear Logs
-              </button>
-            </div>
-          </div>
-          <div class="log-container" id="logsContainer">
-            <!-- Logs will be displayed here -->
-            <div class="no-logs" id="noLogsMessage">
-              No blocked requests logged yet.
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
+
+    <main class="split">
+      <section class="pane pane-urls" aria-labelledby="urlsHeading">
+        <div class="pane-head">
+          <h2 id="urlsHeading">Blocked URLs</h2>
+        </div>
+        <div id="blockedUrlsList" class="url-rows"></div>
+      </section>
+
+      <section class="pane" aria-labelledby="logHeading">
+        <div class="pane-head">
+          <h2 id="logHeading">Blocked requests</h2>
+          <span id="logCount" class="count"></span>
+          <span class="spacer"></span>
+          <button id="refreshButton" class="tb-btn outlined">Refresh</button>
+          <button id="clearLogsButton" class="tb-btn outlined">Clear</button>
+        </div>
+        <div class="grid-head" aria-hidden="true">
+          <span>Time</span><span>URL</span>
+        </div>
+        <ol id="logsContainer" class="log-rows" hidden></ol>
+        <p id="noLogsMessage" class="empty">No blocked requests logged yet.</p>
+      </section>
+    </main>
 
     <script type="module" src="panel.js"></script>
   </body>

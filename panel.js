@@ -9,28 +9,57 @@ const urlInput = document.getElementById("urlInput");
 const addButton = document.getElementById("addButton");
 const blockedUrlsList = document.getElementById("blockedUrlsList");
 const logsContainer = document.getElementById("logsContainer");
+const logCount = document.getElementById("logCount");
 const refreshButton = document.getElementById("refreshButton");
 const clearLogsButton = document.getElementById("clearLogsButton");
 const noLogsMessage = document.getElementById("noLogsMessage");
 const selectorButton = document.getElementById("selectorButton");
 const stopSelectorButton = document.getElementById("stopSelectorButton");
-const openInspectorButton = document.getElementById("openInspectorButton");
 const statusMessage = document.getElementById("statusMessage");
 
 // URL display configuration
 const MAX_DISPLAYED_URLS = 10;
 let showAllUrls = false;
 
+// One formatter for every row; toLocaleTimeString builds a new one per call
+const timeFormat = new Intl.DateTimeFormat([], {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+});
+
+// Logs redraw when background.js saves new entries, instead of polling.
+// While the panel is hidden, keep only the newest list and draw it on return.
+let pendingLogs = null;
+let renderedLogsKey = "";
+
+// document.hidden only covers a hidden DevTools window. devtools.js calls this
+// when another DevTools tab (Elements, Console...) comes to the front. Set
+// before any await so an early call isn't missed.
+let panelShown = true;
+const isPanelHidden = () => document.hidden || !panelShown;
+globalThis.setPanelShown = (shown) => {
+  panelShown = shown;
+  drawPendingLogs();
+};
+
+function drawPendingLogs() {
+  if (isPanelHidden() || !pendingLogs) return;
+  const logs = pendingLogs;
+  pendingLogs = null;
+  renderBlockedLogs(logs);
+}
+
 renderBlockedUrls(await getBlockedUrls());
 onBlockedUrlsChanged(renderBlockedUrls);
 
-// Logs redraw when background.js saves new entries, instead of polling
 loadBlockedLogs();
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.blockedUrlLogs) {
-    renderBlockedLogs(changes.blockedUrlLogs.newValue || []);
+    showBlockedLogs(changes.blockedUrlLogs.newValue || []);
   }
 });
+document.addEventListener("visibilitychange", drawPendingLogs);
 
 async function addUrl() {
   const url = urlInput.value.trim();
@@ -52,9 +81,8 @@ clearLogsButton.addEventListener("click", () =>
 );
 
 function setSelectorActive(isActive) {
-  selectorButton.style.display = isActive ? "none" : "inline-flex";
-  stopSelectorButton.style.display = isActive ? "inline-flex" : "none";
-  selectorButton.classList.toggle("active", isActive);
+  selectorButton.hidden = isActive;
+  stopSelectorButton.hidden = !isActive;
 }
 
 // background.js loads the picker into the inspected tab and forwards these
@@ -85,15 +113,10 @@ chrome.runtime.onMessage.addListener((message) => {
   if (message.action === "selectorStopped") setSelectorActive(false);
 });
 
-// Chrome DevTools has no API to switch to another panel, so show instructions
-openInspectorButton.addEventListener("click", () => {
-  statusMessage.textContent =
-    "Click 'Select Element to Block', then click the ad on the page.";
-});
-
 function renderBlockedUrls(blockedUrls) {
   if (blockedUrls.length === 0) {
     const empty = document.createElement("p");
+    empty.className = "empty";
     empty.textContent = "No URLs blocked yet.";
     blockedUrlsList.replaceChildren(empty);
     return;
@@ -103,21 +126,24 @@ function renderBlockedUrls(blockedUrls) {
     ? blockedUrls
     : blockedUrls.slice(0, MAX_DISPLAYED_URLS);
 
-  const tags = displayedUrls.map((url) => {
-    const urlTag = document.createElement("div");
-    urlTag.className = "url-tag";
+  const rows = document.createDocumentFragment();
+  for (const url of displayedUrls) {
+    const urlRow = document.createElement("div");
+    urlRow.className = "url-row";
 
     const urlText = document.createElement("span");
     urlText.textContent = url;
+    urlText.title = url;
 
     const removeButton = document.createElement("button");
     removeButton.textContent = "×";
     removeButton.title = "Remove";
+    removeButton.setAttribute("aria-label", `Remove ${url}`);
     removeButton.addEventListener("click", () => removeBlockedUrl(url));
 
-    urlTag.append(urlText, removeButton);
-    return urlTag;
-  });
+    urlRow.append(urlText, removeButton);
+    rows.append(urlRow);
+  }
 
   if (blockedUrls.length > MAX_DISPLAYED_URLS) {
     const showMoreButton = document.createElement("button");
@@ -129,58 +155,64 @@ function renderBlockedUrls(blockedUrls) {
       showAllUrls = !showAllUrls;
       renderBlockedUrls(blockedUrls);
     });
-    tags.push(showMoreButton);
+    rows.append(showMoreButton);
   }
 
-  blockedUrlsList.replaceChildren(...tags);
+  blockedUrlsList.replaceChildren(rows);
 }
 
 async function loadBlockedLogs() {
   const { blockedUrlLogs = [] } =
     await chrome.storage.local.get("blockedUrlLogs");
-  renderBlockedLogs(blockedUrlLogs);
+  showBlockedLogs(blockedUrlLogs);
+}
+
+function showBlockedLogs(logs) {
+  if (isPanelHidden()) {
+    pendingLogs = logs;
+    return;
+  }
+  pendingLogs = null;
+  renderBlockedLogs(logs);
 }
 
 function renderBlockedLogs(logs) {
+  // Same length and same newest entry means nothing new to draw
+  const newest = logs.at(-1);
+  const key = newest ? `${logs.length}|${newest.timestamp}|${newest.url}` : "0";
+  if (key === renderedLogsKey) return;
+  renderedLogsKey = key;
+
+  logCount.textContent = logs.length ? logs.length.toLocaleString() : "";
+
   if (logs.length === 0) {
-    noLogsMessage.style.display = "block";
-    logsContainer.replaceChildren(noLogsMessage);
+    logsContainer.hidden = true;
+    logsContainer.replaceChildren();
+    noLogsMessage.hidden = false;
     return;
   }
 
-  noLogsMessage.style.display = "none";
-
-  // Most recent first
-  const entries = logs.toReversed().map((log) => {
-    const logEntry = document.createElement("div");
+  // Most recent first, built off-document and swapped in once
+  const rows = document.createDocumentFragment();
+  for (let i = logs.length - 1; i >= 0; i--) {
+    const log = logs[i];
+    const logEntry = document.createElement("li");
     logEntry.className = "log-entry";
 
     const logTime = document.createElement("span");
     logTime.className = "log-time";
-    logTime.textContent = new Date(log.timestamp).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+    logTime.textContent = timeFormat.format(new Date(log.timestamp));
 
     const logUrl = document.createElement("span");
     logUrl.className = "log-url";
     logUrl.textContent = log.url;
+    logUrl.title = log.url;
 
     logEntry.append(logTime, logUrl);
-    return logEntry;
-  });
+    rows.append(logEntry);
+  }
 
-  logsContainer.replaceChildren(...entries);
-}
-
-// Only "URL Blocking" exists so far
-const sidebarItems = document.querySelectorAll(".sidebar-item");
-for (const item of sidebarItems) {
-  item.addEventListener("click", () => {
-    sidebarItems.forEach((other) => other.classList.toggle("active", other === item));
-    const section = item.textContent.trim();
-    statusMessage.textContent =
-      section === "URL Blocking" ? "" : `${section} isn't built yet.`;
-  });
+  logsContainer.replaceChildren(rows);
+  noLogsMessage.hidden = true;
+  logsContainer.hidden = false;
 }
