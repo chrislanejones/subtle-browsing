@@ -11,6 +11,21 @@ A powerful Chrome extension that allows you to selectively block specific URLs, 
 - **Request Logging**: View a log of all blocked requests
 - **User-Friendly Interface**: Easy-to-use popup and DevTools panel
 
+## Why not a regular ad blocker
+
+A lot of sites ask you to turn off your ad blocker. Fair enough: ads pay for the site. I don't mind a banner. What I mind is the autoplay video in the corner, the pop-up, and the countdown screen before the article. The goal here is to block those and leave normal ads alone, without clicking on every bad ad by hand.
+
+## Ad lists
+
+These are the lists and standards this extension is built around. They're picked because they go after annoying ads, not all ads. A general list like EasyList blocks everything, which is the opposite of the point.
+
+| List | What it blocks | Fit for "kill video, keep some ads" |
+| --- | --- | --- |
+| [EasyList / Fanboy Annoyances](https://github.com/easylist/easylist) | Pop-ups, newsletter overlays, cookie banners, social widgets | Good |
+| [AdGuard Annoyances + Popups filters](https://github.com/AdguardTeam/AdguardFilters) | The same kind of thing, well maintained | Good |
+| [Better Ads Standards](https://www.betterads.org/standards/) (Coalition for Better Ads) | Not a blocklist. It defines the formats people hate: autoplay video with sound, pop-ups, countdown screens, large sticky ads | The best spec for what counts as "annoying" |
+| [`@adguard/dnr-rulesets`](https://www.npmjs.com/package/@adguard/dnr-rulesets) (npm) | AdGuard's lists already converted to Chrome's built-in blocking format (Manifest V3 rules) | The easiest way to get those lists into the extension |
+
 ## Installation
 
 ### From Chrome Web Store
@@ -30,7 +45,7 @@ _(Coming soon)_
 ### Blocking URLs Manually
 
 1. Click the URL Blocker icon in your Chrome toolbar
-2. Enter the URL you want to block (e.g., `example.com`, `ads.example.com/banner`)
+2. Enter the URL you want to block (e.g., `example.com`, `ads.example.com/banner`). A bare domain like `example.com` also blocks its subdomains, but not look-alikes such as `notexample.com`.
 3. Click "Block URL"
 4. The URL will be added to your block list and immediately start blocking
 
@@ -41,7 +56,7 @@ _(Coming soon)_
 3. Click "Select Element to Block"
 4. Your cursor will change to a crosshair
 5. Hover over elements to highlight them
-6. Click on the ad or element you want to block
+6. Click on the ad or element you want to block. Ads inside iframes work too, and the click never reaches the ad. Press Esc to cancel.
 7. A dialog will show you URLs associated with that element
 8. Select the URL you want to block
 9. The selected URL will be added to your block list
@@ -64,9 +79,12 @@ _(Coming soon)_
 
 ## Limitations
 
-- The extension cannot block URLs from being loaded by scripts that dynamically inject content after the page has loaded
 - Some websites may use obfuscated or dynamically generated URLs that change frequently
 - Extremely complex ad delivery systems might require multiple URLs to be blocked
+
+## Memory use
+
+Blocking runs inside Chrome's own network layer, so it costs nothing per page. The element picker only loads into a tab when you use it and leaves the page when you're done, so the tabs you never pick in carry no extra script.
 
 ## Privacy
 
