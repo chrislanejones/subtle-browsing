@@ -48,6 +48,7 @@
     }
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
     h2 { margin: 0 0 15px; font-size: 18px; }
+    h3 { margin: 0 0 6px; font-size: 14px; color: #e8eaed; }
     ul {
       list-style: none;
       max-height: 300px;
@@ -257,31 +258,61 @@
     return [...urls];
   }
 
-  function showUrlSelectionDialog(urls) {
-    const dialog = createElement("dialog");
-    const list = createElement("ul");
+  // The site being browsed and its parent domains: blocking one of those
+  // would block the site itself
+  function isPageSite(host) {
+    const pageHost = location.hostname.replace(/^www\./, "");
+    return host === pageHost || pageHost.endsWith(`.${host}`);
+  }
 
-    for (const url of urls) {
+  function createChoiceList(choices, dialog) {
+    const list = createElement("ul");
+    for (const { label, value } of choices) {
       const button = createElement("button", "url");
       button.type = "button";
-
-      // Show the domain in bold
-      const { protocol, hostname, pathname, search, hash } = new URL(url);
-      button.append(
-        `${protocol}//`,
-        createElement("b", "", hostname),
-        pathname + search + hash
-      );
-
+      button.append(...label);
       button.addEventListener("click", () => {
         dialog.close();
-        blockUrl(url);
+        blockUrl(value);
       });
 
       const item = createElement("li");
       item.append(button);
       list.append(item);
     }
+    return list;
+  }
+
+  function showUrlSelectionDialog(urls) {
+    const dialog = createElement("dialog");
+
+    // Ad URLs usually carry tracking numbers that change on every load, so
+    // blocking the whole domain is listed first
+    const domains = [
+      ...new Set(urls.map((url) => new URL(url).hostname.replace(/^www\./, ""))),
+    ].filter((host) => !isPageSite(host));
+    const domainChoices = domains.map((host) => ({
+      label: [createElement("b", "", host)],
+      value: host,
+    }));
+
+    // Show the domain in bold
+    const urlChoices = urls.map((url) => {
+      const { protocol, hostname, pathname, search, hash } = new URL(url);
+      return {
+        label: [`${protocol}//`, createElement("b", "", hostname), pathname + search + hash],
+        value: url,
+      };
+    });
+
+    dialog.append(
+      createElement("h2", "", "Select what to block"),
+      ...(domainChoices.length > 0
+        ? [createElement("h3", "", "Whole domain"), createChoiceList(domainChoices, dialog)]
+        : []),
+      createElement("h3", "", "Exact URL"),
+      createChoiceList(urlChoices, dialog)
+    );
 
     const cancelButton = createElement("button", "cancel", "Cancel");
     cancelButton.type = "button";
@@ -290,12 +321,7 @@
     const actions = createElement("div", "actions");
     actions.append(cancelButton);
 
-    dialog.append(
-      createElement("h2", "", "Select URL to block"),
-      createElement("p", "", "Choose which URL you want to block:"),
-      list,
-      actions
-    );
+    dialog.append(actions);
     // Esc, Cancel and picking a URL all end up here
     dialog.addEventListener("close", () => hide(dialog));
 
@@ -309,7 +335,7 @@
         action: "blockUrl",
         url,
       });
-      showNotification(added ? `URL blocked: ${url}` : "That URL is already blocked.");
+      showNotification(added ? `Blocked: ${url}` : "That's already blocked.");
     } catch {
       showNotification("Failed to block URL");
     }
