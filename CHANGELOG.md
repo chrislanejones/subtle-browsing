@@ -1,0 +1,193 @@
+# Changelog
+
+Every version of URL Blocker, newest first. Dates are MM-DD-YYYY. The
+version number is the one in `manifest.json`. None of these were tagged
+or published as GitHub releases; each one maps to the commits listed.
+
+Why things work the way they do: [docs/adr/](docs/adr/README.md).
+
+## 1.5.1 — Unreleased
+
+### Fixed
+- Updating on a second computer no longer drops that computer's block
+  list and paused sites; both lists are merged.
+
+## 1.5.0 — 10-26-2026
+
+Your settings follow you between computers, there's a settings page, and
+Google's video ad engine gets a stand-in that tells players "no ads."
+
+Commit: `6b498fa`
+
+### Added
+- **Settings sync.** Your block list, paused sites and switches follow
+  your Chrome sign-in to every computer. Chrome syncs them through your
+  Google account; the extension still sends nothing to any server of its
+  own. The request log and today's count stay on each computer.
+- **Settings page.** Right-click the toolbar icon and choose
+  **Options**, or click **Blocked URLs and paused sites** in the popup.
+  It has the four switches, your full block list with search and Remove,
+  paused sites with Unpause, the keyboard shortcut, and backups.
+- **Backups.** Export saves `url-blocker-backup-MM-DD-YYYY.json` to your
+  downloads. Import adds the file's URLs and paused sites to yours and
+  never removes anything; switches take the file's settings.
+- **Keyboard shortcut.** Alt+Shift+K starts the picker. Change it from
+  the settings page or at `chrome://extensions/shortcuts`.
+- **Google IMA stand-in.** Google's video ad engine (`ima3.js`) is
+  swapped for a small script of our own that answers every ad request
+  with IMA's normal "no ad" reply, so players go straight to the video.
+  It's part of the **Video ad companies** switch.
+- **No more blank boxes.** When a heavy ad or a video ad that kept
+  restarting gets unloaded, its box is hidden too.
+
+### Changed
+- The popup shows how many URLs are blocked and sites paused instead of
+  the whole list, so it fits without scrolling. The list lives on the
+  settings page.
+- The toolbar count clears at midnight on the dot, instead of on the
+  first block of the new day.
+- Your existing list, paused sites and switches move to sync on update.
+- The block list now tops out at about 300 entries, Chrome's sync limit.
+  Past that, adding one shows a message saying the list is full.
+- Needs the `alarms` permission, for the midnight reset.
+
+## 1.4.0 — 10-26-2026
+
+Ads that spin up your fan get unloaded, and the popup and DevTools panel
+got a redesign.
+
+Commits: `3190ef2`, `0715fed`, `7c88061`, `131a26d`, `c111ba8`, `f3acf04`
+
+### Added
+- **Heavy ads** (on by default). A third-party ad frame gets unloaded
+  once it has downloaded 4 MB, Chrome's own heavy ad limit, or spent
+  5 seconds of busy CPU in any 30. Frames you've clicked and frames from
+  the site itself are never touched. Removed ads show up in the DevTools
+  log and today's count.
+- A Heavy ads switch in the popup.
+
+### Changed
+- New popup: light and dark themes, today's blocked count as the big
+  number up top, **Pause on (site)** in its own card, and four blocking
+  switches with a one-line description each. Real checkboxes styled as
+  switches, a visible focus ring, and WCAG AA contrast in both themes.
+- The DevTools panel looks like the rest of DevTools: same grays, 12px
+  type, monospace URLs, and it follows the DevTools light or dark theme.
+  The log is a Time | URL table that stacks when DevTools is docked
+  narrow.
+- The panel stops drawing the log while you're on another DevTools tab
+  and catches up when you come back.
+- Needs the `webRequest` permission, for counting ad download sizes. It
+  only watches; it doesn't block anything.
+
+### Removed
+- The Settings, Statistics and Advanced sidebar and the Open Inspector
+  button in the DevTools panel. None of them did anything.
+
+## 1.3.0 — 10-26-2026
+
+Commits: `41583d1`, `18f4319`, `a4a3803`
+
+### Added
+- **Pause on (site)** in the popup turns everything off for that site,
+  including your own list, the built-in lists and the autoplay stopper,
+  then reloads the tab.
+- The toolbar icon shows how many requests were blocked today. It needs
+  an unpacked install; a Web Store install shows each tab's own count.
+- A **Pop-ups and prompts** switch (off by default) that blocks
+  OptinMonster, Privy, Justuno, Sumo, Klaviyo forms, OneSignal and
+  similar tools. Pop-ups a site builds itself still show.
+- The autoplay stopper hides a paused ad that floats in a corner of the
+  window.
+
+### Changed
+- The picker lists whole domains first, then exact URLs. Ad URLs change
+  on every load, so a whole domain is usually the one you want. The
+  site you're on isn't offered, since that would block the site.
+
+## 1.2.1 — 10-26-2026
+
+Commits: `812ccbf`, `1570061`, `366116e`
+
+### Fixed
+- Ad players that hit play again the moment they're paused used to win:
+  the ad played about 98% of the time. Now a video that restarts itself
+  3 times in 2 seconds gets unloaded.
+- The picker no longer bogs the page down. It checks what's under the
+  pointer once per frame and scans at most 2,000 elements, so picking a
+  huge ad container doesn't freeze the tab.
+
+### Removed
+- The Google IMA block (`imasdk.googleapis.com`). It could leave a
+  site's own video player waiting on ads forever. The autoplay stopper
+  still pauses those ads.
+
+## 1.2.0 — 10-26-2026
+
+Commits: `f48aedb`, `15d5f8d`
+
+### Added
+- A built-in video ad list, on by default. It blocks Connatix, Primis,
+  AnyClip, EX.CO, Teads, Aniview, Vidazoo, Truvid, SendtoNews,
+  SpringServe, SpotX, Innovid, vdo.ai and ExtremeReach, plus only the
+  video parts of Taboola, Amazon and Google IMA. Banner ads and
+  Taboola's recommendations still load.
+- An autoplay stopper, on by default. It pauses muted videos that start
+  before you click or press a key, in every frame on the page, ad frames
+  included. Videos you start play normally.
+- Popup switches for both. Turning the stopper off removes it from every
+  page.
+
+## 1.1.0 — 10-25-2026
+
+The features 1.0.0 had on paper now work.
+
+Commits: `89118c3`, `62cb315`
+
+### Added
+- The right-click **Block ad element** menu the README described.
+- The picker works on ads inside iframes. Esc cancels.
+
+### Changed
+- The picker loads into a tab only when you use it, instead of into
+  every tab, and takes its overlay off the page when you're done.
+- The picker covers the page while you pick, so your click never
+  reaches the ad. Its overlay and dialog are walled off from the page's
+  own styles.
+- A bare domain like `example.com` blocks its subdomains but not
+  look-alikes such as `notexample.com`.
+- Messages show as a status line instead of `alert()` pop-ups.
+- The request log saves once a second instead of on every blocked
+  request, and the DevTools panel updates when the log changes instead
+  of checking every 5 seconds.
+- Needs Chrome 121 or newer. No longer asks for the `tabs` permission.
+
+### Fixed
+- Picking an element and choosing a URL said "Failed to block URL".
+  It blocks now.
+- The DevTools panel's picker buttons did nothing. They work now.
+- The request log could throw an error at startup. It was missing the
+  `declarativeNetRequestFeedback` permission.
+- Two quick changes to the block list could collide and drop a rule.
+
+### Removed
+- The popup's Cancel button, which did nothing.
+
+## 1.0.0 — 04-15-2025
+
+The first version, built between 03-13-2025 and 04-15-2025.
+
+Commits: `1faa041`, `4fff39a`, `46482a3`, `867060f`
+
+### Added
+- Type a URL into the popup to block it on every site. Blocking runs in
+  Chrome's own network layer (Manifest V3 blocking rules).
+- An element picker for finding the URLs inside an ad.
+- A **URL Blocker** tab in DevTools with your block list and a log of
+  blocked requests.
+
+### Known problems (fixed in 1.1.0)
+- Choosing a URL in the picker failed with "Failed to block URL".
+- The picker buttons in the DevTools panel did nothing.
+- The right-click menu in the README was never built.
+- The picker loaded into every tab, used or not.
