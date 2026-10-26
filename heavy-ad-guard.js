@@ -27,7 +27,7 @@
   if (sameSite) return;
 
   let siteIsPaused = false;
-  chrome.storage.local.get("pausedSites").then(({ pausedSites = [] }) => {
+  chrome.storage.sync.get("pausedSites").then(({ pausedSites = [] }) => {
     siteIsPaused = pausedSites.some(
       (site) => topSite === site || topSite.endsWith(`.${site}`)
     );
@@ -57,7 +57,9 @@
         reason: `${(busyMs / 1000).toFixed(1)}s of CPU`,
       })
       .catch(() => {});
-    // A new blank document stops every script and download in the frame
+    // frame-collapse.js in the parent hides the box, then a new blank
+    // document stops every script and download in the frame
+    parent.postMessage("url-blocker:collapse-frame", "*");
     location.replace("about:blank");
   });
   observer.observe({ type: "longtask", buffered: true });

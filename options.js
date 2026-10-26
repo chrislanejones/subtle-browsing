@@ -1,0 +1,206 @@
+import {
+  addBlockedUrl,
+  getBlockedUrls,
+  normalizeUrl,
+  onBlockedUrlsChanged,
+  removeBlockedUrl,
+  SYNC_FULL_MESSAGE,
+} from "./blocklist.js";
+import {
+  getPausedSites,
+  getSettings,
+  onPausedSitesChanged,
+  onSettingsChanged,
+  setSitePaused,
+  siteKey,
+  updateSettings,
+} from "./settings.js";
+
+const $ = (id) => document.getElementById(id);
+const urlInput = $("urlInput");
+const searchInput = $("searchInput");
+const blockedStatus = $("blockedStatus");
+const backupStatus = $("backupStatus");
+
+$("version").textContent = `Version ${chrome.runtime.getManifest().version}`;
+
+// Blocking switches, kept in step with the popup
+const toggles = {
+  videoAdRules: $("videoAdRulesToggle"),
+  autoplayGuard: $("autoplayGuardToggle"),
+  heavyAds: $("heavyAdsToggle"),
+  annoyanceRules: $("annoyanceRulesToggle"),
+};
+function renderToggles(settings) {
+  for (const [key, checkbox] of Object.entries(toggles)) checkbox.checked = settings[key];
+}
+renderToggles(await getSettings());
+onSettingsChanged(renderToggles);
+for (const [key, checkbox] of Object.entries(toggles)) {
+  checkbox.addEventListener("change", () => updateSettings({ [key]: checkbox.checked }));
+}
+
+function listRow(text, buttonLabel, onClick) {
+  const row = document.createElement("div");
+  row.className = "url-item";
+  const label = document.createElement("span");
+  label.textContent = text;
+  label.title = text;
+  const button = document.createElement("button");
+  button.className = "remove-btn";
+  button.textContent = buttonLabel;
+  button.setAttribute("aria-label", `${buttonLabel} ${text}`);
+  button.addEventListener("click", onClick);
+  row.append(label, button);
+  return row;
+}
+
+function emptyRow(text) {
+  const empty = document.createElement("p");
+  empty.className = "empty";
+  empty.textContent = text;
+  return empty;
+}
+
+// Blocked URLs, newest first, filtered by the search box
+let blockedUrls = await getBlockedUrls();
+function renderBlockedUrls() {
+  const query = searchInput.value.trim().toLowerCase();
+  const shown = blockedUrls.toReversed().filter((url) => url.toLowerCase().includes(query));
+  $("blockedCount").textContent = query
+    ? `${shown.length} of ${blockedUrls.length}`
+    : `${blockedUrls.length} total`;
+
+  if (shown.length === 0) {
+    $("urlList").replaceChildren(emptyRow(query ? "Nothing matches." : "No URLs blocked yet."));
+    return;
+  }
+  const rows = document.createDocumentFragment();
+  for (const url of shown) rows.append(listRow(url, "Remove", () => removeBlockedUrl(url)));
+  $("urlList").replaceChildren(rows);
+}
+renderBlockedUrls();
+onBlockedUrlsChanged((urls) => {
+  blockedUrls = urls;
+  renderBlockedUrls();
+});
+searchInput.addEventListener("input", renderBlockedUrls);
+
+async function addUrl() {
+  const url = urlInput.value.trim();
+  if (!url) return;
+  try {
+    const added = await addBlockedUrl(url);
+    blockedStatus.textContent = added ? "" : "This URL is already blocked.";
+    if (added) urlInput.value = "";
+  } catch (error) {
+    blockedStatus.textContent = error.message;
+  }
+}
+$("addButton").addEventListener("click", addUrl);
+urlInput.addEventListener("keyup", (event) => {
+  if (event.key === "Enter") addUrl();
+});
+
+// Paused sites
+function renderPausedSites(sites) {
+  $("pausedCount").textContent = `${sites.length} total`;
+  if (sites.length === 0) {
+    $("pausedList").replaceChildren(emptyRow("No paused sites."));
+    return;
+  }
+  const rows = document.createDocumentFragment();
+  for (const site of sites) rows.append(listRow(site, "Unpause", () => setSitePaused(site, false)));
+  $("pausedList").replaceChildren(rows);
+}
+renderPausedSites(await getPausedSites());
+onPausedSitesChanged(renderPausedSites);
+
+// Keyboard shortcut: Chrome only lets the user change it on its own page
+async function renderShortcut() {
+  const commands = await chrome.commands.getAll();
+  const shortcut = commands.find((command) => command.name === "start-picker")?.shortcut;
+  const desc = $("shortcutDesc");
+  if (shortcut) {
+    const key = document.createElement("kbd");
+    key.textContent = shortcut;
+    desc.replaceChildren(key);
+  } else {
+    desc.textContent = "Not set";
+  }
+}
+renderShortcut();
+$("shortcutButton").addEventListener("click", () =>
+  chrome.tabs.create({ url: "chrome://extensions/shortcuts" })
+);
+// Picks up a change made on that page when the user comes back
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) renderShortcut();
+});
+
+// Backup. The file name date is MM-DD-YYYY, since a person reads it.
+$("exportButton").addEventListener("click", async () => {
+  const backup = {
+    app: "subtle-browsing",
+    version: chrome.runtime.getManifest().version,
+    exportedAt: new Date().toISOString(),
+    blockedUrls: await getBlockedUrls(),
+    pausedSites: await getPausedSites(),
+    settings: await getSettings(),
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  const [year, month, day] = new Date().toLocaleDateString("en-CA").split("-");
+  link.href = URL.createObjectURL(blob);
+  link.download = `url-blocker-backup-${month}-${day}-${year}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  backupStatus.className = "status ok";
+  backupStatus.textContent = "Backup saved to your downloads.";
+});
+
+$("importButton").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", async (event) => {
+  const [file] = event.target.files;
+  event.target.value = ""; // Lets the same file be picked again
+  if (!file) return;
+  backupStatus.className = "status";
+
+  let backup;
+  try {
+    backup = JSON.parse(await file.text());
+  } catch {
+    backupStatus.textContent = "That file isn't a URL Blocker backup.";
+    return;
+  }
+  const strings = (value) => (Array.isArray(value) ? value.filter((item) => typeof item === "string") : []);
+  const incomingUrls = strings(backup.blockedUrls).map(normalizeUrl).filter(Boolean);
+  const incomingSites = strings(backup.pausedSites).map((site) => siteKey(site.trim().toLowerCase())).filter(Boolean);
+  const incomingSettings = Object.fromEntries(
+    Object.keys(toggles)
+      .filter((key) => typeof backup.settings?.[key] === "boolean")
+      .map((key) => [key, backup.settings[key]])
+  );
+  if (incomingUrls.length + incomingSites.length + Object.keys(incomingSettings).length === 0) {
+    backupStatus.textContent = "That file isn't a URL Blocker backup.";
+    return;
+  }
+
+  const currentUrls = await getBlockedUrls();
+  const currentSites = await getPausedSites();
+  const newUrls = incomingUrls.filter((url) => !currentUrls.includes(url));
+  const newSites = incomingSites.filter((site) => !currentSites.includes(site));
+  try {
+    // One write, so background.js rebuilds its rules once
+    await chrome.storage.sync.set({
+      blockedUrls: [...currentUrls, ...new Set(newUrls)],
+      pausedSites: [...currentSites, ...new Set(newSites)],
+      settings: { ...(await getSettings()), ...incomingSettings },
+    });
+  } catch {
+    backupStatus.textContent = SYNC_FULL_MESSAGE;
+    return;
+  }
+  backupStatus.className = "status ok";
+  backupStatus.textContent = `Imported ${newUrls.length} URLs and ${newSites.length} paused sites.`;
+});

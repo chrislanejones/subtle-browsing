@@ -2,27 +2,50 @@ import {
   addBlockedUrl,
   getBlockedUrls,
   onBlockedUrlsChanged,
-  removeBlockedUrl,
 } from "./blocklist.js";
 import {
   getPausedSites,
   getSettings,
+  onPausedSitesChanged,
   siteKey,
   updateSettings,
 } from "./settings.js";
 
 const urlInput = document.getElementById("urlInput");
 const addButton = document.getElementById("addButton");
-const urlList = document.getElementById("urlList");
 const selectorButton = document.getElementById("selectorButton");
 const statusMessage = document.getElementById("statusMessage");
 
-// URL display configuration
-const MAX_DISPLAYED_URLS = 5;
-let showAllUrls = false;
+// The full lists live on the settings page; the popup shows counts
+const manageSummary = document.getElementById("manageSummary");
+let counts = { urls: (await getBlockedUrls()).length, sites: (await getPausedSites()).length };
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+function renderSummary() {
+  manageSummary.textContent = `${plural(counts.urls, "blocked URL")} · ${plural(counts.sites, "paused site")}`;
+}
+renderSummary();
+onBlockedUrlsChanged((urls) => {
+  counts.urls = urls.length;
+  renderSummary();
+});
+onPausedSitesChanged((sites) => {
+  counts.sites = sites.length;
+  renderSummary();
+});
+document.getElementById("manageButton").addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+  window.close();
+});
 
-renderBlockedUrls(await getBlockedUrls());
-onBlockedUrlsChanged(renderBlockedUrls);
+// Show the picker shortcut, which may have been changed at chrome://extensions/shortcuts
+const [pickerCommand] = await chrome.commands.getAll().then((commands) =>
+  commands.filter((command) => command.name === "start-picker" && command.shortcut)
+);
+if (pickerCommand) {
+  const pickerShortcut = document.getElementById("pickerShortcut");
+  pickerShortcut.textContent = pickerCommand.shortcut;
+  pickerShortcut.hidden = false;
+}
 
 // Blocking switches, saved as soon as they change
 const toggles = {
@@ -84,9 +107,13 @@ async function addUrl() {
   const url = urlInput.value.trim();
   if (!url) return;
 
-  const added = await addBlockedUrl(url);
-  statusMessage.textContent = added ? "" : "This URL is already blocked.";
-  if (added) urlInput.value = "";
+  try {
+    const added = await addBlockedUrl(url);
+    statusMessage.textContent = added ? "" : "This URL is already blocked.";
+    if (added) urlInput.value = "";
+  } catch (error) {
+    statusMessage.textContent = error.message;
+  }
 }
 
 addButton.addEventListener("click", addUrl);
@@ -110,50 +137,3 @@ selectorButton.addEventListener("click", async () => {
   // Close the popup so the page can be clicked
   window.close();
 });
-
-function renderBlockedUrls(blockedUrls) {
-  if (blockedUrls.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "empty";
-    empty.textContent = "No URLs blocked yet.";
-    urlList.replaceChildren(empty);
-    return;
-  }
-
-  const displayedUrls = showAllUrls
-    ? blockedUrls
-    : blockedUrls.slice(0, MAX_DISPLAYED_URLS);
-
-  const items = displayedUrls.map((url) => {
-    const urlItem = document.createElement("div");
-    urlItem.className = "url-item";
-
-    const urlText = document.createElement("span");
-    urlText.textContent = url;
-    urlText.title = url;
-
-    const removeButton = document.createElement("button");
-    removeButton.className = "remove-btn";
-    removeButton.textContent = "Remove";
-    removeButton.setAttribute("aria-label", `Remove ${url}`);
-    removeButton.addEventListener("click", () => removeBlockedUrl(url));
-
-    urlItem.append(urlText, removeButton);
-    return urlItem;
-  });
-
-  if (blockedUrls.length > MAX_DISPLAYED_URLS) {
-    const showMoreButton = document.createElement("button");
-    showMoreButton.className = "show-more-btn";
-    showMoreButton.textContent = showAllUrls
-      ? "Show fewer URLs"
-      : `Show all URLs (${blockedUrls.length})`;
-    showMoreButton.addEventListener("click", () => {
-      showAllUrls = !showAllUrls;
-      renderBlockedUrls(blockedUrls);
-    });
-    items.push(showMoreButton);
-  }
-
-  urlList.replaceChildren(...items);
-}

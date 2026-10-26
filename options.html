@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>URL Blocker settings</title>
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      body {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+        gap: 24px;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 18px;
+      }
+      .version {
+        color: var(--color-ink-2);
+        font-size: 12px;
+      }
+      section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-sm);
+      }
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-md);
+      }
+      .section-head .section-label {
+        margin-bottom: 0;
+      }
+      .count {
+        color: var(--color-ink-2);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+      .tools {
+        display: flex;
+        gap: var(--space-sm);
+      }
+      /* ui.css gives text inputs flex: 1 for side-by-side rows; in this
+         column layout that would squash the search box */
+      section > input[type="text"] {
+        flex: none;
+      }
+      .list {
+        max-height: 420px;
+        overflow-y: auto;
+      }
+      .note {
+        margin: 0;
+        color: var(--color-ink-2);
+        font-size: 12px;
+      }
+      .btn-plain {
+        background: var(--color-surface);
+        border-color: var(--color-line);
+      }
+      .btn-plain:hover {
+        background: var(--color-hover);
+      }
+      .shortcut-row {
+        cursor: default;
+      }
+      kbd {
+        padding: 1px 6px;
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-sm);
+        font: 12px/18px var(--font-ui);
+      }
+      .status {
+        margin: 0;
+      }
+      .status.ok {
+        color: var(--color-ink-2);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand">
+        <img src="images/icon48.png" alt="" width="24" height="24" />
+        <h1>URL Blocker settings</h1>
+      </div>
+      <span id="version" class="version"></span>
+    </header>
+
+    <fieldset class="group">
+      <legend class="section-label">Block</legend>
+      <div class="card">
+        <label class="row">
+          <span class="row-text">
+            <span class="row-title">Video ad companies</span>
+            <span class="row-desc">Connatix, Primis, Teads and similar, plus Google's video ad engine</span>
+          </span>
+          <input type="checkbox" id="videoAdRulesToggle" class="switch" />
+        </label>
+        <label class="row">
+          <span class="row-text">
+            <span class="row-title">Muted autoplay videos</span>
+            <span class="row-desc">Paused; videos you start still play</span>
+          </span>
+          <input type="checkbox" id="autoplayGuardToggle" class="switch" />
+        </label>
+        <label class="row">
+          <span class="row-text">
+            <span class="row-title">Heavy ads</span>
+            <span class="row-desc">Over 4 MB, or hogging the CPU</span>
+          </span>
+          <input type="checkbox" id="heavyAdsToggle" class="switch" />
+        </label>
+        <label class="row">
+          <span class="row-text">
+            <span class="row-title">Pop-ups and prompts</span>
+            <span class="row-desc">Newsletters, notification requests</span>
+          </span>
+          <input type="checkbox" id="annoyanceRulesToggle" class="switch" />
+        </label>
+      </div>
+    </fieldset>
+
+    <section aria-labelledby="blockedHeading">
+      <div class="section-head">
+        <h2 id="blockedHeading" class="section-label">Blocked URLs</h2>
+        <span id="blockedCount" class="count"></span>
+      </div>
+      <div class="tools">
+        <input type="text" id="urlInput" placeholder="Add a URL or domain, e.g. example.com" aria-label="URL to block" />
+        <button id="addButton" class="btn btn-primary">Block</button>
+      </div>
+      <input type="text" id="searchInput" placeholder="Search your list" aria-label="Search blocked URLs" />
+      <p id="blockedStatus" class="status" role="status"></p>
+      <div id="urlList" class="card list"></div>
+    </section>
+
+    <section aria-labelledby="pausedHeading">
+      <div class="section-head">
+        <h2 id="pausedHeading" class="section-label">Paused sites</h2>
+        <span id="pausedCount" class="count"></span>
+      </div>
+      <p class="note">Nothing is blocked on these sites. Pause a site from the popup while you're on it.</p>
+      <div id="pausedList" class="card list"></div>
+    </section>
+
+    <section aria-labelledby="shortcutHeading">
+      <h2 id="shortcutHeading" class="section-label">Keyboard shortcut</h2>
+      <div class="card row shortcut-row">
+        <span class="row-text">
+          <span class="row-title">Select an ad to block</span>
+          <span id="shortcutDesc" class="row-desc"></span>
+        </span>
+        <button id="shortcutButton" class="btn btn-plain">Change</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="backupHeading">
+      <h2 id="backupHeading" class="section-label">Backup</h2>
+      <p class="note">
+        Your list, paused sites and switches already sync to every Chrome you're signed into. A backup file
+        is for moving them somewhere sync doesn't reach. Importing adds to what's here; nothing is removed.
+      </p>
+      <div class="tools">
+        <button id="exportButton" class="btn btn-plain">Export backup</button>
+        <button id="importButton" class="btn btn-plain">Import backup</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+      </div>
+      <p id="backupStatus" class="status" role="status"></p>
+    </section>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

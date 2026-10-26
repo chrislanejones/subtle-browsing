@@ -65,9 +65,13 @@ async function addUrl() {
   const url = urlInput.value.trim();
   if (!url) return;
 
-  const added = await addBlockedUrl(url);
-  statusMessage.textContent = added ? "" : "This URL is already blocked.";
-  if (added) urlInput.value = "";
+  try {
+    const added = await addBlockedUrl(url);
+    statusMessage.textContent = added ? "" : "This URL is already blocked.";
+    if (added) urlInput.value = "";
+  } catch (error) {
+    statusMessage.textContent = error.message;
+  }
 }
 
 addButton.addEventListener("click", addUrl);

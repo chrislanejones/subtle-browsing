@@ -33,11 +33,14 @@ const VIDEO_AD_RULESET_ID = "video_ads";
 const ANNOYANCES_RULESET_ID = "annoyances";
 const AUTOPLAY_GUARD_ID = "autoplay-guard";
 const HEAVY_AD_GUARD_ID = "heavy-ad-guard";
+const FRAME_COLLAPSE_ID = "frame-collapse";
 // Chrome's own heavy ad rule unloads ad frames past this much download
 const HEAVY_AD_BYTES = 4 * 1024 * 1024;
 // Block rules use IDs 1..N, so the paused-sites rule sits far above them
 const PAUSED_SITES_RULE_ID = 1_000_000;
 const BADGE_COLOR = "#3a6d45";
+const MIDNIGHT_ALARM = "midnight";
+const PICKER_COMMAND = "start-picker";
 
 // Only fires for unpacked installs with the declarativeNetRequestFeedback permission
 const canCountBlocks = Boolean(chrome.declarativeNetRequest.onRuleMatchedDebug);
@@ -50,6 +53,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     contexts: ["all"],
   });
 
+  queue(moveSettingsToSync);
   queue(syncDynamicRules);
   // An update resets rulesets to their manifest defaults, so reapply
   queue(async () => applySettings(await getSettings()));
@@ -71,6 +75,23 @@ let pending = Promise.resolve();
 function queue(task) {
   pending = pending.then(task).catch((error) => console.error(error));
   return pending;
+}
+
+// 1.5.0 moved these from storage.local to storage.sync. Copies anything
+// still in local, unless sync already has a value from another computer.
+const SYNCED_KEYS = ["blockedUrls", "settings", "pausedSites"];
+async function moveSettingsToSync() {
+  const local = await chrome.storage.local.get(SYNCED_KEYS);
+  const keys = Object.keys(local);
+  if (keys.length === 0) return;
+
+  const synced = await chrome.storage.sync.get(keys);
+  const missing = Object.fromEntries(
+    keys.filter((key) => synced[key] === undefined).map((key) => [key, local[key]])
+  );
+  // If this throws (sync full), local keeps the data for the next try
+  if (Object.keys(missing).length > 0) await chrome.storage.sync.set(missing);
+  await chrome.storage.local.remove(keys);
 }
 
 // A bare domain blocks the site and its subdomains, but not look-alikes such
@@ -132,6 +153,8 @@ async function applySettings({ videoAdRules, autoplayGuard, annoyanceRules, heav
 
   await setFrameScript(AUTOPLAY_GUARD_ID, "autoplay-guard.js", autoplayGuard);
   await setFrameScript(HEAVY_AD_GUARD_ID, "heavy-ad-guard.js", heavyAds);
+  // Both of those can unload a frame and ask its parent to hide the box
+  await setFrameScript(FRAME_COLLAPSE_ID, "frame-collapse.js", autoplayGuard || heavyAds);
 }
 
 // Registered rather than listed in the manifest, so turning one off removes
@@ -176,6 +199,7 @@ async function getBlockedToday() {
 }
 
 async function setUpBadge() {
+  scheduleMidnightReset();
   if (!canCountBlocks) {
     // Without the debug event there's no daily total, so let Chrome show
     // each tab's own blocked count instead
@@ -187,6 +211,20 @@ async function setUpBadge() {
   await chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
   await chrome.action.setBadgeText({ text: badgeText(await getBlockedToday()) });
 }
+
+// Clears the badge at local midnight instead of waiting for the first block
+// of the new day. The stored count needs no reset: it's tied to its date.
+function scheduleMidnightReset() {
+  const nextMidnight = new Date();
+  nextMidnight.setHours(24, 0, 1, 0); // Rolls into tomorrow, DST included
+  chrome.alarms.create(MIDNIGHT_ALARM, { when: nextMidnight.getTime() });
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name !== MIDNIGHT_ALARM) return;
+  scheduleMidnightReset();
+  if (canCountBlocks) chrome.action.setBadgeText({ text: "" });
+});
 
 // An ad-heavy page can trigger dozens of blocks a second, so entries are
 // batched into one storage write instead of one write per blocked request
@@ -298,6 +336,7 @@ function unloadThirdPartyFrame(pausedSites) {
   if (sameSite || paused || navigator.userActivation.hasBeenActive) return null;
 
   const url = location.href;
+  parent.postMessage("url-blocker:collapse-frame", "*"); // frame-collapse.js hides the box
   location.replace("about:blank"); // Stops every script and download in it
   return url;
 }
@@ -319,6 +358,14 @@ async function pauseSite(site, paused, tabId) {
   await chrome.tabs.reload(tabId);
 }
 
+// Keyboard shortcut (Alt+Shift+K unless changed at chrome://extensions/shortcuts)
+chrome.commands.onCommand.addListener(async (command, tab) => {
+  if (command !== PICKER_COMMAND || !(tab?.id >= 0)) return;
+  sendToTab(tab.id, { action: "startSelector" }).catch((error) =>
+    console.warn("Can't start the selector on this page:", error.message)
+  );
+});
+
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== CONTEXT_MENU_ID || !(tab?.id >= 0)) return;
   sendToTab(tab.id, { action: "startSelector" }).catch((error) =>
@@ -329,7 +376,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
     case "blockUrl":
-      addBlockedUrl(message.url).then((added) => sendResponse({ added }));
+      addBlockedUrl(message.url)
+        .then((added) => sendResponse({ added }))
+        .catch((error) => sendResponse({ error: error.message }));
       return true; // Keep the channel open for the async response
 
     case "startSelector":

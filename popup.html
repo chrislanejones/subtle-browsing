@@ -3,382 +3,35 @@
   <head>
     <meta charset="utf-8" />
     <title>URL Blocker</title>
+    <link rel="stylesheet" href="ui.css" />
     <style>
-      /* Hallmark · surface: extension popup · tone: utilitarian, quiet
-       * anchor hue: 230 (teal-blue, from the toolbar icon) · motion: switch slide only
-       * themes: light + dark via prefers-color-scheme · contrast: AA */
-
-      :root {
-        color-scheme: light dark;
-        --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
-          Cantarell, "Helvetica Neue", sans-serif;
-
-        --color-bg: oklch(97.6% 0.003 230);
-        --color-surface: oklch(100% 0 0);
-        --color-line: oklch(91% 0.004 230);
-        --color-control-edge: oklch(60% 0.01 230);
-        --color-ink: oklch(23% 0.012 250);
-        --color-ink-2: oklch(46% 0.012 250);
-        --color-hover: oklch(95.5% 0.005 230);
-        --color-accent: oklch(50% 0.115 232);
-        --color-accent-hover: oklch(44% 0.11 232);
-        --color-on-accent: oklch(100% 0 0);
-        --color-thumb: oklch(100% 0 0);
-        --color-thumb-on: oklch(100% 0 0);
-        --color-warn: oklch(49% 0.15 38);
-        --color-danger: oklch(50% 0.18 27);
-        --color-focus: var(--color-accent);
-
-        --space-2xs: 2px;
-        --space-xs: 4px;
-        --space-sm: 8px;
-        --space-md: 12px;
-        --space-lg: 14px;
-        --radius-sm: 6px;
-        --radius-md: 8px;
-        --radius-lg: 10px;
-        --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
-        --dur-fast: 120ms;
-      }
-
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --color-bg: oklch(20.5% 0.004 250);
-          --color-surface: oklch(25% 0.005 250);
-          --color-line: oklch(31.5% 0.006 250);
-          --color-control-edge: oklch(58% 0.01 250);
-          --color-ink: oklch(94% 0.004 250);
-          --color-ink-2: oklch(74% 0.01 250);
-          --color-hover: oklch(29% 0.006 250);
-          --color-accent: oklch(78% 0.1 225);
-          --color-accent-hover: oklch(84% 0.085 225);
-          --color-on-accent: oklch(22% 0.03 235);
-          --color-thumb: oklch(92% 0.004 250);
-          --color-thumb-on: oklch(22% 0.03 235);
-          --color-warn: oklch(81% 0.12 60);
-          --color-danger: oklch(75% 0.15 25);
-        }
-      }
-
-      [hidden] {
-        display: none !important;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
       body {
         width: 360px;
-        margin: 0;
-        padding: var(--space-lg);
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-lg);
-        background: var(--color-bg);
-        color: var(--color-ink);
-        font: 13px/1.4 var(--font-ui);
-        -webkit-font-smoothing: antialiased;
       }
 
-      button,
-      input {
-        font: inherit;
-        color: inherit;
-      }
-
-      /* Header: name left, today's count as the one big number */
-      .top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--space-md);
-        min-height: 32px;
-      }
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: var(--space-sm);
-        min-width: 0;
-      }
-      .brand img {
-        flex: none;
-        border-radius: 5px;
-      }
-      h1 {
-        margin: 0;
-        font-size: 14px;
-        font-weight: 600;
-        letter-spacing: -0.005em;
-      }
-      .stat {
-        margin: 0;
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
-        white-space: nowrap;
-      }
-      .stat b {
-        font-size: 24px;
-        line-height: 1;
-        font-weight: 650;
-        letter-spacing: -0.02em;
-        font-variant-numeric: tabular-nums;
-      }
-      .stat span {
-        font-size: 12px;
-        color: var(--color-ink-2);
-      }
-
-      /* Grouped rows: one card, hairlines between rows */
-      .group {
-        margin: 0;
-        padding: 0;
-        border: 0;
-        min-width: 0;
-      }
-      .section-label {
-        display: block;
-        margin: 0 0 6px var(--space-2xs);
-        padding: 0;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--color-ink-2);
-      }
-      .card {
-        background: var(--color-surface);
+      /* Opens the settings page; replaces the old in-popup list */
+      .manage-row {
+        width: 100%;
         border: 1px solid var(--color-line);
-        border-radius: var(--radius-lg);
-        overflow: hidden;
+        background: var(--color-surface);
+        text-align: left;
       }
-
-      .row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-md);
-        min-height: 46px;
-        padding: 7px var(--space-md);
-        cursor: pointer;
-        transition: background-color var(--dur-fast) var(--ease-out);
-      }
-      .row + .row {
-        border-top: 1px solid var(--color-line);
-      }
-      .row:hover {
-        background: var(--color-hover);
-      }
-      .row-text {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-      }
-      .row-title {
-        font-weight: 500;
-        line-height: 18px;
-      }
-      .row-title b {
-        font-weight: 650;
-        overflow-wrap: anywhere;
-      }
-      .row-desc {
-        font-size: 12px;
-        line-height: 16px;
-        color: var(--color-ink-2);
-      }
-
-      /* Switch: still a real checkbox, restyled */
-      .switch {
-        appearance: none;
-        flex: none;
-        position: relative;
-        width: 32px;
-        height: 18px;
-        margin: 0;
-        border-radius: 9px;
-        background: var(--color-control-edge);
-        cursor: pointer;
-        transition: background-color var(--dur-fast) var(--ease-out);
-      }
-      .switch::before {
-        content: "";
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: var(--color-thumb);
-        transition: transform var(--dur-fast) var(--ease-out);
-      }
-      .switch:checked {
-        background: var(--color-accent);
-      }
-      .switch:checked::before {
-        transform: translateX(14px);
-        background: var(--color-thumb-on);
-      }
-      .switch:focus-visible {
+      .manage-row:focus-visible {
         outline: 2px solid var(--color-focus);
         outline-offset: 2px;
       }
-
-      /* Manual block */
-      .add-row {
-        display: flex;
-        gap: var(--space-sm);
-      }
-      input[type="text"] {
-        flex: 1;
-        min-width: 0;
-        height: 32px;
-        padding: 0 10px;
-        background: var(--color-surface);
-        border: 1px solid var(--color-control-edge);
-        border-radius: var(--radius-md);
-      }
-      input[type="text"]::placeholder {
-        color: var(--color-ink-2);
-      }
-      input[type="text"]:focus-visible {
-        outline: 2px solid var(--color-focus);
-        outline-offset: -1px;
-        border-color: var(--color-focus);
-      }
-
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--space-sm);
-        height: 32px;
-        padding: 0 14px;
-        border: 1px solid transparent;
-        border-radius: var(--radius-md);
-        font-weight: 500;
-        white-space: nowrap;
-        cursor: pointer;
-        transition: background-color var(--dur-fast) var(--ease-out);
-      }
-      .btn:active {
-        transform: translateY(1px);
-      }
-      .btn:focus-visible,
-      .remove-btn:focus-visible,
-      .show-more-btn:focus-visible {
-        outline: 2px solid var(--color-focus);
-        outline-offset: 2px;
-      }
-      .btn-primary {
-        background: var(--color-accent);
-        color: var(--color-on-accent);
-      }
-      .btn-primary:hover {
-        background: var(--color-accent-hover);
-      }
-      .btn-secondary {
-        width: 100%;
-        margin-top: var(--space-sm);
-        background: var(--color-surface);
-        border-color: var(--color-line);
-      }
-      .btn-secondary:hover {
-        background: var(--color-hover);
-      }
-      .btn svg {
+      .manage-row svg {
         flex: none;
         color: var(--color-ink-2);
       }
 
-      .status {
-        margin: var(--space-sm) var(--space-2xs) 0;
-        font-size: 12px;
-        color: var(--color-warn);
-      }
-      .status:empty {
-        display: none;
-      }
-
-      /* Blocked list (rows rendered by popup.js) */
-      .url-item {
-        display: flex;
-        align-items: center;
-        gap: var(--space-sm);
-        min-height: 36px;
-        padding: 0 var(--space-xs) 0 var(--space-md);
-      }
-      .url-item + .url-item {
-        border-top: 1px solid var(--color-line);
-      }
-      .url-item span {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .remove-btn {
-        flex: none;
-        height: 26px;
-        padding: 0 var(--space-sm);
-        border: 0;
+      kbd {
+        margin-left: auto;
+        padding: 1px 6px;
+        border: 1px solid var(--color-line);
         border-radius: var(--radius-sm);
-        background: transparent;
         color: var(--color-ink-2);
-        font-size: 12px;
-        cursor: pointer;
-      }
-      .remove-btn:hover {
-        background: var(--color-hover);
-        color: var(--color-danger);
-      }
-      .show-more-btn {
-        display: block;
-        width: 100%;
-        height: 34px;
-        border: 0;
-        border-top: 1px solid var(--color-line);
-        background: transparent;
-        color: var(--color-accent);
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-      }
-      .show-more-btn:hover {
-        background: var(--color-hover);
-      }
-      .show-more-btn:focus-visible {
-        outline-offset: -2px;
-      }
-      .empty {
-        margin: 0;
-        padding: var(--space-md);
-        color: var(--color-ink-2);
-      }
-
-      @media (forced-colors: active) {
-        .switch {
-          border: 1px solid CanvasText;
-          background: Canvas;
-        }
-        .switch::before {
-          top: 1px;
-          left: 1px;
-          background: CanvasText;
-        }
-        .switch:checked {
-          background: Highlight;
-        }
-        .switch:checked::before {
-          background: HighlightText;
-        }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        *,
-        *::before {
-          transition: none !important;
-        }
+        font: 11px/16px var(--font-ui);
       }
     </style>
   </head>
@@ -456,14 +109,20 @@
           />
         </svg>
         Select element to block
+        <kbd id="pickerShortcut" hidden></kbd>
       </button>
       <p id="statusMessage" class="status" role="status"></p>
     </section>
 
-    <section aria-labelledby="blockedHeading">
-      <h2 id="blockedHeading" class="section-label">Blocked URLs</h2>
-      <div id="urlList" class="card url-list"></div>
-    </section>
+    <button id="manageButton" class="card row manage-row">
+      <span class="row-text">
+        <span class="row-title">Blocked URLs and paused sites</span>
+        <span id="manageSummary" class="row-desc"></span>
+      </span>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M6 3.5L10.5 8 6 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
 
     <script type="module" src="popup.js"></script>
   </body>

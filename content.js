@@ -331,11 +331,12 @@
 
   async function blockUrl(url) {
     try {
-      const { added } = await chrome.runtime.sendMessage({
+      const { added, error } = await chrome.runtime.sendMessage({
         action: "blockUrl",
         url,
       });
-      showNotification(added ? `Blocked: ${url}` : "That's already blocked.");
+      if (error) showNotification(error);
+      else showNotification(added ? `Blocked: ${url}` : "That's already blocked.");
     } catch {
       showNotification("Failed to block URL");
     }

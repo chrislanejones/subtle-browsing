@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "URL Blocker",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Block specific URLs from loading",
   "minimum_chrome_version": "121",
   "permissions": [
@@ -10,7 +10,8 @@
     "declarativeNetRequestFeedback",
     "scripting",
     "webRequest",
-    "contextMenus"
+    "contextMenus",
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -46,5 +47,28 @@
     "16": "images/icon16.png",
     "48": "images/icon48.png",
     "128": "images/icon128.png"
+  },
+  "commands": {
+    "start-picker": {
+      "suggested_key": {
+        "default": "Alt+Shift+K"
+      },
+      "description": "Select an ad to block"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "stubs/ima3.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ],
+      "use_dynamic_url": true
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
   }
 }

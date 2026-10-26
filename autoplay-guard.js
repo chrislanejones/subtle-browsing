@@ -28,7 +28,7 @@ function topSite() {
 // finishes long before a video has loaded enough to autoplay.
 let siteIsPaused = false;
 const site = topSite();
-chrome.storage.local.get("pausedSites").then(({ pausedSites = [] }) => {
+chrome.storage.sync.get("pausedSites").then(({ pausedSites = [] }) => {
   siteIsPaused = pausedSites.some(
     (pausedSite) => site === pausedSite || site.endsWith(`.${pausedSite}`)
   );
@@ -61,6 +61,10 @@ function hideFloatingPlayer(video) {
 
 // Unloading doesn't fire a "pause" event, so players that restart on pause stop retrying
 function unload(video) {
+  // An ad frame left with nothing to play has its box hidden by frame-collapse.js
+  if (!unloaded.has(video) && window.top !== window) {
+    parent.postMessage("url-blocker:collapse-frame", "*");
+  }
   unloaded.add(video);
   video.removeAttribute("src");
   video.querySelectorAll("source").forEach((source) => source.remove());
