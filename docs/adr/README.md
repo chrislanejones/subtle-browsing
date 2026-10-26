@@ -27,3 +27,4 @@ for a new one.
 | [012](012-settings-block-list-and-paused-sites-live-in-storage-sync.md) | Settings, the block list and paused sites live in chrome.storage.sync | Draft (shipped 1.5.0) | 2026-10-26 |
 | [013](013-a-settings-page-holds-the-lists-and-the-popup-shows-counts.md) | A settings page holds the lists, and the popup shows counts | Draft (shipped 1.5.0) | 2026-10-26 |
 | [014](014-an-unloading-frame-asks-its-parent-to-hide-its-own-box.md) | An unloading frame asks its parent to hide its own box | Draft (shipped 1.5.0) | 2026-10-26 |
+| [015](015-end-to-end-tests-run-on-playwright-1-64-0-as-the-first-dev-dependency.md) | End-to-end tests run on `@playwright/test` 1.64.0, the repo's first dev dependency | Draft (1.5.1) | 2026-10-26 |

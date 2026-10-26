@@ -6,11 +6,40 @@ or published as GitHub releases; each one maps to the commits listed.
 
 Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
-## 1.5.1 — Unreleased
+## 1.5.1 — 10-26-2026
+
+Two small fixes the new test suite caught, one found in review, and
+URLs that differ only in capital letters count as one entry.
+
+Commits: `2f4352b`, `a4a7ea8`
+
+### Changed
+- The domain part of a URL you type or pick is lowercased, and `WWW.`
+  is stripped however it's capitalized, so `Example.com` and
+  `example.com` are one entry. Paths keep their case.
 
 ### Fixed
 - Updating on a second computer no longer drops that computer's block
   list and paused sites; both lists are merged.
+- The picker's **Exact URL** choices show the port again. A URL on
+  `localhost:8791` showed as `localhost`; what got blocked was always
+  right.
+- Importing a backup reports the right count. It used to count
+  duplicates and different spellings of one URL that were only stored
+  once.
+
+### Added (for contributors)
+- An end-to-end test suite: `pnpm install`, then `pnpm test`. 74 tests
+  in 13 spec files cover install state, blocking, pausing, autoplay,
+  heavy ads (download and CPU), the IMA stand-in, the picker, the popup,
+  the settings page, the DevTools panel, the 1.4.0 to 1.5.x upgrade, and
+  a performance guard (no long tasks on worst-case pages). A run takes
+  about 57 seconds. It uses Playwright 1.64.0 with the Chromium build
+  that version already ships with, and serves its test pages on
+  `127.0.0.1` and `localhost` so the third-party checks kick in. It
+  found the port and import-count bugs above. Not covered yet:
+  `devtools.js`, clicking the right-click menu, and a real Alt+Shift+K
+  keypress.
 
 ## 1.5.0 — 10-26-2026
 

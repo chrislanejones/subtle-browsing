@@ -4,7 +4,7 @@
 
 # URL Blocker
 
-**Version 1.5.0** (10-26-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
+**Version 1.5.1** (10-26-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
 
 A Chrome extension that goes after the ads people actually hate (autoplay
 video, pop-ups, ads that spin up your fan) and leaves normal banner ads
@@ -28,7 +28,7 @@ to every computer.
 | [Limitations](#limitations) | Known gaps |
 | [Version history](#version-history) | Every version at a glance |
 | [Design decisions](#design-decisions) | Why it's built the way it is |
-| [Contributing](#contributing) | |
+| [Contributing](#contributing) | Running the tests |
 | [License](#license) | |
 
 ## Why not a regular ad blocker
@@ -297,6 +297,7 @@ This extension:
 
 | Version | Date | Highlights |
 | --- | --- | --- |
+| 1.5.1 | 10-26-2026 | Second-computer sync merge fix, picker shows ports, one entry per domain regardless of case, end-to-end test suite |
 | 1.5.0 | 10-26-2026 | Settings sync, settings page with backups, Alt+Shift+K shortcut, Google IMA stand-in, no more blank ad boxes |
 | 1.4.0 | 10-26-2026 | Heavy ad removal; redesigned popup and DevTools panel |
 | 1.3.0 | 10-26-2026 | Pause on this site, blocked-today counter, pop-ups switch, whole-domain picks |
@@ -315,6 +316,23 @@ Why it's built the way it is, one decision per file, in
 ## Contributing
 
 Pull requests are welcome.
+
+### Running the tests
+
+You need Node and [pnpm](https://pnpm.io/).
+
+```bash
+pnpm install
+pnpm test
+```
+
+- 74 end-to-end tests load the extension into Chromium and run it
+  against local test pages. A run takes about a minute.
+- The setup is in `playwright.config.js`; the tests and their pages are
+  in `tests/`.
+- Leave `node_modules/`, `tests/`, `package.json` and the other test
+  files out of any Chrome Web Store zip. Chrome ignores them when you
+  load the folder unpacked, but they don't belong in a release.
 
 ## License
 
