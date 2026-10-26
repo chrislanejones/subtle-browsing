@@ -4,7 +4,12 @@ import {
   onBlockedUrlsChanged,
   removeBlockedUrl,
 } from "./blocklist.js";
-import { getSettings, updateSettings } from "./settings.js";
+import {
+  getPausedSites,
+  getSettings,
+  siteKey,
+  updateSettings,
+} from "./settings.js";
 
 const urlInput = document.getElementById("urlInput");
 const addButton = document.getElementById("addButton");
@@ -19,10 +24,11 @@ let showAllUrls = false;
 renderBlockedUrls(await getBlockedUrls());
 onBlockedUrlsChanged(renderBlockedUrls);
 
-// Video ad switches, saved as soon as they change
+// Blocking switches, saved as soon as they change
 const toggles = {
   videoAdRules: document.getElementById("videoAdRulesToggle"),
   autoplayGuard: document.getElementById("autoplayGuardToggle"),
+  annoyanceRules: document.getElementById("annoyanceRulesToggle"),
 };
 const settings = await getSettings();
 for (const [key, checkbox] of Object.entries(toggles)) {
@@ -30,6 +36,45 @@ for (const [key, checkbox] of Object.entries(toggles)) {
   checkbox.addEventListener("change", () =>
     updateSettings({ [key]: checkbox.checked })
   );
+}
+
+// "Pause on this site", for web pages only
+const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+if (/^https?:/.test(activeTab?.url ?? "")) {
+  const site = siteKey(new URL(activeTab.url).hostname);
+  const pauseSiteToggle = document.getElementById("pauseSiteToggle");
+  document.getElementById("siteName").textContent = site;
+  pauseSiteToggle.checked = (await getPausedSites()).includes(site);
+  document.getElementById("siteRow").hidden = false;
+
+  // background.js updates the rules, then reloads the tab
+  pauseSiteToggle.addEventListener("change", () => {
+    chrome.runtime.sendMessage({
+      action: "pauseSite",
+      site,
+      paused: pauseSiteToggle.checked,
+      tabId: activeTab.id,
+    });
+  });
+}
+
+// The daily count needs the debug event, which only unpacked installs have
+const blockedToday = document.getElementById("blockedToday");
+if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
+  const renderBlockedToday = (record) => {
+    const today = new Date().toLocaleDateString("en-CA");
+    const count = record?.date === today ? record.count : 0;
+    const number = document.createElement("b");
+    number.textContent = count.toLocaleString();
+    blockedToday.replaceChildren("Blocked today: ", number);
+  };
+  renderBlockedToday((await chrome.storage.local.get("blockedToday")).blockedToday);
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.blockedToday) {
+      renderBlockedToday(changes.blockedToday.newValue);
+    }
+  });
+  blockedToday.hidden = false;
 }
 
 async function addUrl() {

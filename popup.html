@@ -114,6 +114,31 @@
       .show-more-btn:hover {
         background-color: #e0e0e0;
       }
+      .stat {
+        margin: -4px 0 0;
+        color: #666;
+      }
+      .stat b {
+        color: #3a6d45;
+      }
+      .site-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 10px;
+        background-color: #f5f5f5;
+        border-radius: 4px;
+        cursor: pointer;
+        word-break: break-all;
+      }
+      .site-row[hidden] {
+        display: none;
+      }
+      .site-row input {
+        padding: 0;
+        margin: 0;
+        flex-shrink: 0;
+      }
       .toggles {
         display: flex;
         flex-direction: column;
@@ -153,15 +178,24 @@
   <body>
     <div class="container">
       <h1>URL Blocker</h1>
+      <p id="blockedToday" class="stat" hidden></p>
+      <label id="siteRow" class="site-row" hidden>
+        <input type="checkbox" id="pauseSiteToggle" />
+        <span>Pause on <b id="siteName"></b></span>
+      </label>
       <fieldset class="toggles">
-        <legend>Video ads</legend>
+        <legend>Block</legend>
         <label>
           <input type="checkbox" id="videoAdRulesToggle" />
-          Block video ad companies
+          Video ad companies
         </label>
         <label>
           <input type="checkbox" id="autoplayGuardToggle" />
           Pause muted autoplay videos
+        </label>
+        <label>
+          <input type="checkbox" id="annoyanceRulesToggle" />
+          Pop-ups, newsletters, notification prompts
         </label>
       </fieldset>
       <div>
