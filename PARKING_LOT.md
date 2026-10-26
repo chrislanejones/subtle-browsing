@@ -1,6 +1,5 @@
 # Parking Lot
 
-- **No LICENSE file:** the README says MIT, but there's no `LICENSE`, so GitHub shows "no license". Adding one needs the copyright holder's name as Chris wants it shown.
 - **GitHub repo description:** still "Yes, I am doing a Chrome Extention" with no topics. Suggested: `gh repo edit chrislanejones/subtle-browsing --description "Chrome extension that blocks video ads, muted autoplay, pop-ups and heavy ads, and leaves normal banner ads alone." --add-topic chrome-extension --add-topic manifest-v3 --add-topic ad-blocker`
 - **Sync caps the block list at about 300 entries:** `chrome.storage.sync` allows 8 KB per item. Past that, adding shows an error. Splitting the list across several keys would lift it.
 - **Paused in-page videos keep their box:** boxes collapse for unloaded ad frames and floating players, but a muted video paused on the page itself stays, so it can still be clicked to play.
