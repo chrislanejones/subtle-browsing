@@ -48,8 +48,8 @@ _(Coming soon)_
 
 Both are on when you install. Turn either one off in the popup under **Video ads**.
 
-- **Block video ad companies** uses the list in `rules/video-ads.json`. It blocks whole video-ad companies, plus only the video parts of bigger networks (Taboola's video player, Amazon's video ads, Google's video ad SDK), so their regular ads still show.
-- **Pause muted autoplay videos** stops any muted video that starts on its own. Video ads start muted because Chrome won't autoplay sound. Click play and the video runs.
+- **Block video ad companies** uses the list in `rules/video-ads.json`. It blocks whole video-ad companies, plus only the video parts of bigger networks (Taboola's video player, Amazon's video ads), so their regular ads still show.
+- **Pause muted autoplay videos** stops any muted video that starts on its own. Video ads start muted because Chrome won't autoplay sound. Click play and the video runs. If an ad player keeps restarting itself, its video gets unloaded after the third try, so it can't turn into a tug-of-war that slows the page down.
 
 ### Blocking URLs Manually
 
