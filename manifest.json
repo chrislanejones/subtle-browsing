@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "URL Blocker",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Block specific URLs from loading",
   "minimum_chrome_version": "121",
   "permissions": [
@@ -12,6 +12,15 @@
     "contextMenus"
   ],
   "host_permissions": ["<all_urls>"],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "video_ads",
+        "enabled": true,
+        "path": "rules/video-ads.json"
+      }
+    ]
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

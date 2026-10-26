@@ -4,6 +4,7 @@ import {
   onBlockedUrlsChanged,
   removeBlockedUrl,
 } from "./blocklist.js";
+import { getSettings, updateSettings } from "./settings.js";
 
 const urlInput = document.getElementById("urlInput");
 const addButton = document.getElementById("addButton");
@@ -17,6 +18,19 @@ let showAllUrls = false;
 
 renderBlockedUrls(await getBlockedUrls());
 onBlockedUrlsChanged(renderBlockedUrls);
+
+// Video ad switches, saved as soon as they change
+const toggles = {
+  videoAdRules: document.getElementById("videoAdRulesToggle"),
+  autoplayGuard: document.getElementById("autoplayGuardToggle"),
+};
+const settings = await getSettings();
+for (const [key, checkbox] of Object.entries(toggles)) {
+  checkbox.checked = settings[key];
+  checkbox.addEventListener("change", () =>
+    updateSettings({ [key]: checkbox.checked })
+  );
+}
 
 async function addUrl() {
   const url = urlInput.value.trim();

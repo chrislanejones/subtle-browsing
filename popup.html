@@ -114,6 +114,29 @@
       .show-more-btn:hover {
         background-color: #e0e0e0;
       }
+      .toggles {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 0;
+        padding: 8px 10px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+      }
+      .toggles legend {
+        font-weight: bold;
+        padding: 0 4px;
+      }
+      .toggles label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+      .toggles input {
+        padding: 0;
+        margin: 0;
+      }
       .empty {
         color: #666;
         font-style: italic;
@@ -130,6 +153,17 @@
   <body>
     <div class="container">
       <h1>URL Blocker</h1>
+      <fieldset class="toggles">
+        <legend>Video ads</legend>
+        <label>
+          <input type="checkbox" id="videoAdRulesToggle" />
+          Block video ad companies
+        </label>
+        <label>
+          <input type="checkbox" id="autoplayGuardToggle" />
+          Pause muted autoplay videos
+        </label>
+      </fieldset>
       <div>
         <input
           type="text"

@@ -3,6 +3,7 @@ import {
   getBlockedUrls,
   onBlockedUrlsChanged,
 } from "./blocklist.js";
+import { getSettings, onSettingsChanged } from "./settings.js";
 
 const RESOURCE_TYPES = [
   "main_frame",
@@ -22,6 +23,8 @@ const RESOURCE_TYPES = [
 const MAX_LOG_ENTRIES = 100;
 const LOG_FLUSH_DELAY_MS = 1000;
 const CONTEXT_MENU_ID = "block-ad-element";
+const VIDEO_AD_RULESET_ID = "video_ads";
+const AUTOPLAY_GUARD_ID = "autoplay-guard";
 
 chrome.runtime.onInstalled.addListener(async () => {
   await chrome.contextMenus.removeAll();
@@ -32,9 +35,12 @@ chrome.runtime.onInstalled.addListener(async () => {
   });
 
   queue(async () => updateBlockRules(await getBlockedUrls()));
+  // An update resets rulesets to their manifest defaults, so reapply
+  queue(async () => applySettings(await getSettings()));
 });
 
 onBlockedUrlsChanged((blockedUrls) => queue(() => updateBlockRules(blockedUrls)));
+onSettingsChanged((settings) => queue(() => applySettings(settings)));
 
 // Rule and log updates read, then write. Running them one at a time stops two
 // quick changes from overwriting each other.
@@ -68,6 +74,34 @@ async function updateBlockRules(blockedUrls) {
     removeRuleIds: oldRules.map((rule) => rule.id),
     addRules,
   });
+}
+
+async function applySettings({ videoAdRules, autoplayGuard }) {
+  await chrome.declarativeNetRequest.updateEnabledRulesets(
+    videoAdRules
+      ? { enableRulesetIds: [VIDEO_AD_RULESET_ID] }
+      : { disableRulesetIds: [VIDEO_AD_RULESET_ID] }
+  );
+
+  // Registered rather than listed in the manifest, so turning it off
+  // removes it from every page
+  const registered = await chrome.scripting.getRegisteredContentScripts({
+    ids: [AUTOPLAY_GUARD_ID],
+  });
+  if (autoplayGuard && registered.length === 0) {
+    await chrome.scripting.registerContentScripts([
+      {
+        id: AUTOPLAY_GUARD_ID,
+        js: ["autoplay-guard.js"],
+        matches: ["<all_urls>"],
+        allFrames: true, // Video ads often play inside iframes
+        matchOriginAsFallback: true, // Includes about:blank ad frames
+        runAt: "document_start",
+      },
+    ]);
+  } else if (!autoplayGuard && registered.length > 0) {
+    await chrome.scripting.unregisterContentScripts({ ids: [AUTOPLAY_GUARD_ID] });
+  }
 }
 
 // Only fires for unpacked installs with the declarativeNetRequestFeedback permission
