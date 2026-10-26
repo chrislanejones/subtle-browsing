@@ -13,5 +13,5 @@
 - **Picker only looks inside the clicked element:** clicking an ad image doesn't list the link wrapped around it. Consider walking up to the nearest `<a>` or ad container too.
 - **Install warning:** `host_permissions: <all_urls>` shows "read and change all your data" at install. Switching to `activeTab` would drop it for the popup and right-click paths, but the DevTools panel would lose the picker.
 - **Log needs an unpacked install:** `onRuleMatchedDebug` only fires for unpacked extensions, so the DevTools log stays empty for a Web Store install.
-- **Unbuilt panel sections:** Settings, Statistics and Advanced in the DevTools sidebar show "isn't built yet."
+- **Popup can pass Chrome's 600px cap:** with the site row and 5 blocked URLs it's about 720px tall, so the bottom of the list scrolls. Every switch and action fits above that.
 - **README cleanup:** the Acknowledgements section still says `Icon design by [YOUR NAME]`, and the License section points to a LICENSE file that doesn't exist.

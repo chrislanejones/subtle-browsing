@@ -69,14 +69,14 @@ The number on the toolbar icon is how many requests were blocked today, across e
 
 1. Click the URL Blocker icon in your Chrome toolbar
 2. Enter the URL you want to block (e.g., `example.com`, `ads.example.com/banner`). A bare domain like `example.com` also blocks its subdomains, but not look-alikes such as `notexample.com`.
-3. Click "Block URL"
+3. Click "Block"
 4. The URL will be added to your block list and immediately start blocking
 
 ### Using the Element Selector Tool
 
 1. Navigate to a page with ads or elements you want to block
 2. Click the URL Blocker icon in your toolbar
-3. Click "Select Element to Block"
+3. Click "Select element to block"
 4. Your cursor will change to a crosshair
 5. Hover over elements to highlight them
 6. Click on the ad or element you want to block. Ads inside iframes work too, and the click never reaches the ad. Press Esc to cancel.
@@ -98,7 +98,7 @@ The number on the toolbar icon is how many requests were blocked today, across e
    - View and manage blocked URLs
    - See a log of all blocked requests
    - Use the element selector tool
-   - Clear logs and manage settings
+   - Refresh or clear the log
 
 ## Limitations
 
