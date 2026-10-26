@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/icon128.png" alt="URL Blocker logo" width="96" />
+</p>
+
 # URL Blocker
 
 **Version 1.5.0** (10-26-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
