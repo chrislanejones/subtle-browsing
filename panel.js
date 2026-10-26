@@ -1,273 +1,186 @@
-document.addEventListener("DOMContentLoaded", function () {
-  const urlInput = document.getElementById("urlInput");
-  const addButton = document.getElementById("addButton");
-  const blockedUrlsList = document.getElementById("blockedUrlsList");
-  const logsContainer = document.getElementById("logsContainer");
-  const refreshButton = document.getElementById("refreshButton");
-  const clearLogsButton = document.getElementById("clearLogsButton");
-  const noLogsMessage = document.getElementById("noLogsMessage");
-  const selectorButton = document.getElementById("selectorButton");
-  const stopSelectorButton = document.getElementById("stopSelectorButton");
-  const openInspectorButton = document.getElementById("openInspectorButton");
+import {
+  addBlockedUrl,
+  getBlockedUrls,
+  onBlockedUrlsChanged,
+  removeBlockedUrl,
+} from "./blocklist.js";
 
-  // URL display configuration
-  const MAX_DISPLAYED_URLS = 10;
-  let showAllUrls = false;
+const urlInput = document.getElementById("urlInput");
+const addButton = document.getElementById("addButton");
+const blockedUrlsList = document.getElementById("blockedUrlsList");
+const logsContainer = document.getElementById("logsContainer");
+const refreshButton = document.getElementById("refreshButton");
+const clearLogsButton = document.getElementById("clearLogsButton");
+const noLogsMessage = document.getElementById("noLogsMessage");
+const selectorButton = document.getElementById("selectorButton");
+const stopSelectorButton = document.getElementById("stopSelectorButton");
+const openInspectorButton = document.getElementById("openInspectorButton");
+const statusMessage = document.getElementById("statusMessage");
 
-  // Load blocked URLs and logs when panel opens
-  loadBlockedUrls();
-  loadBlockedLogs();
+// URL display configuration
+const MAX_DISPLAYED_URLS = 10;
+let showAllUrls = false;
 
-  // Add URL to block list
-  addButton.addEventListener("click", function () {
-    const url = urlInput.value.trim();
-    if (url) {
-      addUrlToBlockList(url);
-      urlInput.value = "";
-    }
+renderBlockedUrls(await getBlockedUrls());
+onBlockedUrlsChanged(renderBlockedUrls);
+
+// Logs redraw when background.js saves new entries, instead of polling
+loadBlockedLogs();
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.blockedUrlLogs) {
+    renderBlockedLogs(changes.blockedUrlLogs.newValue || []);
+  }
+});
+
+async function addUrl() {
+  const url = urlInput.value.trim();
+  if (!url) return;
+
+  const added = await addBlockedUrl(url);
+  statusMessage.textContent = added ? "" : "This URL is already blocked.";
+  if (added) urlInput.value = "";
+}
+
+addButton.addEventListener("click", addUrl);
+urlInput.addEventListener("keyup", (event) => {
+  if (event.key === "Enter") addUrl();
+});
+
+refreshButton.addEventListener("click", loadBlockedLogs);
+clearLogsButton.addEventListener("click", () =>
+  chrome.storage.local.set({ blockedUrlLogs: [] })
+);
+
+function setSelectorActive(isActive) {
+  selectorButton.style.display = isActive ? "none" : "inline-flex";
+  stopSelectorButton.style.display = isActive ? "inline-flex" : "none";
+  selectorButton.classList.toggle("active", isActive);
+}
+
+// background.js loads the picker into the inspected tab and forwards these
+async function sendSelectorMessage(action) {
+  return chrome.runtime.sendMessage({
+    action,
+    tabId: chrome.devtools.inspectedWindow.tabId,
   });
+}
 
-  // Allow Enter key to add URL
-  urlInput.addEventListener("keyup", function (event) {
-    if (event.key === "Enter") {
-      addButton.click();
-    }
-  });
+selectorButton.addEventListener("click", async () => {
+  const response = await sendSelectorMessage("startSelector");
+  if (response?.status === "Selector activated") {
+    statusMessage.textContent = "";
+    setSelectorActive(true);
+  } else {
+    statusMessage.textContent = "The selector can't run on this page.";
+  }
+});
 
-  // Refresh logs button
-  refreshButton.addEventListener("click", function () {
-    loadBlockedLogs();
-  });
+stopSelectorButton.addEventListener("click", async () => {
+  await sendSelectorMessage("stopSelector");
+  setSelectorActive(false);
+});
 
-  // Clear logs button
-  clearLogsButton.addEventListener("click", function () {
-    clearBlockedLogs();
-  });
+// The picker reports back when it finishes, after a pick or Esc
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.action === "selectorStopped") setSelectorActive(false);
+});
 
-  // Element selector button
-  selectorButton.addEventListener("click", function () {
-    // Send message to background script to start the selector
-    chrome.runtime.sendMessage(
-      { action: "startSelector" },
-      function (response) {
-        if (response && response.status === "Selector activated") {
-          selectorButton.style.display = "none";
-          stopSelectorButton.style.display = "inline-flex";
-          selectorButton.classList.add("active");
-        }
-      }
-    );
-  });
+// Chrome DevTools has no API to switch to another panel, so show instructions
+openInspectorButton.addEventListener("click", () => {
+  statusMessage.textContent =
+    "Click 'Select Element to Block', then click the ad on the page.";
+});
 
-  // Stop element selector button
-  stopSelectorButton.addEventListener("click", function () {
-    // Send message to background script to stop the selector
-    chrome.runtime.sendMessage({ action: "stopSelector" }, function (response) {
-      if (response && response.status === "Selector deactivated") {
-        selectorButton.style.display = "inline-flex";
-        stopSelectorButton.style.display = "none";
-        selectorButton.classList.remove("active");
-      }
-    });
-  });
-
-  // Open inspector button
-  openInspectorButton.addEventListener("click", function () {
-    // Chrome DevTools has no API to programmatically switch to another panel,
-    // so we'll show instructions to the user
-    alert(
-      "To use the element selector, click on the 'Select Element to Block' button, then click on the ad element you want to block on the page."
-    );
-  });
-
-  // Function to add URL to block list
-  function addUrlToBlockList(url) {
-    // Normalize URL format
-    const normalizedUrl = normalizeUrl(url);
-
-    // Get current blocked URLs
-    chrome.storage.local.get(["blockedUrls"], function (result) {
-      const blockedUrls = result.blockedUrls || [];
-
-      // Check if URL is already in the list
-      if (blockedUrls.includes(normalizedUrl)) {
-        alert("This URL is already blocked.");
-        return;
-      }
-
-      // Add URL to the list
-      blockedUrls.push(normalizedUrl);
-
-      // Save updated list - this will trigger the storage listener in background.js
-      // which will update the declarative rules
-      chrome.storage.local.set({ blockedUrls: blockedUrls }, function () {
-        // Update UI
-        loadBlockedUrls();
-      });
-    });
+function renderBlockedUrls(blockedUrls) {
+  if (blockedUrls.length === 0) {
+    const empty = document.createElement("p");
+    empty.textContent = "No URLs blocked yet.";
+    blockedUrlsList.replaceChildren(empty);
+    return;
   }
 
-  // Function to remove URL from block list
-  function removeUrlFromBlockList(url) {
-    chrome.storage.local.get(["blockedUrls"], function (result) {
-      const blockedUrls = result.blockedUrls || [];
-      const updatedList = blockedUrls.filter((item) => item !== url);
+  const displayedUrls = showAllUrls
+    ? blockedUrls
+    : blockedUrls.slice(0, MAX_DISPLAYED_URLS);
 
-      chrome.storage.local.set({ blockedUrls: updatedList }, function () {
-        // Update UI
-        loadBlockedUrls();
-      });
+  const tags = displayedUrls.map((url) => {
+    const urlTag = document.createElement("div");
+    urlTag.className = "url-tag";
+
+    const urlText = document.createElement("span");
+    urlText.textContent = url;
+
+    const removeButton = document.createElement("button");
+    removeButton.textContent = "×";
+    removeButton.title = "Remove";
+    removeButton.addEventListener("click", () => removeBlockedUrl(url));
+
+    urlTag.append(urlText, removeButton);
+    return urlTag;
+  });
+
+  if (blockedUrls.length > MAX_DISPLAYED_URLS) {
+    const showMoreButton = document.createElement("button");
+    showMoreButton.className = "show-more-btn";
+    showMoreButton.textContent = showAllUrls
+      ? "Show fewer URLs"
+      : `Show all URLs (${blockedUrls.length})`;
+    showMoreButton.addEventListener("click", () => {
+      showAllUrls = !showAllUrls;
+      renderBlockedUrls(blockedUrls);
     });
+    tags.push(showMoreButton);
   }
 
-  // Function to load and display blocked URLs
-  function loadBlockedUrls() {
-    chrome.storage.local.get(["blockedUrls"], function (result) {
-      const blockedUrls = result.blockedUrls || [];
+  blockedUrlsList.replaceChildren(...tags);
+}
 
-      // Clear current list
-      blockedUrlsList.innerHTML = "";
+async function loadBlockedLogs() {
+  const { blockedUrlLogs = [] } =
+    await chrome.storage.local.get("blockedUrlLogs");
+  renderBlockedLogs(blockedUrlLogs);
+}
 
-      if (blockedUrls.length === 0) {
-        blockedUrlsList.innerHTML = "<p>No URLs blocked yet.</p>";
-        return;
-      }
-
-      // Determine how many URLs to show
-      const displayedUrls = showAllUrls
-        ? blockedUrls
-        : blockedUrls.slice(0, MAX_DISPLAYED_URLS);
-
-      // Add each URL to the list
-      displayedUrls.forEach(function (url) {
-        const urlTag = document.createElement("div");
-        urlTag.className = "url-tag";
-
-        const urlText = document.createElement("span");
-        urlText.textContent = url;
-
-        const removeButton = document.createElement("button");
-        removeButton.innerHTML = "&times;";
-        removeButton.title = "Remove";
-        removeButton.addEventListener("click", function () {
-          removeUrlFromBlockList(url);
-        });
-
-        urlTag.appendChild(urlText);
-        urlTag.appendChild(removeButton);
-        blockedUrlsList.appendChild(urlTag);
-      });
-
-      // Add "Show more" / "Show less" button if there are more than MAX_DISPLAYED_URLS
-      if (blockedUrls.length > MAX_DISPLAYED_URLS) {
-        const showMoreButton = document.createElement("button");
-        showMoreButton.className = "show-more-btn";
-        showMoreButton.textContent = showAllUrls
-          ? "Show fewer URLs"
-          : `Show all URLs (${blockedUrls.length})`;
-        showMoreButton.addEventListener("click", function () {
-          showAllUrls = !showAllUrls;
-          loadBlockedUrls();
-        });
-        blockedUrlsList.appendChild(showMoreButton);
-      }
-    });
+function renderBlockedLogs(logs) {
+  if (logs.length === 0) {
+    noLogsMessage.style.display = "block";
+    logsContainer.replaceChildren(noLogsMessage);
+    return;
   }
 
-  // Function to load and display blocked URL logs
-  function loadBlockedLogs() {
-    // Request logs from background script
-    chrome.runtime.sendMessage(
-      { action: "getBlockedUrlLogs" },
-      function (response) {
-        const logs = response.logs || [];
+  noLogsMessage.style.display = "none";
 
-        // Clear current logs
-        logsContainer.innerHTML = "";
+  // Most recent first
+  const entries = logs.toReversed().map((log) => {
+    const logEntry = document.createElement("div");
+    logEntry.className = "log-entry";
 
-        if (logs.length === 0) {
-          noLogsMessage.style.display = "block";
-          logsContainer.appendChild(noLogsMessage);
-          return;
-        }
-
-        noLogsMessage.style.display = "none";
-
-        // Add each log entry to the list (most recent first)
-        logs
-          .slice()
-          .reverse()
-          .forEach(function (log) {
-            const logEntry = document.createElement("div");
-            logEntry.className = "log-entry";
-
-            const logTime = document.createElement("span");
-            logTime.className = "log-time";
-
-            // Format timestamp
-            const timestamp = new Date(log.timestamp);
-            logTime.textContent = formatTimestamp(timestamp);
-
-            const logUrl = document.createElement("span");
-            logUrl.className = "log-url";
-            logUrl.textContent = log.url;
-
-            logEntry.appendChild(logTime);
-            logEntry.appendChild(logUrl);
-            logsContainer.appendChild(logEntry);
-          });
-      }
-    );
-  }
-
-  // Function to clear blocked URL logs
-  function clearBlockedLogs() {
-    chrome.storage.local.set({ blockedUrlLogs: [] }, function () {
-      loadBlockedLogs();
-    });
-  }
-
-  // Helper function to format timestamp
-  function formatTimestamp(date) {
-    return date.toLocaleTimeString([], {
+    const logTime = document.createElement("span");
+    logTime.className = "log-time";
+    logTime.textContent = new Date(log.timestamp).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
     });
-  }
 
-  // Helper function to normalize URL format
-  function normalizeUrl(url) {
-    // Remove protocol if present
-    let normalizedUrl = url.replace(/^(https?:\/\/)?(www\.)?/, "");
+    const logUrl = document.createElement("span");
+    logUrl.className = "log-url";
+    logUrl.textContent = log.url;
 
-    // Remove trailing slash if present
-    normalizedUrl = normalizedUrl.replace(/\/$/, "");
-
-    return normalizedUrl;
-  }
-
-  // Auto-refresh logs every 5 seconds
-  setInterval(loadBlockedLogs, 5000);
-
-  // Handle sidebar navigation
-  const sidebarItems = document.querySelectorAll(".sidebar-item");
-
-  sidebarItems.forEach((item) => {
-    item.addEventListener("click", function () {
-      // Remove active class from all items
-      sidebarItems.forEach((i) => i.classList.remove("active"));
-
-      // Add active class to clicked item
-      this.classList.add("active");
-
-      // For now, only URL Blocking is implemented
-      // In the future, we can use this to show different sections
-      const section = this.textContent.trim();
-
-      if (section !== "URL Blocking") {
-        alert("This section is not yet implemented.");
-      }
-    });
+    logEntry.append(logTime, logUrl);
+    return logEntry;
   });
-});
+
+  logsContainer.replaceChildren(...entries);
+}
+
+// Only "URL Blocking" exists so far
+const sidebarItems = document.querySelectorAll(".sidebar-item");
+for (const item of sidebarItems) {
+  item.addEventListener("click", () => {
+    sidebarItems.forEach((other) => other.classList.toggle("active", other === item));
+    const section = item.textContent.trim();
+    statusMessage.textContent =
+      section === "URL Blocking" ? "" : `${section} isn't built yet.`;
+  });
+}

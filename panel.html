@@ -26,6 +26,14 @@
         color: var(--text-color);
       }
 
+      .status {
+        margin: 0 0 12px;
+        color: #f5c26b;
+      }
+      .status:empty {
+        display: none;
+      }
+
       .sidebar {
         width: var(--sidebar-width);
         background-color: var(--secondary-bg);
@@ -299,6 +307,7 @@
 
     <div class="main-content">
       <h1>URL Blocker</h1>
+      <p id="statusMessage" class="status" role="status"></p>
 
       <div class="container">
         <div class="section url-manager">
@@ -354,6 +363,6 @@
       </div>
     </div>
 
-    <script src="panel.js"></script>
+    <script type="module" src="panel.js"></script>
   </body>
 </html>

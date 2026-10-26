@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "URL Blocker",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Block specific URLs from loading",
+  "minimum_chrome_version": "121",
   "permissions": [
     "storage",
     "declarativeNetRequest",
-    "tabs",
+    "declarativeNetRequestFeedback",
     "scripting",
     "contextMenus"
   ],
@@ -20,16 +21,10 @@
     }
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "devtools_page": "devtools.html",
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
-  ],
   "icons": {
     "16": "images/icon16.png",
     "48": "images/icon48.png",

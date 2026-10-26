@@ -1,340 +1,319 @@
-// URL Selector Tool for the URL Blocker extension
-// This script injects an element selector tool to the active page
+// Element picker for the URL Blocker extension.
+// background.js injects this only when the picker is needed. It can be
+// injected more than once into the same page, so the guard keeps one copy.
+(() => {
+  if (globalThis.urlBlockerPickerLoaded) return;
+  globalThis.urlBlockerPickerLoaded = true;
 
-// Create a selector tool object with its state and methods
-const SelectorTool = {
-  isActive: false,
-  selectedElement: null,
-  highlightElement: null,
+  const STYLES = `
+    :host { all: initial; }
+    .shield {
+      position: fixed;
+      inset: 0;
+      cursor: crosshair;
+      z-index: 2147483646;
+    }
+    .highlight {
+      position: fixed;
+      box-sizing: border-box;
+      border: 2px solid #6dd58c;
+      background: rgba(109, 213, 140, 0.2);
+      pointer-events: none;
+      z-index: 2147483647;
+      display: none;
+    }
+    .toast, dialog {
+      background: #202124;
+      color: #6dd58c;
+      font: 14px/1.4 system-ui, sans-serif;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      z-index: 2147483647;
+    }
+    dialog {
+      padding: 20px;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      min-width: min(400px, 90vw);
+      max-width: 80vw;
+    }
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
+    h2 { margin: 0 0 15px; font-size: 18px; }
+    ul {
+      list-style: none;
+      max-height: 300px;
+      overflow-y: auto;
+      margin: 0 0 15px;
+      padding: 10px;
+      border: 1px solid #3c4043;
+      border-radius: 4px;
+    }
+    li + li { border-top: 1px solid #3c4043; }
+    .url {
+      display: block;
+      width: 100%;
+      padding: 8px;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      word-break: break-all;
+      cursor: pointer;
+    }
+    .url:hover, .url:focus-visible { background: rgba(109, 213, 140, 0.1); }
+    .actions { display: flex; justify-content: flex-end; }
+    .cancel {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      background: #3c4043;
+      color: white;
+      font: inherit;
+      cursor: pointer;
+    }
+  `;
 
-  // Initialize the selector tool
-  init: function () {
-    // Create highlight overlay element
-    this.highlightElement = document.createElement("div");
-    this.highlightElement.style.position = "absolute";
-    this.highlightElement.style.border = "2px solid #6dd58c";
-    this.highlightElement.style.backgroundColor = "rgba(109, 213, 140, 0.2)";
-    this.highlightElement.style.pointerEvents = "none";
-    this.highlightElement.style.zIndex = "9999999";
-    this.highlightElement.style.display = "none";
-    document.body.appendChild(this.highlightElement);
+  // Everything the picker draws lives in a closed shadow root, so the page's
+  // CSS can't restyle it. The host is only in the page while something shows.
+  const host = document.createElement("url-blocker-ui");
+  const root = host.attachShadow({ mode: "closed" });
+  const style = document.createElement("style");
+  style.textContent = STYLES;
+  root.append(style);
 
-    // Listen for messages from the extension
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      if (request.action === "startSelector") {
-        this.activate();
-        sendResponse({ status: "Selector activated" });
-      } else if (request.action === "stopSelector") {
-        this.deactivate();
-        sendResponse({ status: "Selector deactivated" });
-      }
-      return true;
+  // The shield sits over the page while picking, so clicks never reach the
+  // ad and iframes can be picked too
+  const shield = createElement("div", "shield");
+  const highlight = createElement("div", "highlight");
+  let hoveredElement = null;
+  let isActive = false;
+
+  function createElement(tag, className, text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text) element.textContent = text;
+    return element;
+  }
+
+  function show(...elements) {
+    root.append(...elements);
+    if (!host.isConnected) document.documentElement.append(host);
+  }
+
+  function hide(...elements) {
+    elements.forEach((element) => element.remove());
+    // Only the <style> is left: take the host out of the page
+    if (root.childElementCount === 1) host.remove();
+  }
+
+  function activate() {
+    if (isActive) return;
+    isActive = true;
+
+    show(shield, highlight);
+    shield.addEventListener("mousemove", handleMouseMove);
+    shield.addEventListener("click", handleClick);
+    window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("scroll", updateHighlight, {
+      capture: true,
+      passive: true,
     });
-  },
 
-  // Activate the selector tool
-  activate: function () {
-    if (this.isActive) return;
-
-    this.isActive = true;
-
-    // Add event listeners
-    document.addEventListener("mousemove", this.handleMouseMove);
-    document.addEventListener("click", this.handleClick);
-
-    // Change cursor style
-    document.body.style.cursor = "crosshair";
-
-    // Display notification
-    this.showNotification(
-      "Element selector activated. Click on an element to block its source URL."
+    showNotification(
+      "Element selector activated. Click on an element to block its source URL. Press Esc to cancel."
     );
-  },
+  }
 
-  // Deactivate the selector tool
-  deactivate: function () {
-    if (!this.isActive) return;
+  function deactivate() {
+    if (!isActive) return;
+    isActive = false;
 
-    this.isActive = false;
+    shield.removeEventListener("mousemove", handleMouseMove);
+    shield.removeEventListener("click", handleClick);
+    window.removeEventListener("keydown", handleKeyDown, true);
+    window.removeEventListener("scroll", updateHighlight, true);
+    highlight.style.display = "none";
+    hoveredElement = null;
+    hide(shield, highlight);
 
-    // Remove event listeners
-    document.removeEventListener("mousemove", this.handleMouseMove);
-    document.removeEventListener("click", this.handleClick);
+    // Lets an open DevTools panel reset its buttons
+    chrome.runtime.sendMessage({ action: "selectorStopped" }).catch(() => {});
+  }
 
-    // Reset cursor
-    document.body.style.cursor = "";
+  // The topmost page element under the pointer, looking through the shield
+  function elementAt(x, y) {
+    return (
+      document
+        .elementsFromPoint(x, y)
+        .find(
+          (element) =>
+            element !== host &&
+            element !== document.documentElement &&
+            element !== document.body
+        ) ?? null
+    );
+  }
 
-    // Hide highlight
-    this.highlightElement.style.display = "none";
+  function handleMouseMove(e) {
+    hoveredElement = elementAt(e.clientX, e.clientY);
+    updateHighlight();
+  }
 
-    // Clear selected element
-    this.selectedElement = null;
-  },
+  function updateHighlight() {
+    if (!hoveredElement) {
+      highlight.style.display = "none";
+      return;
+    }
+    const { left, top, width, height } = hoveredElement.getBoundingClientRect();
+    Object.assign(highlight.style, {
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${width}px`,
+      height: `${height}px`,
+      display: "block",
+    });
+  }
 
-  // Handle mouse movement
-  handleMouseMove: function (e) {
-    if (!SelectorTool.isActive) return;
-
-    // Prevent events from firing on other elements
-    e.stopPropagation();
-
-    // Get element under cursor, except our highlight element
-    const element = document.elementFromPoint(e.clientX, e.clientY);
-    if (!element || element === SelectorTool.highlightElement) return;
-
-    // Update selected element
-    SelectorTool.selectedElement = element;
-
-    // Update highlight position
-    const rect = element.getBoundingClientRect();
-    SelectorTool.highlightElement.style.left = `${
-      window.scrollX + rect.left
-    }px`;
-    SelectorTool.highlightElement.style.top = `${window.scrollY + rect.top}px`;
-    SelectorTool.highlightElement.style.width = `${rect.width}px`;
-    SelectorTool.highlightElement.style.height = `${rect.height}px`;
-    SelectorTool.highlightElement.style.display = "block";
-  },
-
-  // Handle click on element
-  handleClick: function (e) {
-    if (!SelectorTool.isActive) return;
-
-    // Prevent the default action and event propagation
+  function handleClick(e) {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!SelectorTool.selectedElement) return;
+    const element = elementAt(e.clientX, e.clientY);
+    deactivate();
+    if (!element) return;
 
-    // Find URLs in the element
-    const urls = SelectorTool.extractUrls(SelectorTool.selectedElement);
-
+    const urls = extractUrls(element);
     if (urls.length > 0) {
-      // Send found URLs to the background script
-      SelectorTool.showUrlSelectionDialog(urls);
+      showUrlSelectionDialog(urls);
     } else {
-      SelectorTool.showNotification("No URLs found in this element.");
+      showNotification("No URLs found in this element.");
     }
+  }
 
-    // Deactivate after selection
-    SelectorTool.deactivate();
-  },
+  function handleKeyDown(e) {
+    if (e.key !== "Escape") return;
+    e.preventDefault();
+    e.stopPropagation();
+    deactivate();
+  }
 
-  // Extract URLs from an element and its children
-  extractUrls: function (element) {
+  // Collect http(s) URLs from an element and everything inside it
+  function extractUrls(element) {
     const urls = new Set();
-
-    // Check for src attribute
-    if (element.src) {
-      urls.add(element.src);
-    }
-
-    // Check for href attribute
-    if (element.href) {
-      urls.add(element.href);
-    }
-
-    // Check for background image
-    const style = window.getComputedStyle(element);
-    const backgroundImage = style.backgroundImage;
-    if (backgroundImage && backgroundImage !== "none") {
-      const urlMatch = backgroundImage.match(/url\(['"]?(.*?)['"]?\)/);
-      if (urlMatch && urlMatch[1]) {
-        urls.add(urlMatch[1]);
-      }
-    }
-
-    // Check data attributes that might contain URLs
-    Array.from(element.attributes).forEach((attr) => {
-      if (attr.name.startsWith("data-") && attr.value.match(/^https?:\/\//)) {
-        urls.add(attr.value);
-      }
-    });
-
-    // Check for iframe src
-    if (element.tagName === "IFRAME" && element.src) {
-      urls.add(element.src);
-    }
-
-    // Get URLs from child elements
-    Array.from(element.children).forEach((child) => {
-      const childUrls = this.extractUrls(child);
-      childUrls.forEach((url) => urls.add(url));
-    });
-
-    return Array.from(urls);
-  },
-
-  // Show dialog with found URLs
-  showUrlSelectionDialog: function (urls) {
-    if (urls.length === 0) return;
-
-    // Create dialog container
-    const dialog = document.createElement("div");
-    dialog.style.position = "fixed";
-    dialog.style.top = "50%";
-    dialog.style.left = "50%";
-    dialog.style.transform = "translate(-50%, -50%)";
-    dialog.style.backgroundColor = "#202124";
-    dialog.style.color = "#6dd58c";
-    dialog.style.padding = "20px";
-    dialog.style.borderRadius = "8px";
-    dialog.style.zIndex = "10000000";
-    dialog.style.boxShadow = "0 0 20px rgba(0,0,0,0.5)";
-    dialog.style.minWidth = "400px";
-    dialog.style.maxWidth = "80%";
-
-    // Add heading
-    const heading = document.createElement("h2");
-    heading.textContent = "Select URL to block";
-    heading.style.marginTop = "0";
-    heading.style.marginBottom = "15px";
-    dialog.appendChild(heading);
-
-    // Add description
-    const description = document.createElement("p");
-    description.textContent = "Choose which URL you want to block:";
-    dialog.appendChild(description);
-
-    // Create URL list
-    const urlList = document.createElement("div");
-    urlList.style.maxHeight = "300px";
-    urlList.style.overflowY = "auto";
-    urlList.style.border = "1px solid #3c4043";
-    urlList.style.padding = "10px";
-    urlList.style.marginBottom = "15px";
-    urlList.style.borderRadius = "4px";
-
-    urls.forEach((url, index) => {
-      const urlItem = document.createElement("div");
-      urlItem.style.padding = "8px";
-      urlItem.style.cursor = "pointer";
-      urlItem.style.borderBottom =
-        index < urls.length - 1 ? "1px solid #3c4043" : "none";
-      urlItem.style.wordBreak = "break-all";
-
-      // Highlight on hover
-      urlItem.addEventListener("mouseover", () => {
-        urlItem.style.backgroundColor = "rgba(109, 213, 140, 0.1)";
-      });
-      urlItem.addEventListener("mouseout", () => {
-        urlItem.style.backgroundColor = "transparent";
-      });
-
-      // Format URL display: domain highlighted
+    const addUrl = (value) => {
+      // SVG elements expose href as an object, not a string
+      if (typeof value !== "string" || !value) return;
       try {
-        const urlObj = new URL(url);
-        const domainPart = document.createElement("span");
-        domainPart.textContent = urlObj.hostname;
-        domainPart.style.fontWeight = "bold";
+        const url = new URL(value, location.href);
+        if (url.protocol === "http:" || url.protocol === "https:") {
+          urls.add(url.href);
+        }
+      } catch {
+        // Not a URL
+      }
+    };
 
-        const beforeDomain = document.createElement("span");
-        beforeDomain.textContent = `${urlObj.protocol}//`;
+    for (const node of [element, ...element.querySelectorAll("*")]) {
+      addUrl(node.currentSrc || node.src); // img, video, iframe, script
+      addUrl(node.href);
+      addUrl(node.poster);
+      addUrl(node.getAttribute("data")); // <object data="...">
 
-        const afterDomain = document.createElement("span");
-        afterDomain.textContent = urlObj.pathname + urlObj.search + urlObj.hash;
-
-        urlItem.appendChild(beforeDomain);
-        urlItem.appendChild(domainPart);
-        urlItem.appendChild(afterDomain);
-      } catch (e) {
-        // If URL parsing fails, just show the whole URL
-        urlItem.textContent = url;
+      for (const attr of node.attributes) {
+        if (attr.name.startsWith("data-") && /^https?:\/\//.test(attr.value)) {
+          addUrl(attr.value);
+        }
       }
 
-      // Handle click to block this URL
-      urlItem.addEventListener("click", () => {
-        // Send message to background script to block this URL
-        chrome.runtime.sendMessage(
-          {
-            action: "blockUrl",
-            url: url,
-          },
-          (response) => {
-            if (response && response.success) {
-              SelectorTool.showNotification(`URL blocked: ${url}`);
-            } else {
-              SelectorTool.showNotification("Failed to block URL");
-            }
-          }
-        );
+      const { backgroundImage } = getComputedStyle(node);
+      for (const [, url] of backgroundImage.matchAll(/url\(["']?(.*?)["']?\)/g)) {
+        addUrl(url);
+      }
+    }
 
-        // Remove dialog
-        document.body.removeChild(dialog);
-        document.body.removeChild(overlay);
+    return [...urls];
+  }
+
+  function showUrlSelectionDialog(urls) {
+    const dialog = createElement("dialog");
+    const list = createElement("ul");
+
+    for (const url of urls) {
+      const button = createElement("button", "url");
+      button.type = "button";
+
+      // Show the domain in bold
+      const { protocol, hostname, pathname, search, hash } = new URL(url);
+      button.append(
+        `${protocol}//`,
+        createElement("b", "", hostname),
+        pathname + search + hash
+      );
+
+      button.addEventListener("click", () => {
+        dialog.close();
+        blockUrl(url);
       });
 
-      urlList.appendChild(urlItem);
-    });
+      const item = createElement("li");
+      item.append(button);
+      list.append(item);
+    }
 
-    dialog.appendChild(urlList);
+    const cancelButton = createElement("button", "cancel", "Cancel");
+    cancelButton.type = "button";
+    cancelButton.addEventListener("click", () => dialog.close());
 
-    // Add buttons
-    const buttonContainer = document.createElement("div");
-    buttonContainer.style.display = "flex";
-    buttonContainer.style.justifyContent = "flex-end";
-    buttonContainer.style.gap = "10px";
+    const actions = createElement("div", "actions");
+    actions.append(cancelButton);
 
-    const cancelButton = document.createElement("button");
-    cancelButton.textContent = "Cancel";
-    cancelButton.style.padding = "8px 12px";
-    cancelButton.style.backgroundColor = "#3c4043";
-    cancelButton.style.color = "white";
-    cancelButton.style.border = "none";
-    cancelButton.style.borderRadius = "4px";
-    cancelButton.style.cursor = "pointer";
-    cancelButton.addEventListener("click", () => {
-      document.body.removeChild(dialog);
-      document.body.removeChild(overlay);
-    });
+    dialog.append(
+      createElement("h2", "", "Select URL to block"),
+      createElement("p", "", "Choose which URL you want to block:"),
+      list,
+      actions
+    );
+    // Esc, Cancel and picking a URL all end up here
+    dialog.addEventListener("close", () => hide(dialog));
 
-    buttonContainer.appendChild(cancelButton);
-    dialog.appendChild(buttonContainer);
+    show(dialog);
+    dialog.showModal();
+  }
 
-    // Create background overlay
-    const overlay = document.createElement("div");
-    overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.right = "0";
-    overlay.style.bottom = "0";
-    overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
-    overlay.style.zIndex = "9999999";
+  async function blockUrl(url) {
+    try {
+      const { added } = await chrome.runtime.sendMessage({
+        action: "blockUrl",
+        url,
+      });
+      showNotification(added ? `URL blocked: ${url}` : "That URL is already blocked.");
+    } catch {
+      showNotification("Failed to block URL");
+    }
+  }
 
-    // Add to document
-    document.body.appendChild(overlay);
-    document.body.appendChild(dialog);
-  },
+  function showNotification(message) {
+    const notification = createElement("div", "toast", message);
+    show(notification);
+    setTimeout(() => hide(notification), 3000);
+  }
 
-  // Show notification
-  showNotification: function (message) {
-    const notification = document.createElement("div");
-    notification.textContent = message;
-    notification.style.position = "fixed";
-    notification.style.bottom = "20px";
-    notification.style.left = "50%";
-    notification.style.transform = "translateX(-50%)";
-    notification.style.backgroundColor = "#202124";
-    notification.style.color = "#6dd58c";
-    notification.style.padding = "10px 20px";
-    notification.style.borderRadius = "4px";
-    notification.style.zIndex = "10000000";
-    notification.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
-
-    document.body.appendChild(notification);
-
-    // Remove after 3 seconds
-    setTimeout(() => {
-      if (document.body.contains(notification)) {
-        document.body.removeChild(notification);
-      }
-    }, 3000);
-  },
-};
-
-// Initialize the selector tool when the content script loads
-SelectorTool.init();
-
-// Bind the event handlers to the SelectorTool object
-SelectorTool.handleMouseMove = SelectorTool.handleMouseMove.bind(SelectorTool);
-SelectorTool.handleClick = SelectorTool.handleClick.bind(SelectorTool);
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "startSelector") {
+      activate();
+      sendResponse({ status: "Selector activated" });
+    } else if (request.action === "stopSelector") {
+      deactivate();
+      sendResponse({ status: "Selector deactivated" });
+    }
+  });
+})();

@@ -114,6 +114,17 @@
       .show-more-btn:hover {
         background-color: #e0e0e0;
       }
+      .empty {
+        color: #666;
+        font-style: italic;
+      }
+      .status {
+        margin: 0;
+        color: #d32f2f;
+      }
+      .status:empty {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -132,14 +143,8 @@
           <span class="selector-icon"></span>
           Select Element to Block
         </button>
-        <button
-          id="stopSelectorButton"
-          class="selector-btn"
-          style="display: none"
-        >
-          Cancel Selection
-        </button>
       </div>
+      <p id="statusMessage" class="status" role="status"></p>
       <div>
         <h2 style="font-size: 16px">Blocked URLs:</h2>
         <div id="urlList" class="url-list">
@@ -147,6 +152,6 @@
         </div>
       </div>
     </div>
-    <script src="popup.js"></script>
+    <script type="module" src="popup.js"></script>
   </body>
 </html>
