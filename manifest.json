@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "URL Blocker",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Block specific URLs from loading",
   "minimum_chrome_version": "121",
   "permissions": [
@@ -9,6 +9,7 @@
     "declarativeNetRequest",
     "declarativeNetRequestFeedback",
     "scripting",
+    "webRequest",
     "contextMenus"
   ],
   "host_permissions": [

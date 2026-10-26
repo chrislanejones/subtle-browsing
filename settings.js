@@ -6,6 +6,7 @@ const DEFAULTS = {
   videoAdRules: true, // rules/video-ads.json
   autoplayGuard: true, // autoplay-guard.js
   annoyanceRules: false, // rules/annoyances.json
+  heavyAds: true, // heavy-ad-guard.js and the download count in background.js
 };
 
 export async function getSettings() {

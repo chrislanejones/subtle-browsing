@@ -32,6 +32,9 @@ const CONTEXT_MENU_ID = "block-ad-element";
 const VIDEO_AD_RULESET_ID = "video_ads";
 const ANNOYANCES_RULESET_ID = "annoyances";
 const AUTOPLAY_GUARD_ID = "autoplay-guard";
+const HEAVY_AD_GUARD_ID = "heavy-ad-guard";
+// Chrome's own heavy ad rule unloads ad frames past this much download
+const HEAVY_AD_BYTES = 4 * 1024 * 1024;
 // Block rules use IDs 1..N, so the paused-sites rule sits far above them
 const PAUSED_SITES_RULE_ID = 1_000_000;
 const BADGE_COLOR = "#3a6d45";
@@ -57,7 +60,10 @@ chrome.runtime.onStartup.addListener(setUpBadge);
 
 onBlockedUrlsChanged(() => queue(syncDynamicRules));
 onPausedSitesChanged(() => queue(syncDynamicRules));
-onSettingsChanged((settings) => queue(() => applySettings(settings)));
+onSettingsChanged((settings) => {
+  heavyAdsOn = settings.heavyAds;
+  queue(() => applySettings(settings));
+});
 
 // Rule and log updates read, then write. Running them one at a time stops two
 // quick changes from overwriting each other.
@@ -113,7 +119,7 @@ async function syncDynamicRules() {
   });
 }
 
-async function applySettings({ videoAdRules, autoplayGuard, annoyanceRules }) {
+async function applySettings({ videoAdRules, autoplayGuard, annoyanceRules, heavyAds }) {
   const rulesets = {
     [VIDEO_AD_RULESET_ID]: videoAdRules,
     [ANNOYANCES_RULESET_ID]: annoyanceRules,
@@ -124,24 +130,27 @@ async function applySettings({ videoAdRules, autoplayGuard, annoyanceRules }) {
     disableRulesetIds: ids.filter((id) => !rulesets[id]),
   });
 
-  // Registered rather than listed in the manifest, so turning it off
-  // removes it from every page
-  const registered = await chrome.scripting.getRegisteredContentScripts({
-    ids: [AUTOPLAY_GUARD_ID],
-  });
-  if (autoplayGuard && registered.length === 0) {
+  await setFrameScript(AUTOPLAY_GUARD_ID, "autoplay-guard.js", autoplayGuard);
+  await setFrameScript(HEAVY_AD_GUARD_ID, "heavy-ad-guard.js", heavyAds);
+}
+
+// Registered rather than listed in the manifest, so turning one off removes
+// it from every page
+async function setFrameScript(id, file, enabled) {
+  const registered = await chrome.scripting.getRegisteredContentScripts({ ids: [id] });
+  if (enabled && registered.length === 0) {
     await chrome.scripting.registerContentScripts([
       {
-        id: AUTOPLAY_GUARD_ID,
-        js: ["autoplay-guard.js"],
+        id,
+        js: [file],
         matches: ["<all_urls>"],
-        allFrames: true, // Video ads often play inside iframes
+        allFrames: true, // Ads usually run inside iframes
         matchOriginAsFallback: true, // Includes about:blank ad frames
         runAt: "document_start",
       },
     ]);
-  } else if (!autoplayGuard && registered.length > 0) {
-    await chrome.scripting.unregisterContentScripts({ ids: [AUTOPLAY_GUARD_ID] });
+  } else if (!enabled && registered.length > 0) {
+    await chrome.scripting.unregisterContentScripts({ ids: [id] });
   }
 }
 
@@ -203,6 +212,96 @@ async function flushLogs() {
   await chrome.action.setBadgeText({ text: badgeText(count) });
 }
 
+// Heavy ads: adds up what each third-party frame downloads, counting nested
+// frames toward the frame directly under the page, and unloads it past
+// HEAVY_AD_BYTES. heavy-ad-guard.js covers CPU use from inside the frame.
+// The listener has to be added at startup to wake the worker, so the
+// setting is checked inside it.
+let heavyAdsOn = true;
+getSettings().then((settings) => (heavyAdsOn = settings.heavyAds));
+
+const frameTrees = new Map(); // tabId -> { parents, bytes, removed }
+const MAX_FRAME_DEPTH = 20;
+
+chrome.tabs.onRemoved.addListener((tabId) => frameTrees.delete(tabId));
+
+chrome.webRequest.onHeadersReceived.addListener(
+  countFrameBytes,
+  { urls: ["<all_urls>"] },
+  ["responseHeaders"]
+);
+
+function countFrameBytes(details) {
+  if (!heavyAdsOn || details.tabId < 0) return;
+  if (details.type === "main_frame") {
+    frameTrees.delete(details.tabId); // New page, new frames
+    return;
+  }
+  if (details.frameId === 0) return; // The page's own requests
+
+  let tree = frameTrees.get(details.tabId);
+  if (!tree) {
+    tree = { parents: new Map(), bytes: new Map(), removed: new Set() };
+    frameTrees.set(details.tabId, tree);
+  }
+  tree.parents.set(details.frameId, details.parentFrameId);
+
+  let adFrame = details.frameId;
+  for (let depth = 0; depth < MAX_FRAME_DEPTH; depth++) {
+    const parent = tree.parents.get(adFrame);
+    if (!parent) break; // 0 is the page, undefined is unknown
+    adFrame = parent;
+  }
+  if (tree.removed.has(adFrame)) return;
+
+  const header = details.responseHeaders?.find(
+    (h) => h.name.toLowerCase() === "content-length"
+  );
+  const size = Number(header?.value) || 0;
+  if (size === 0) return;
+
+  const total = (tree.bytes.get(adFrame) ?? 0) + size;
+  tree.bytes.set(adFrame, total);
+  if (total >= HEAVY_AD_BYTES) {
+    tree.removed.add(adFrame);
+    removeHeavyFrame(details.tabId, adFrame, total).catch(() => {
+      // The frame may already be gone
+    });
+  }
+}
+
+async function removeHeavyFrame(tabId, frameId, bytes) {
+  const [{ result: url } = {}] = await chrome.scripting.executeScript({
+    target: { tabId, frameIds: [frameId] },
+    func: unloadThirdPartyFrame,
+    args: [await getPausedSites()],
+  });
+  if (url) logBlockedUrl(`Heavy ad (${(bytes / 1048576).toFixed(1)} MB): ${url}`);
+}
+
+// Runs inside the frame. Returns its URL if it was unloaded.
+function unloadThirdPartyFrame(pausedSites) {
+  const siteOf = (origin) => new URL(origin).hostname.replace(/^www\./, "");
+  let frameSite = "";
+  let topSite = "";
+  try {
+    frameSite = siteOf(self.origin);
+    topSite = siteOf(location.ancestorOrigins[location.ancestorOrigins.length - 1]);
+  } catch {
+    // Opaque origin: a sandboxed ad frame
+  }
+  const sameSite =
+    frameSite &&
+    (frameSite === topSite || frameSite.endsWith(`.${topSite}`) || topSite.endsWith(`.${frameSite}`));
+  const paused = pausedSites.some((site) => topSite === site || topSite.endsWith(`.${site}`));
+  // A frame the user clicked (a video they started) is never unloaded
+  if (sameSite || paused || navigator.userActivation.hasBeenActive) return null;
+
+  const url = location.href;
+  location.replace("about:blank"); // Stops every script and download in it
+  return url;
+}
+
 // The picker only loads into a page when it's needed, which keeps every other
 // tab lighter. content.js guards against being loaded twice.
 async function sendToTab(tabId, message) {
@@ -239,6 +338,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .then(sendResponse)
         .catch((error) => sendResponse({ error: error.message }));
       return true;
+
+    case "heavyAdRemoved":
+      logBlockedUrl(`Heavy ad (${message.reason}): ${message.url}`);
+      return;
 
     case "pauseSite":
       pauseSite(message.site, message.paused, message.tabId)
