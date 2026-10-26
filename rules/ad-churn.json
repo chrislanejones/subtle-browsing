@@ -1,0 +1,18 @@
+[
+  {"id": 1, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||browsiprod.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 2, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||usersync.getpublica.com/usersync", "resourceTypes": ["sub_frame"]}},
+  {"id": 3, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||us-u.openx.net^", "resourceTypes": ["sub_frame"]}},
+  {"id": 4, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||ch-match.taboola.com/sync", "resourceTypes": ["sub_frame"]}},
+  {"id": 5, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||cdn.taboola.com/scripts/prebid_iframe_sync.html", "resourceTypes": ["sub_frame"]}},
+  {"id": 6, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||cm.g.doubleclick.net/partnerpixels", "resourceTypes": ["sub_frame"]}},
+  {"id": 7, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||eb2.3lift.com/sync", "resourceTypes": ["sub_frame"]}},
+  {"id": 8, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||npid.amspbs.com/v0/user/sync", "resourceTypes": ["sub_frame"]}},
+  {"id": 9, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||cdn.undertone.com/js/usersync.html", "resourceTypes": ["sub_frame"]}},
+  {"id": 10, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||sync.serverbid.com/ss/", "resourceTypes": ["sub_frame"]}},
+  {"id": 11, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||crb.kargo.com/api/v1/initsyncrnd/", "resourceTypes": ["sub_frame"]}},
+  {"id": 12, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||js-sec.indexww.com/um/ixmatch.html", "resourceTypes": ["sub_frame"]}},
+  {"id": 13, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||csync.smartadserver.com/diff/rtb/csync/CookieSync.html", "resourceTypes": ["sub_frame"]}},
+  {"id": 14, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||prebid.a-mo.net/isyn", "resourceTypes": ["sub_frame"]}},
+  {"id": 15, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||ads.pubmatic.com/AdServer/js/user_sync.html", "resourceTypes": ["sub_frame"]}},
+  {"id": 16, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||gum.criteo.com/syncframe", "resourceTypes": ["sub_frame"]}}
+]

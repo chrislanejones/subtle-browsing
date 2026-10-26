@@ -32,6 +32,11 @@
         "id": "notifications",
         "enabled": false,
         "path": "rules/notifications.json"
+      },
+      {
+        "id": "ad_churn",
+        "enabled": false,
+        "path": "rules/ad-churn.json"
       }
     ]
   },

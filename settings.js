@@ -8,6 +8,7 @@ export const DEFAULTS = {
   autoplayGuard: true, // autoplay-guard.js
   annoyanceRules: false, // newsletter offers
   notificationRules: false,
+  adChurnRules: false, // rules/ad-churn.json
   aggressiveHeavyAds: false,
   heavyAds: true, // heavy-ad-guard.js and the download count in background.js
 };
@@ -73,6 +74,7 @@ export const FEATURES = {
   heavyAds: "Heavy ads",
   annoyanceRules: "Newsletter offers",
   notificationRules: "Notification requests",
+  adChurnRules: "Ad refresh and sync frames",
   aggressiveHeavyAds: "All heavy third-party embeds",
 };
 export async function getSiteSettings() {

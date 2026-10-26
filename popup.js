@@ -62,6 +62,7 @@ const toggles = {
   autoplayGuard: document.getElementById("autoplayGuardToggle"),
   heavyAds: document.getElementById("heavyAdsToggle"),
   notificationRules: document.getElementById("notificationRulesToggle"),
+  adChurnRules: document.getElementById("adChurnRulesToggle"),
   aggressiveHeavyAds: document.getElementById("aggressiveHeavyAdsToggle"),
   annoyanceRules: document.getElementById("annoyanceRulesToggle"),
 };

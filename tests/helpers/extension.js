@@ -56,8 +56,8 @@ export function expectedScripts({ autoplayGuard, heavyAds }) {
   ].filter(Boolean);
 }
 
-export function expectedRulesets({ videoAdRules, annoyanceRules, notificationRules }) {
-  return [annoyanceRules && "annoyances", (notificationRules ?? annoyanceRules) && "notifications", videoAdRules && "video_ads"].filter(Boolean);
+export function expectedRulesets({ videoAdRules, annoyanceRules, notificationRules, adChurnRules }) {
+  return [adChurnRules && "ad_churn", annoyanceRules && "annoyances",(notificationRules ?? annoyanceRules) && "notifications", videoAdRules && "video_ads"].filter(Boolean);
 }
 
 // The worker turns these block list entries into these URL filters

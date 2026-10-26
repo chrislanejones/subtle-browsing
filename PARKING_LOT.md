@@ -22,3 +22,9 @@
 - **Navigation timing:** site category exceptions are per-tab session rules refreshed asynchronously. Earliest requests after navigation can race the refresh; stress-test redirects and many overridden tabs before stronger guarantees.
 - **Cosmetic selectors:** structural selectors may need updating after site redesigns. They hide elements but do not prevent downloads or unlock scroll.
 - **New sync lists:** site overrides and hidden selectors each have their own per-item quota, like the original URL list. A future sharded format should migrate all three.
+
+## Follow-ups from Ad refresh and sync frames
+
+- **Measure it:** the off/on A/B on the firstcoastnews.com article (5 min each, JS heap + Task Manager memory) is still pending. The site's Akamai bot protection returns 403 to Playwright, so it has to run in a real Chrome. Turn the switch on by default only if the numbers justify it.
+- **Refresh throttle:** capping `googletag.pubads().refresh()` from a main-world script would slow ad churn on every Google ad tag site, not just Browsi ones. More invasive; see ADR-021's rejected alternatives.
+- **Unlisted hidden frames:** `imprchmp.taboola.com/st` and `i.liadm.com` were seen as 0×0 frames but left out until their purpose is clear.

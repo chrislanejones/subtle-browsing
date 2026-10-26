@@ -33,3 +33,4 @@ for a new one.
 | [018](018-picker-hiding-is-host-scoped-css.md) | Picker hiding is hostname-scoped CSS | Draft (1.6.0) | 2026-10-26 |
 | [019](019-newsletter-and-notification-lists-are-independent.md) | Newsletter and notification lists are independent | Draft (1.6.0) | 2026-10-26 |
 | [020](020-live-site-checks-are-separate-from-regression-tests.md) | Live-site checks are separate from regression tests | Draft (1.6.0) | 2026-10-26 |
+| [021](021-ad-refresh-and-sync-frames-are-an-opt-in-list.md) | Ad refresh and sync frames are an opt-in list | Draft | 2026-10-26 |

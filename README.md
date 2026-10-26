@@ -67,6 +67,7 @@ on every bad ad by hand.
 | Broader heavy-embed mode | Applies those limits to unrecognized third-party embeds too; may stop legitimate content | No |
 | Newsletter offers | Blocks newsletter and promotional overlay tools | No |
 | Notification requests | Blocks website push-prompt tools independently | No |
+| Ad refresh and sync frames | Blocks Browsi's ad refresh and the hidden cookie-sync frames that ad auctions open. [See the URLs](rules/ad-churn.json) | No |
 | Site controls | Override individual protections for a site and its subdomains | Inherit defaults |
 | Hide on this site | Hide a picked element only on its hostname; undo in settings or DevTools | — |
 | Pause on this site | Turns everything off for one site, in case it breaks | — |
@@ -96,18 +97,19 @@ on every bad ad by hand.
 ### What gets blocked
 
 The popup shows the three default-on protections under **Block by default**.
-Expand **Offers, prompts and broader limits** for the three default-off
+Expand **Offers, prompts and broader limits** for the four default-off
 choices. The settings page and DevTools **Default protections** expose the
 same choices.
 
 | Switch | How it works |
 | --- | --- |
-| **Video ad companies** | Uses the list in `rules/video-ads.json`. Blocks whole video-ad companies, plus only the video parts of bigger networks (Taboola's video player, Amazon's video ads), so their regular ads still show. Also swaps in the Google IMA stand-in. |
+| **Video ad companies** | Uses the list in [`rules/video-ads.json`](rules/video-ads.json). Blocks whole video-ad companies, plus only the video parts of bigger networks (Taboola's video player, Amazon's video ads), so their regular ads still show. Also swaps in the Google IMA stand-in. |
 | **Muted autoplay videos** | Stops any muted video that starts on its own. Video ads start muted because Chrome won't autoplay sound. Click play and the video runs. |
 | **Heavy ads** | Stops an identified third-party ad frame at 4 MB of declared downloads or 5 seconds of long tasks in 30 seconds. |
 | **All heavy third-party embeds** | Broadens Heavy ads to unrecognized third-party frames. Heavy ads must also be on. |
-| **Newsletter offers** | Uses `rules/annoyances.json`: OptinMonster, Privy, Justuno, Sumo, Klaviyo forms and similar. |
-| **Notification requests** | Uses `rules/notifications.json`: OneSignal, PushEngage, iZooto, Webpushr, Aimtell and PushCrew. |
+| **Newsletter offers** | Uses [`rules/annoyances.json`](rules/annoyances.json): OptinMonster, Privy, Justuno, Sumo, Klaviyo forms and similar. |
+| **Notification requests** | Uses [`rules/notifications.json`](rules/notifications.json): OneSignal, PushEngage, iZooto, Webpushr, Aimtell and PushCrew. |
+| **Ad refresh and sync frames** | Uses [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts, plus 15 hidden cookie-sync frames from ad auctions (OpenX, PubMatic, Criteo, TripleLift, Index Exchange and others). |
 
 More on each:
 
@@ -136,6 +138,27 @@ More on each:
   tools, not every overlay a site builds itself. On upgrade, an old enabled
   **Pop-ups and prompts** setting enables both categories until you change
   their separate switches.
+- **Ad refresh and sync frames:** a local news article left open climbed
+  past 1.2 GB. The page itself never changed. The ads did: a new auction
+  about every 30 seconds, Browsi swapping in fresh ads, and 28 invisible
+  frames syncing cookies between ad companies. No single frame is heavy,
+  so the heavy-ad limits never trip. This switch blocks Browsi and those
+  sync frames by their sync URLs, and only when they load as a frame, so
+  the same companies' visible banners still show. It's off by default until
+  the memory savings are measured.
+
+#### URLs each list catches
+
+| Switch | List | Rules |
+| --- | --- | --- |
+| Video ad companies | [`rules/video-ads.json`](rules/video-ads.json) | 19 |
+| Newsletter offers | [`rules/annoyances.json`](rules/annoyances.json) | 18 |
+| Notification requests | [`rules/notifications.json`](rules/notifications.json) | 6 |
+| Ad refresh and sync frames | [`rules/ad-churn.json`](rules/ad-churn.json) | 16 |
+
+Each rule's `urlFilter` is the URL it catches. Your own blocked URLs are on
+the settings page, and on an unpacked install the DevTools log lists every
+request blocked in a tab.
 
 ### Controls for one site
 
@@ -284,8 +307,9 @@ EasyList blocks everything, which is the opposite of the point.
 | [Better Ads Standards](https://www.betterads.org/standards/) (Coalition for Better Ads) | Not a blocklist. It defines the formats people hate: autoplay video with sound, pop-ups, countdown screens, large sticky ads | The best spec for what counts as "annoying" |
 | [`@adguard/dnr-rulesets`](https://www.npmjs.com/package/@adguard/dnr-rulesets) (npm) | AdGuard's lists already converted to Chrome's built-in blocking format (Manifest V3 rules) | The easiest way in, but GPL-3.0-only, so it isn't bundled here |
 
-None of these ship inside the extension. The three built-in lists
-(`rules/video-ads.json`, `rules/annoyances.json`, `rules/notifications.json`) are small and hand-made:
+None of these ship inside the extension. The four built-in lists
+([`rules/video-ads.json`](rules/video-ads.json), [`rules/annoyances.json`](rules/annoyances.json),
+[`rules/notifications.json`](rules/notifications.json), [`rules/ad-churn.json`](rules/ad-churn.json)) are small and hand-made:
 
 - AdGuard's rulesets are GPL-3.0-only and this repo is MIT.
 - Most annoyance filters hide page elements with CSS, which Chrome's
@@ -357,6 +381,8 @@ This extension:
   precede the refresh. Reload after changing a site setting.
 - Hiding cannot reach inside closed shadow roots, and structural selectors
   can target the wrong element after a site changes its layout.
+- Ad refresh and sync frames matches specific sync URLs. Ad companies can move
+  them, and the list needs updating when they do.
 - The IMA stand-in covers `ima3.js` only, not Google's live-stream ad
   engine (`ima3_dai.js`).
 - The block list holds about 300 URLs, the most Chrome sync allows.

@@ -57,7 +57,7 @@ test.describe("popup", () => {
     await page.locator("#autoplayGuardToggle").uncheck();
     await expect
       .poll(async () => (await ext.getSync("settings")).settings)
-      .toEqual({ videoAdRules: true, autoplayGuard: false, heavyAds: false, annoyanceRules: true, notificationRules: false, aggressiveHeavyAds: false });
+      .toEqual({ videoAdRules: true, autoplayGuard: false, heavyAds: false, annoyanceRules: true, notificationRules: false, adChurnRules: false, aggressiveHeavyAds: false });
     // The worker applies them
     await expect.poll(() => ext.enabledRulesets()).toEqual(["annoyances", "video_ads"]);
     await expect.poll(() => ext.registeredScripts()).toEqual(["cosmetic"]);

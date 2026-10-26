@@ -16,6 +16,7 @@
     heavyAds: true,
     annoyanceRules: false,
     notificationRules: false,
+    adChurnRules: false,
     aggressiveHeavyAds: false,
     cosmetic: true,
   };

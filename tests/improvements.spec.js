@@ -173,6 +173,29 @@ test("newsletter and notification switches are independent, including legacy mig
     .toEqual(["notifications", "video_ads"]);
 });
 
+test("ad refresh and sync frames switch is off by default and only blocks sync frames", async ({
+  ext,
+  page,
+}) => {
+  expect(await ext.enabledRulesets()).toEqual(["video_ads"]);
+  await page.goto(ext.url("options.html"));
+  await expect(page.locator("#adChurnRulesToggle")).not.toBeChecked();
+  await page.locator("#adChurnRulesToggle").check();
+  await expect
+    .poll(() => ext.enabledRulesets())
+    .toEqual(["ad_churn", "video_ads"]);
+
+  // Browsi is blocked outright; every other rule is a hidden sync frame, so
+  // the same hosts can still serve scripts, bids and visible ads
+  const rules = await page.evaluate(async () =>
+    (await fetch("/rules/ad-churn.json")).json(),
+  );
+  const [browsi, ...sync] = rules;
+  expect(browsi.condition.urlFilter).toBe("||browsiprod.com^");
+  for (const rule of sync)
+    expect(rule.condition.resourceTypes).toEqual(["sub_frame"]);
+});
+
 test("picker hides a URL-less element only here, persists and can be undone in DevTools", async ({
   ext,
   page,

@@ -154,6 +154,7 @@ async function applySettings({
   autoplayGuard,
   annoyanceRules,
   notificationRules,
+  adChurnRules,
   heavyAds,
 }) {
   const overrides = Object.values(await getSiteSettings());
@@ -162,6 +163,7 @@ async function applySettings({
     [VIDEO_AD_RULESET_ID]: videoAdRules,
     [ANNOYANCES_RULESET_ID]: annoyanceRules,
     notifications: notificationRules,
+    ad_churn: adChurnRules,
   };
   const ids = Object.keys(rulesets);
   await chrome.declarativeNetRequest.updateEnabledRulesets({
@@ -380,6 +382,7 @@ const categoryFiles = {
   videoAdRules: "video-ads",
   annoyanceRules: "annoyances",
   notificationRules: "notifications",
+  adChurnRules: "ad-churn",
 };
 const builtinRules = Promise.all(
   Object.entries(categoryFiles).map(async ([key, name]) => [
