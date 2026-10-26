@@ -76,6 +76,8 @@ test.describe("user block list", () => {
 test.describe("blocked counter and badge", () => {
   const today = () => new Date().toLocaleDateString("en-CA");
 
+  test.beforeEach(({ ext }) => ext.badgeWindow(true));
+
   test("the badge shows today's stored count after blocks", async ({ ext, page }) => {
     await ext.setBlockedUrls(["localhost"]);
     await page.goto(`${FIRST}/index.html`);
@@ -109,6 +111,19 @@ test.describe("blocked counter and badge", () => {
     await page.reload();
     await expect.poll(async () => (await ext.getLocal("blockedToday")).blockedToday.count).toBe(1500);
     expect(await ext.sw.evaluate(() => chrome.action.getBadgeText({}))).toBe("1k");
+  });
+
+  test("past the first 7 minutes of the hour the badge goes blank, and comes back on the hour", async ({ ext, page }) => {
+    await ext.badgeWindow(false);
+    await ext.setBlockedUrls([`localhost:${PORT}/ad.png`]);
+    await page.goto(`${FIRST}/index.html`);
+    await expect.poll(async () => (await ext.getLocal("blockedToday")).blockedToday?.count ?? 0).toBe(1);
+    expect(await ext.sw.evaluate(() => chrome.action.getBadgeText({}))).toBe("");
+
+    await ext.badgeWindow(true);
+    await expect.poll(() => ext.sw.evaluate(() => chrome.action.getBadgeText({}))).toBe("1");
+    await ext.badgeWindow(false);
+    await expect.poll(() => ext.sw.evaluate(() => chrome.action.getBadgeText({}))).toBe("");
   });
 
   test("the midnight alarm clears the badge and schedules the next one", async ({ ext, page }) => {

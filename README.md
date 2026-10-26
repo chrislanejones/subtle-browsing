@@ -68,10 +68,11 @@ on every bad ad by hand.
 | Newsletter offers | Blocks newsletter and promotional overlay tools | No |
 | Notification requests | Blocks website push-prompt tools independently | No |
 | Ad refresh and sync frames | Blocks Browsi's ad refresh and the hidden cookie-sync frames that ad auctions open. [See the URLs](rules/ad-churn.json) | No |
+| Slow ad refresh | Lets each Google ad slot refresh at most once every 2 minutes, and not in a hidden tab | No |
 | Site controls | Override individual protections for a site and its subdomains | Inherit defaults |
 | Hide on this site | Hide a picked element only on its hostname; undo in settings or DevTools | — |
 | Pause on this site | Turns everything off for one site, in case it breaks | — |
-| Blocked-today counter | The toolbar icon shows how many requests were blocked today | — |
+| Blocked-today counter | The toolbar icon shows how many requests were blocked today, for the first 7 minutes of each hour | — |
 | Block a URL | Type a URL to block it on every site | — |
 | Element picker | Click an ad to see the domains and URLs inside it, then block one | — |
 | Keyboard shortcut | Alt+Shift+K starts the picker | — |
@@ -97,7 +98,7 @@ on every bad ad by hand.
 ### What gets blocked
 
 The popup shows the three default-on protections under **Block by default**.
-Expand **Offers, prompts and broader limits** for the four default-off
+Expand **Offers, prompts and broader limits** for the five default-off
 choices. The settings page and DevTools **Default protections** expose the
 same choices.
 
@@ -109,7 +110,8 @@ same choices.
 | **All heavy third-party embeds** | Broadens Heavy ads to unrecognized third-party frames. Heavy ads must also be on. |
 | **Newsletter offers** | Uses [`rules/annoyances.json`](rules/annoyances.json): OptinMonster, Privy, Justuno, Sumo, Klaviyo forms and similar. |
 | **Notification requests** | Uses [`rules/notifications.json`](rules/notifications.json): OneSignal, PushEngage, iZooto, Webpushr, Aimtell and PushCrew. |
-| **Ad refresh and sync frames** | Uses [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts, plus 15 hidden cookie-sync frames from ad auctions (OpenX, PubMatic, Criteo, TripleLift, Index Exchange and others). |
+| **Ad refresh and sync frames** | Uses [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts, plus 16 hidden cookie-sync frames from ad auctions (OpenX, PubMatic, Criteo, TripleLift, Index Exchange, LiveIntent and others). |
+| **Slow ad refresh** | Wraps Google's ad tag (`googletag.pubads().refresh()`) in [`refresh-throttle.js`](refresh-throttle.js). Every slot's first load goes through; after that each slot refreshes at most once every 2 minutes, and not while the tab is hidden. |
 
 More on each:
 
@@ -146,6 +148,13 @@ More on each:
   sync frames by their sync URLs, and only when they load as a frame, so
   the same companies' visible banners still show. It's off by default until
   the memory savings are measured.
+- **Slow ad refresh:** Browsi isn't the only thing refreshing ads. Most
+  news sites ask Google's ad tag for a fresh round on a timer, and each
+  round loads new ads into the page's memory. This switch doesn't block
+  anything. Banners still show; they just change every 2 minutes instead of
+  every 30 seconds, and stop changing while you're on another tab. That also
+  means fewer paid impressions for the site, which is why it's off by
+  default.
 
 #### URLs each list catches
 
@@ -154,7 +163,7 @@ More on each:
 | Video ad companies | [`rules/video-ads.json`](rules/video-ads.json) | 19 |
 | Newsletter offers | [`rules/annoyances.json`](rules/annoyances.json) | 18 |
 | Notification requests | [`rules/notifications.json`](rules/notifications.json) | 6 |
-| Ad refresh and sync frames | [`rules/ad-churn.json`](rules/ad-churn.json) | 16 |
+| Ad refresh and sync frames | [`rules/ad-churn.json`](rules/ad-churn.json) | 17 |
 
 Each rule's `urlFilter` is the URL it catches. Your own blocked URLs are on
 the settings page, and on an unpacked install the DevTools log lists every
@@ -189,6 +198,8 @@ If a site breaks, open the popup on that site and turn on
 
 - The number on the toolbar icon is how many requests were blocked today,
   across every tab.
+- It shows for the first 7 minutes of each hour (:00 to :06), then the icon
+  goes back to plain. The popup shows the count any time.
 - It clears at midnight, your local time.
 - The daily count only works when the extension is loaded unpacked. A Web
   Store install shows each tab's own count instead.
@@ -330,6 +341,7 @@ The full reasoning is in [ADR-004](docs/adr/004-built-in-rulesets-are-hand-made-
 | Element picker | Only loads into a tab when you use it, and takes its overlay off the page when you're done |
 | Box hiding and restore | One message listener per frame while autoplay or heavy-ad removal is enabled globally or on a site |
 | Site policy and element hiding | A shared settings cache and a small CSS injector per frame; no polling or mutation observer |
+| Slow ad refresh | One small script in each top page while the switch is on for that site. It only does work when the page uses Google's ad tag |
 | Google IMA stand-in | Only loads on pages that ask for Google's video ad engine, in place of the real one |
 
 ## Privacy
@@ -383,6 +395,11 @@ This extension:
   can target the wrong element after a site changes its layout.
 - Ad refresh and sync frames matches specific sync URLs. Ad companies can move
   them, and the list needs updating when they do.
+- Slow ad refresh only covers refreshes that go through Google's ad tag. A
+  page that resets `googletag` before the tag loads drops the throttle, and
+  ad scripts that reload slots some other way aren't slowed.
+  On pages without ads it leaves an empty `googletag` command queue behind,
+  the same thing Google's own setup snippet creates.
 - The IMA stand-in covers `ima3.js` only, not Google's live-stream ad
   engine (`ima3_dai.js`).
 - The block list holds about 300 URLs, the most Chrome sync allows.

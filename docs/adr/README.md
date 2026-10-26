@@ -34,3 +34,4 @@ for a new one.
 | [019](019-newsletter-and-notification-lists-are-independent.md) | Newsletter and notification lists are independent | Draft (1.6.0) | 2026-10-26 |
 | [020](020-live-site-checks-are-separate-from-regression-tests.md) | Live-site checks are separate from regression tests | Draft (1.6.0) | 2026-10-26 |
 | [021](021-ad-refresh-and-sync-frames-are-an-opt-in-list.md) | Ad refresh and sync frames are an opt-in list | Draft | 2026-10-26 |
+| [022](022-slow-ad-refresh-wraps-googletag-in-the-page-world.md) | Slow ad refresh wraps googletag in the page's world | Draft | 2026-10-26 |

@@ -14,5 +14,6 @@
   {"id": 13, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||csync.smartadserver.com/diff/rtb/csync/CookieSync.html", "resourceTypes": ["sub_frame"]}},
   {"id": 14, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||prebid.a-mo.net/isyn", "resourceTypes": ["sub_frame"]}},
   {"id": 15, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||ads.pubmatic.com/AdServer/js/user_sync.html", "resourceTypes": ["sub_frame"]}},
-  {"id": 16, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||gum.criteo.com/syncframe", "resourceTypes": ["sub_frame"]}}
+  {"id": 16, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||gum.criteo.com/syncframe", "resourceTypes": ["sub_frame"]}},
+  {"id": 17, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||i.liadm.com/sync-container", "resourceTypes": ["sub_frame"]}}
 ]

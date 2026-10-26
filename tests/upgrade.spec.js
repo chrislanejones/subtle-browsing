@@ -8,7 +8,7 @@ import { execFileSync } from "node:child_process";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { EXTENSION_DIR } from "./helpers/env.js";
-import { DEFAULT_SETTINGS, expectedRulesets, launchExtension, waitForInstall, watchErrors } from "./helpers/extension.js";
+import { DEFAULT_SETTINGS, expectedRulesets, launchExtension, setBadgeWindow, waitForInstall, watchErrors } from "./helpers/extension.js";
 
 async function copyExtension(target) {
   const files = execFileSync("git", ["ls-files"], { cwd: EXTENSION_DIR, encoding: "utf8" }).split("\n").filter(Boolean);
@@ -109,7 +109,8 @@ test("updating from 1.4.0 moves local settings to sync and rebuilds the rules", 
     expect((await sw.evaluate(() => chrome.declarativeNetRequest.getEnabledRulesets())).sort()).toEqual(
       expectedRulesets(oldSettings)
     );
-    expect(await sw.evaluate(() => chrome.action.getBadgeText({}))).toBe("3");
+    await setBadgeWindow(sw, true);
+    await expect.poll(() => sw.evaluate(() => chrome.action.getBadgeText({}))).toBe("3");
   });
 });
 

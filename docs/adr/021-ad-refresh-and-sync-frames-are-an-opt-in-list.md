@@ -35,6 +35,7 @@ because their purpose is unclear.
 User block-list entries: synced, whole-host, and would block scripts and bids too.
 Throttle googletag.pubads().refresh() from a main-world script: more invasive,
 runs on every GPT site, and publishers may detect it; kept as a possible later step.
+Built later as an opt-in switch; see ADR-022.
 Import EasyList/AdGuard privacy lists: ruled out by ADR-004 (licensing, scope).
 
 ## Pre-mortem

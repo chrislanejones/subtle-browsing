@@ -37,12 +37,18 @@ const ANNOYANCES_RULESET_ID = "annoyances";
 const AUTOPLAY_GUARD_ID = "autoplay-guard";
 const HEAVY_AD_GUARD_ID = "heavy-ad-guard";
 const FRAME_COLLAPSE_ID = "frame-collapse";
+const REFRESH_THROTTLE_ID = "refresh-throttle";
+const REFRESH_POLICY_ID = "refresh-policy";
 // Chrome's own heavy ad rule unloads ad frames past this much download
 const HEAVY_AD_BYTES = 4 * 1024 * 1024;
 // Block rules use IDs 1..N, so the paused-sites rule sits far above them
 const PAUSED_SITES_RULE_ID = 1_000_000;
 const BADGE_COLOR = "#3a6d45";
 const MIDNIGHT_ALARM = "midnight";
+const BADGE_WINDOW_ALARM = "badge-window";
+// The count shows for the first this-many minutes of each hour, then the
+// badge clears and only the icon shows
+const BADGE_MINUTES = 7;
 const PICKER_COMMAND = "start-picker";
 
 // Only fires for unpacked installs with the declarativeNetRequestFeedback permission
@@ -155,6 +161,7 @@ async function applySettings({
   annoyanceRules,
   notificationRules,
   adChurnRules,
+  refreshThrottle,
   heavyAds,
 }) {
   const overrides = Object.values(await getSiteSettings());
@@ -189,13 +196,25 @@ async function applySettings({
       heavyAds ||
       overrides.some((s) => s.autoplayGuard || s.heavyAds),
   );
+  // Google's ad tag runs in the top page, and only the page's own world can
+  // wrap it; the isolated half passes in this site's on/off choice
+  const throttleOn = refreshThrottle || overrides.some((s) => s.refreshThrottle);
+  await setFrameScript(REFRESH_THROTTLE_ID, "refresh-throttle.js", throttleOn, {
+    world: "MAIN",
+    allFrames: false,
+  });
+  await setFrameScript(REFRESH_POLICY_ID, "refresh-policy.js", throttleOn, {
+    allFrames: false,
+  });
   await setFrameScript("cosmetic", "cosmetic.js", true);
   await syncSiteRules();
 }
 
 // Registered rather than listed in the manifest, so turning one off removes
 // it from future pages; existing listeners consult the shared live policy
-async function setFrameScript(id, file, enabled) {
+async function setFrameScript(id, file, enabled, options = {}) {
+  // The page's world can't use chrome.storage, so it gets no policy cache
+  const js = options.world === "MAIN" ? [file] : ["page-policy.js", file];
   const registered = await chrome.scripting.getRegisteredContentScripts({
     ids: [id],
   });
@@ -203,16 +222,17 @@ async function setFrameScript(id, file, enabled) {
     await chrome.scripting.registerContentScripts([
       {
         id,
-        js: ["page-policy.js", file],
+        js,
         matches: ["<all_urls>"],
         allFrames: true, // Ads usually run inside iframes
         matchOriginAsFallback: true, // Includes about:blank ad frames
         runAt: "document_start",
+        ...options,
       },
     ]);
   } else if (enabled) {
     await chrome.scripting.updateContentScripts([
-      { id, js: ["page-policy.js", file] },
+      { id, js },
     ]);
   } else if (!enabled && registered.length > 0) {
     await chrome.scripting.unregisterContentScripts({ ids: [id] });
@@ -235,8 +255,12 @@ function today() {
   return new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
 }
 
+function badgeWindowOpen() {
+  return new Date().getMinutes() < BADGE_MINUTES;
+}
+
 function badgeText(count) {
-  if (count === 0) return "";
+  if (count === 0 || !badgeWindowOpen()) return "";
   return count < 1000 ? String(count) : `${Math.floor(count / 1000)}k`;
 }
 
@@ -247,18 +271,34 @@ async function getBlockedToday() {
 
 async function setUpBadge() {
   scheduleMidnightReset();
+  scheduleBadgeWindow();
+  if (canCountBlocks)
+    await chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
+  await showBadge();
+}
+
+async function showBadge() {
   if (!canCountBlocks) {
     // Without the debug event there's no daily total, so let Chrome show
     // each tab's own blocked count instead
     await chrome.declarativeNetRequest.setExtensionActionOptions({
-      displayActionCountAsBadgeText: true,
+      displayActionCountAsBadgeText: badgeWindowOpen(),
     });
     return;
   }
-  await chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
   await chrome.action.setBadgeText({
     text: badgeText(await getBlockedToday()),
   });
+}
+
+// Wakes the worker when the count's window opens (the top of the hour) or
+// closes (BADGE_MINUTES past), so the badge changes on time
+function scheduleBadgeWindow() {
+  const next = new Date();
+  const closes = new Date(next).setMinutes(BADGE_MINUTES, 0, 0);
+  if (Date.now() < closes) next.setTime(closes);
+  else next.setHours(next.getHours() + 1, 0, 1, 0);
+  chrome.alarms.create(BADGE_WINDOW_ALARM, { when: next.getTime() });
 }
 
 // Clears the badge at local midnight instead of waiting for the first block
@@ -270,6 +310,11 @@ function scheduleMidnightReset() {
 }
 
 chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === BADGE_WINDOW_ALARM) {
+    scheduleBadgeWindow();
+    showBadge();
+    return;
+  }
   if (alarm.name !== MIDNIGHT_ALARM) return;
   scheduleMidnightReset();
   if (canCountBlocks) chrome.action.setBadgeText({ text: "" });

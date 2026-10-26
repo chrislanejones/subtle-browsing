@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Ad refresh</title></head>
+<body>
+<!-- A stand-in for Google's ad tag. window.calls records every refresh that
+     reaches it, as the list of slot names it was asked to load. -->
+<script>
+  window.googletag = window.googletag || { cmd: [] };
+  window.calls = [];
+  const slots = [];
+  const slot = (name) => {
+    const s = { name };
+    slots.push(s);
+    return s;
+  };
+  const pubads = {
+    getSlots: () => slots.slice(),
+    refresh(list) {
+      window.calls.push((list ?? slots).map((s) => s.name));
+    },
+  };
+  window.defineSlot = slot;
+  slot("a");
+  slot("b");
+  // Like gpt.js: run what was queued, then run later pushes straight away
+  const queued = googletag.cmd;
+  googletag.pubads = () => pubads;
+  googletag.cmd = { push: (fn) => fn() };
+  for (const fn of queued) fn();
+</script>
+</body>
+</html>

@@ -23,8 +23,9 @@
 - **Cosmetic selectors:** structural selectors may need updating after site redesigns. They hide elements but do not prevent downloads or unlock scroll.
 - **New sync lists:** site overrides and hidden selectors each have their own per-item quota, like the original URL list. A future sharded format should migrate all three.
 
-## Follow-ups from Ad refresh and sync frames
+## Follow-ups from Ad refresh and sync frames / Slow ad refresh
 
-- **Measure it:** the off/on A/B on the firstcoastnews.com article (5 min each, JS heap + Task Manager memory) is still pending. The site's Akamai bot protection returns 403 to Playwright, so it has to run in a real Chrome. Turn the switch on by default only if the numbers justify it.
-- **Refresh throttle:** capping `googletag.pubads().refresh()` from a main-world script would slow ad churn on every Google ad tag site, not just Browsi ones. More invasive; see ADR-021's rejected alternatives.
-- **Unlisted hidden frames:** `imprchmp.taboola.com/st` and `i.liadm.com` were seen as 0×0 frames but left out until their purpose is clear.
+- **Measure it:** the A/B on the firstcoastnews.com article runs in a real Chrome, since the site's Akamai bot protection returns 403 to Playwright. Run A (both switches off, 10-26-2026): JS heap 162 MB → 207 MB in 5 minutes (about 9 MB a minute), about 0.7 requests a second, 34 iframes with 29 hidden, DOM flat at about 1,590 elements. Run B (both switches on) is still pending: switch them on in the popup, reload the article and sample for 5 minutes the same way. Turn either switch on by default only if the numbers justify it.
+- **Slow ad refresh on real GPT:** covered by a stand-in fixture only. Check on a live site that the wrapper lands before the page's own refresh wrappers and that first loads still show.
+- **Infinite-scroll slots:** a site that reuses one slot object for each new article would show it empty for up to 2 minutes under Slow ad refresh. Resetting a slot's timer when it's displayed again would fix it, if it shows up.
+- **`imprchmp.taboola.com/st` stays out of the sync list:** it carries creative and impression IDs, so it counts paid impressions rather than syncing IDs.

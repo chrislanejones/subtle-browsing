@@ -63,6 +63,7 @@ const toggles = {
   heavyAds: document.getElementById("heavyAdsToggle"),
   notificationRules: document.getElementById("notificationRulesToggle"),
   adChurnRules: document.getElementById("adChurnRulesToggle"),
+  refreshThrottle: document.getElementById("refreshThrottleToggle"),
   aggressiveHeavyAds: document.getElementById("aggressiveHeavyAdsToggle"),
   annoyanceRules: document.getElementById("annoyanceRulesToggle"),
 };

@@ -63,6 +63,19 @@ test.describe("fresh install", () => {
     expect(alarm.msFromNow).toBeLessThanOrEqual(25 * 60 * 60 * 1000); // DST days run 25 hours
   });
 
+  test("schedules the next badge change for 7 past or the top of the hour", async ({ ext }) => {
+    const alarm = await ext.sw.evaluate(async () => {
+      const found = await chrome.alarms.get("badge-window");
+      if (!found) return null;
+      const at = new Date(found.scheduledTime);
+      return { local: [at.getMinutes(), at.getSeconds()], msFromNow: found.scheduledTime - Date.now() };
+    });
+    expect(alarm).not.toBeNull();
+    expect([[7, 0], [0, 1]]).toContainEqual(alarm.local);
+    expect(alarm.msFromNow).toBeGreaterThan(0);
+    expect(alarm.msFromNow).toBeLessThanOrEqual(60 * 60 * 1000);
+  });
+
   test("uses its own badge color and starts with an empty badge", async ({ ext }) => {
     expect(await ext.sw.evaluate(() => chrome.action.getBadgeBackgroundColor({}))).toEqual([
       0x3a, 0x6d, 0x45, 255,

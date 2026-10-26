@@ -12,13 +12,23 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 ### Added
 - **Ad refresh and sync frames**, a new switch that's off by default. It uses
   [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts are
-  blocked outright, and 15 hidden cookie-sync frames are blocked by their sync URL,
+  blocked outright, and 16 hidden cookie-sync frames are blocked by their sync URL,
   only when they load as a frame. Found on a local news article that grew to
   1.2–1.3 GB while left open: a new ad auction about every 30 seconds and 28
   invisible frames, none heavy enough on its own to trip the heavy-ad limits.
   The memory savings are not measured yet.
 - The README links each built-in list and has a table of the URLs each one
   catches.
+- **Slow ad refresh**, a new switch that's off by default. It wraps Google's
+  ad tag so each slot's first load goes through, then refreshes at most once
+  every 2 minutes and not while the tab is hidden. Banners still show; they
+  just rotate less often. Works on any site using Google's ad tag, not only
+  Browsi ones. Per-site On/Off works like the other switches.
+
+### Changed
+- The toolbar count only shows for the first 7 minutes of each hour. The
+  rest of the hour it's just the icon. The popup still shows the count any
+  time.
 
 ## 1.6.0 — 10-26-2026
 

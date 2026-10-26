@@ -47,17 +47,38 @@ export function registeredScripts(sw) {
   );
 }
 
-export function expectedScripts({ autoplayGuard, heavyAds }) {
+export function expectedScripts({ autoplayGuard, heavyAds, refreshThrottle }) {
   return [
     autoplayGuard && "autoplay-guard",
     "cosmetic",
     (autoplayGuard || heavyAds) && "frame-collapse",
     heavyAds && "heavy-ad-guard",
+    refreshThrottle && "refresh-policy",
+    refreshThrottle && "refresh-throttle",
   ].filter(Boolean);
 }
 
 export function expectedRulesets({ videoAdRules, annoyanceRules, notificationRules, adChurnRules }) {
   return [adChurnRules && "ad_churn", annoyanceRules && "annoyances",(notificationRules ?? annoyanceRules) && "notifications", videoAdRules && "video_ads"].filter(Boolean);
+}
+
+// The badge count only shows in the first minutes of each hour. This pins
+// the worker's clock inside or outside that window, then fires the window
+// alarm so the badge is redrawn the way it would be on the hour.
+export function setBadgeWindow(sw, open) {
+  return sw.evaluate(
+    (minute) =>
+      new Promise((resolve) => {
+        Date.prototype.getMinutes = () => minute;
+        chrome.alarms.onAlarm.addListener(function fired(alarm) {
+          if (alarm.name !== "badge-window") return;
+          chrome.alarms.onAlarm.removeListener(fired);
+          resolve();
+        });
+        chrome.alarms.create("badge-window", { when: Date.now() + 50 });
+      }),
+    open ? 0 : 30
+  );
 }
 
 // The worker turns these block list entries into these URL filters
@@ -83,6 +104,7 @@ function makeHelpers(context, sw, id) {
     enabledRulesets: () =>
       sw.evaluate(async () => (await chrome.declarativeNetRequest.getEnabledRulesets()).sort()),
     registeredScripts: () => registeredScripts(sw),
+    badgeWindow: (open) => setBadgeWindow(sw, open),
     logUrls: () =>
       sw.evaluate(async () =>
         ((await chrome.storage.local.get("blockedUrlLogs")).blockedUrlLogs ?? []).map((l) => l.url)
