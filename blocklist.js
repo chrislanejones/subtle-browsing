@@ -4,12 +4,17 @@
 
 const STORAGE_KEY = "blockedUrls";
 
-// Strip protocol, "www." and a trailing slash so the same site is only stored once
+// Strip protocol, "www." and a trailing slash, and lowercase the domain
+// (paths can be case-sensitive), so the same site is only stored once
 export function normalizeUrl(url) {
-  return url
+  const stripped = url
     .trim()
-    .replace(/^(https?:\/\/)?(www\.)?/, "")
+    .replace(/^(https?:\/\/)?(www\.)?/i, "")
     .replace(/\/$/, "");
+  const slash = stripped.indexOf("/");
+  return slash === -1
+    ? stripped.toLowerCase()
+    : stripped.slice(0, slash).toLowerCase() + stripped.slice(slash);
 }
 
 export async function getBlockedUrls() {

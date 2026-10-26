@@ -1,3 +1,8 @@
 # Chrome writes compiled copies of the static rulesets here when the
 # extension is loaded unpacked
 _metadata/
+
+# End-to-end tests (pnpm test)
+node_modules/
+test-results/
+playwright-report/

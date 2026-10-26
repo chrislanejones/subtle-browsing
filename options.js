@@ -188,13 +188,14 @@ $("importFile").addEventListener("change", async (event) => {
 
   const currentUrls = await getBlockedUrls();
   const currentSites = await getPausedSites();
-  const newUrls = incomingUrls.filter((url) => !currentUrls.includes(url));
-  const newSites = incomingSites.filter((site) => !currentSites.includes(site));
+  // De-duplicated first, so the count matches what's stored
+  const newUrls = [...new Set(incomingUrls)].filter((url) => !currentUrls.includes(url));
+  const newSites = [...new Set(incomingSites)].filter((site) => !currentSites.includes(site));
   try {
     // One write, so background.js rebuilds its rules once
     await chrome.storage.sync.set({
-      blockedUrls: [...currentUrls, ...new Set(newUrls)],
-      pausedSites: [...currentSites, ...new Set(newSites)],
+      blockedUrls: [...currentUrls, ...newUrls],
+      pausedSites: [...currentSites, ...newSites],
       settings: { ...(await getSettings()), ...incomingSettings },
     });
   } catch {

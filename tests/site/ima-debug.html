@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<div id="adContainer"></div><video id="content" src="/clip.webm" muted width="160"></video>
+<script src="https://imasdk.googleapis.com/js/sdkloader/ima3_debug.js"></script>
+<script>
+  // The standard IMA flow from Google's docs
+  window.result = { version: window.google?.ima?.VERSION, events: [], late: [], contexts: [] };
+  try {
+    const adc = new google.ima.AdDisplayContainer(document.getElementById('adContainer'), document.getElementById('content'));
+    adc.initialize();
+    const loader = new google.ima.AdsLoader(adc);
+    loader.getSettings().setVpaidMode(google.ima.ImaSdkSettings.VpaidMode.ENABLED);
+    loader.addEventListener(google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED, () => result.events.push('adsManagerLoaded'));
+    loader.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, (e) => {
+      result.events.push(`adError:${e.getError().getErrorCode()}`);
+      result.contexts.push(e.getUserRequestContext());
+    });
+    const req = new google.ima.AdsRequest();
+    req.adTagUrl = 'https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&env=vp&output=vast&impl=s&correlator=1';
+    req.setAdWillAutoPlay(false);
+    loader.requestAds(req, { slot: 'preroll' });
+    // Players sometimes add their listener after requesting
+    loader.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, () => result.late.push('adError'));
+  } catch (e) { result.error = String(e); }
+</script></body></html>

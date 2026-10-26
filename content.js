@@ -298,9 +298,9 @@
 
     // Show the domain in bold
     const urlChoices = urls.map((url) => {
-      const { protocol, hostname, pathname, search, hash } = new URL(url);
+      const { protocol, host, pathname, search, hash } = new URL(url); // host keeps the port
       return {
-        label: [`${protocol}//`, createElement("b", "", hostname), pathname + search + hash],
+        label: [`${protocol}//`, createElement("b", "", host), pathname + search + hash],
         value: url,
       };
     });

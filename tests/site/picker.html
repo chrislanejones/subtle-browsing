@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;font:16px sans-serif">
+<h1>Picker test</h1>
+<div id="adbox" style="position:absolute;left:100px;top:100px;width:300px;height:150px;background:#eee">
+  <img src="/ok.png?first" width="20" height="20">
+  <a id="adlink" href="https://ads.example-network.com/click?id=987">
+    <img src="__THIRD__/ad.png?cb=12345" width="60" height="60">
+  </a>
+  <div data-src="https://tracker.example-ads.com/pixel/1"></div>
+</div>
+<div id="plain" style="position:absolute;left:100px;top:300px;width:300px;height:80px;background:#ddf">no urls here</div>
+<script>
+  window.adClicks = 0;
+  document.getElementById('adbox').addEventListener('click', () => adClicks++);
+</script>
+</body></html>
