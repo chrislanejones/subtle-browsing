@@ -69,6 +69,7 @@ on every bad ad by hand.
 | Notification requests | Blocks website push-prompt tools independently | No |
 | Ad refresh and sync frames | Blocks Browsi's ad refresh and the hidden cookie-sync frames that ad auctions open. [See the URLs](rules/ad-churn.json) | No |
 | Slow ad refresh | Lets each Google ad slot refresh at most once every 2 minutes, and not in a hidden tab | No |
+| Stop ad redirects | Stops an ad from sending the whole tab to another site without a click | No |
 | Site controls | Override individual protections for a site and its subdomains | Inherit defaults |
 | Hide on this site | Hide a picked element only on its hostname; undo in settings or DevTools | — |
 | Pause on this site | Turns everything off for one site, in case it breaks | — |
@@ -98,7 +99,7 @@ on every bad ad by hand.
 ### What gets blocked
 
 The popup shows the three default-on protections under **Block by default**.
-Expand **Offers, prompts and broader limits** for the five default-off
+Expand **Offers, prompts and broader limits** for the six default-off
 choices. The settings page and DevTools **Default protections** expose the
 same choices.
 
@@ -110,8 +111,9 @@ same choices.
 | **All heavy third-party embeds** | Broadens Heavy ads to unrecognized third-party frames. Heavy ads must also be on. |
 | **Newsletter offers** | Uses [`rules/annoyances.json`](rules/annoyances.json): OptinMonster, Privy, Justuno, Sumo, Klaviyo forms and similar. |
 | **Notification requests** | Uses [`rules/notifications.json`](rules/notifications.json): OneSignal, PushEngage, iZooto, Webpushr, Aimtell and PushCrew. |
-| **Ad refresh and sync frames** | Uses [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts, plus 26 hidden cookie-sync frames from ad auctions (OpenX, PubMatic, Rubicon, AppNexus, Criteo, TripleLift, Index Exchange, LiveIntent and others). |
+| **Ad refresh and sync frames** | Uses [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts, plus 26 hidden cookie-sync frames from ad auctions by name (OpenX, PubMatic, Rubicon, AppNexus, Criteo, TripleLift, Index Exchange, LiveIntent and others) and 3 patterns for sync frames from anyone else. |
 | **Slow ad refresh** | Wraps Google's ad tag (`googletag.pubads().refresh()`) in [`refresh-throttle.js`](refresh-throttle.js). Every slot's first load goes through; after that each slot refreshes at most once every 2 minutes, and not while the tab is hidden. |
+| **Stop ad redirects** | [`ad-redirect-guard.js`](ad-redirect-guard.js) watches the top page's navigations and cancels one that heads to another site without a click. Links, forms, the address bar, reload and back/forward all work as usual. |
 
 More on each:
 
@@ -144,18 +146,31 @@ More on each:
   past 1.2 GB. The page itself never changed. The ads did: a new auction
   about every 30 seconds, Browsi swapping in fresh ads, and 28 invisible
   frames syncing cookies between ad companies. No single frame is heavy,
-  so the heavy-ad limits never trip. A Variety article that hit 3.2 GB had
-  13 of these frames. The 10 that weren't on the list are now. This switch blocks Browsi and those
-  sync frames by their sync URLs, and only when they load as a frame, so
-  the same companies' visible banners still show. It's off by default until
-  the memory savings are measured.
+  so the heavy-ad limits never trip. A Variety article went further: 3.2 GB
+  twenty seconds after it opened, spread over 76 processes, because Chrome
+  gives every outside site's frame its own process and Variety's ads open
+  sync frames from about 60 companies. Listing them by name can't keep up,
+  so three patterns also catch any outside frame whose address looks like a
+  sync URL. With this switch, Slow ad refresh and Stop ad redirects on, the
+  same article used 1.0 GB in 12 processes, and it showed 4 banners instead
+  of 3. It blocks only frames, so the same companies' visible banners still
+  show. It's off by default because a pattern can still catch something it
+  shouldn't.
 - **Slow ad refresh:** Browsi isn't the only thing refreshing ads. Most
   news sites ask Google's ad tag for a fresh round on a timer, and each
   round loads new ads into the page's memory. This switch doesn't block
   anything. Banners still show; they just change every 2 minutes instead of
-  every 30 seconds, and stop changing while you're on another tab. That also
-  means fewer paid impressions for the site, which is why it's off by
-  default.
+  every 30 seconds, and stop changing while you're on another tab. On
+  Variety, 150 seconds of the page's own refreshing sent 10 ad requests
+  with it off and 2 with it on. That also means fewer paid impressions for
+  the site, which is why it's off by default.
+- **Stop ad redirects:** the same Variety article sent the whole tab to a
+  fake McAfee warning page, twice in a row, without a click. The ad ran in
+  one of Google's ad frames that shares the page's address, and Chrome only
+  stops that trick for frames from other sites. This switch cancels a jump
+  to another site that no click started. It's off by default because a
+  site's own sign-in or checkout can move you to another site the same way;
+  turn it off for that site if one does.
 
 #### URLs each list catches
 
@@ -164,7 +179,7 @@ More on each:
 | Video ad companies | [`rules/video-ads.json`](rules/video-ads.json) | 19 |
 | Newsletter offers | [`rules/annoyances.json`](rules/annoyances.json) | 18 |
 | Notification requests | [`rules/notifications.json`](rules/notifications.json) | 6 |
-| Ad refresh and sync frames | [`rules/ad-churn.json`](rules/ad-churn.json) | 27 |
+| Ad refresh and sync frames | [`rules/ad-churn.json`](rules/ad-churn.json) | 30 |
 
 Each rule's `urlFilter` is the URL it catches. Your own blocked URLs are on
 the settings page, and on an unpacked install the DevTools log lists every
@@ -343,6 +358,7 @@ The full reasoning is in [ADR-004](docs/adr/004-built-in-rulesets-are-hand-made-
 | Box hiding and restore | One message listener per frame while autoplay or heavy-ad removal is enabled globally or on a site |
 | Site policy and element hiding | A shared settings cache and a small CSS injector per frame; no polling or mutation observer |
 | Slow ad refresh | One small script in each top page while the switch is on for that site. It only does work when the page uses Google's ad tag |
+| Stop ad redirects | One small script in each top page while the switch is on for that site. It only runs when the page navigates |
 | Google IMA stand-in | Only loads on pages that ask for Google's video ad engine, in place of the real one |
 
 ## Privacy
@@ -394,13 +410,18 @@ This extension:
   precede the refresh. Reload after changing a site setting.
 - Hiding cannot reach inside closed shadow roots, and structural selectors
   can target the wrong element after a site changes its layout.
-- Ad refresh and sync frames matches specific sync URLs. Ad companies can move
-  them, and the list needs updating when they do.
+- Ad refresh and sync frames matches specific sync URLs and three sync-URL
+  patterns. A sync frame with an ordinary-looking address gets through, and
+  an ordinary frame with a sync-looking address would be blocked.
 - Slow ad refresh only covers refreshes that go through Google's ad tag. A
   page that resets `googletag` before the tag loads drops the throttle, and
   ad scripts that reload slots some other way aren't slowed.
   On pages without ads it leaves an empty `googletag` command queue behind,
   the same thing Google's own setup snippet creates.
+- Stop ad redirects lets a redirect through when you've just clicked
+  anywhere on the page, so an ad that waits for your first click still
+  works. Redirects started by frames from other sites are left to Chrome,
+  which already blocks them without a click.
 - The IMA stand-in covers `ima3.js` only, not Google's live-stream ad
   engine (`ima3_dai.js`).
 - The block list holds about 300 URLs, the most Chrome sync allows.

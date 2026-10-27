@@ -194,6 +194,44 @@ test("ad refresh and sync frames switch is off by default and only blocks sync f
   expect(browsi.condition.urlFilter).toBe("||browsiprod.com^");
   for (const rule of sync)
     expect(rule.condition.resourceTypes).toEqual(["sub_frame"]);
+
+  // Chrome silently skips a pattern over its regex memory limit
+  for (const rule of sync.filter((r) => r.condition.regexFilter))
+    expect(
+      await ext.sw.evaluate((regex) => chrome.declarativeNetRequest.isRegexSupported({ regex }), rule.condition.regexFilter),
+      `rule ${rule.id}`,
+    ).toEqual({ isSupported: true });
+
+  // The pattern rules catch sync frames from hosts not listed by name, and
+  // leave ordinary embeds and the site's own frames alone
+  const blocked = (url, initiator = "https://variety.com") =>
+    ext.sw.evaluate(
+      async ([url, initiator]) =>
+        (await chrome.declarativeNetRequest.testMatchOutcome({ url, initiator, type: "sub_frame", tabId: -1 }))
+          .matchedRules.length > 0,
+      [url, initiator],
+    );
+  for (const url of [
+    "https://sync.intentiq.com/profiles_engine/ProfilesEngineServlet?at=20",
+    "https://b1sync.outbrain.com/usersync/prebid?gdpr=",
+    "https://pbsj.bricks-co.com/setuid?gdpr=0",
+    "https://hbx.media.net/checksync.php?cid=8",
+    "https://cs-tam.minutemedia-prebid.com/sync-iframe?redirect=",
+    "https://ssum-sec.casalemedia.com/usermatch?s=1",
+    "https://pbs-cs.yellowblue.io/pbs-iframe?gdpr=",
+  ])
+    expect(await blocked(url), url).toBe(true);
+  for (const url of [
+    "https://www.youtube.com/embed/abc123",
+    "https://player.vimeo.com/video/12345",
+    "https://www.google.com/recaptcha/api2/anchor?ar=1",
+    "https://js.stripe.com/v3/elements-inner-card.html",
+    "https://consumercenter.mysynchrony.com/consumercenter/apply",
+    "https://app.hubspot.com/meetings/sync-team",
+    "https://example.com/async/widget.html",
+  ])
+    expect(await blocked(url), url).toBe(false);
+  expect(await blocked("https://sync.variety.com/usersync.html")).toBe(false);
 });
 
 test("picker hides a URL-less element only here, persists and can be undone in DevTools", async ({

@@ -25,5 +25,8 @@
   {"id": 24, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||cs.krushmedia.com/pbserverIframe", "resourceTypes": ["sub_frame"]}},
   {"id": 25, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||eus.rubiconproject.com/usync.html", "resourceTypes": ["sub_frame"]}},
   {"id": 26, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||acdn.adnxs.com/dmp/async_usersync.html", "resourceTypes": ["sub_frame"]}},
-  {"id": 27, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||srv.scalibur.io/adserver/sync", "resourceTypes": ["sub_frame"]}}
+  {"id": 27, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||srv.scalibur.io/adserver/sync", "resourceTypes": ["sub_frame"]}},
+  {"id": 28, "priority": 1, "action": {"type": "block"}, "condition": {"regexFilter": "^https?://([^/?#]*[^a-z/?#])?(user|cookie)?sync[-.]", "domainType": "thirdParty", "resourceTypes": ["sub_frame"]}},
+  {"id": 29, "priority": 1, "action": {"type": "block"}, "condition": {"regexFilter": "[^/:]/(u|user|cookie|check|multi|dinit|init|s2s|pbs|async_user)?[-_]?sync\\d?(\\.html|\\.php|/|\\?|frame|[-_]i?frame|-container)", "domainType": "thirdParty", "resourceTypes": ["sub_frame"]}},
+  {"id": 30, "priority": 1, "action": {"type": "block"}, "condition": {"regexFilter": "/(setuid|getuid|usermatch|visitormatch|server_match|cm-notify|pbserveriframe|pbs-iframe|check_uuid|isyn\\?)", "domainType": "thirdParty", "resourceTypes": ["sub_frame"]}}
 ]

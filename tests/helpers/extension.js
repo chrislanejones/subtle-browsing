@@ -47,13 +47,14 @@ export function registeredScripts(sw) {
   );
 }
 
-export function expectedScripts({ autoplayGuard, heavyAds, refreshThrottle }) {
+export function expectedScripts({ autoplayGuard, heavyAds, refreshThrottle, adRedirectGuard }) {
   return [
+    adRedirectGuard && "ad-redirect-guard",
     autoplayGuard && "autoplay-guard",
     "cosmetic",
     (autoplayGuard || heavyAds) && "frame-collapse",
     heavyAds && "heavy-ad-guard",
-    refreshThrottle && "refresh-policy",
+    (refreshThrottle || adRedirectGuard) && "page-world-policy",
     refreshThrottle && "refresh-throttle",
   ].filter(Boolean);
 }

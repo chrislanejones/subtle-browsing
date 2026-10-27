@@ -10,6 +10,7 @@ export const DEFAULTS = {
   notificationRules: false,
   adChurnRules: false, // rules/ad-churn.json
   refreshThrottle: false, // refresh-throttle.js
+  adRedirectGuard: false, // ad-redirect-guard.js
   aggressiveHeavyAds: false,
   heavyAds: true, // heavy-ad-guard.js and the download count in background.js
 };
@@ -77,6 +78,7 @@ export const FEATURES = {
   notificationRules: "Notification requests",
   adChurnRules: "Ad refresh and sync frames",
   refreshThrottle: "Slow ad refresh",
+  adRedirectGuard: "Stop ad redirects",
   aggressiveHeavyAds: "All heavy third-party embeds",
 };
 export async function getSiteSettings() {

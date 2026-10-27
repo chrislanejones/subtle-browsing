@@ -20,6 +20,12 @@ with page-policy.js) dispatches a `subtle-refresh-policy` CustomEvent with
 true/false on load and on every sync storage change. setFrameScript gained an
 `options` param (world, allFrames) and skips page-policy.js for MAIN-world
 scripts. 3 Playwright tests on a GPT stand-in (tests/site/refresh.html).
+Later: the bridge is now page-world-policy.js (ADR-023). A slot whose box
+element is replaced (infinite scroll reusing one slot object) gets its first
+load again. Live check on Variety, 150 s of the page's own refreshing: throttle
+off 10 ad requests (5 per slot), on 2. The marker property is hidden because
+SHE Media's blogherads wraps refresh() on top of ours, but the throttle is in
+the chain.
 
 ## Consequences
 + Works on any GPT site, not just Browsi. Banners still show; they rotate less.

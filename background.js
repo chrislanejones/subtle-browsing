@@ -38,7 +38,8 @@ const AUTOPLAY_GUARD_ID = "autoplay-guard";
 const HEAVY_AD_GUARD_ID = "heavy-ad-guard";
 const FRAME_COLLAPSE_ID = "frame-collapse";
 const REFRESH_THROTTLE_ID = "refresh-throttle";
-const REFRESH_POLICY_ID = "refresh-policy";
+const AD_REDIRECT_GUARD_ID = "ad-redirect-guard";
+const PAGE_WORLD_POLICY_ID = "page-world-policy";
 // Chrome's own heavy ad rule unloads ad frames past this much download
 const HEAVY_AD_BYTES = 4 * 1024 * 1024;
 // Block rules use IDs 1..N, so the paused-sites rule sits far above them
@@ -162,6 +163,7 @@ async function applySettings({
   notificationRules,
   adChurnRules,
   refreshThrottle,
+  adRedirectGuard,
   heavyAds,
 }) {
   const overrides = Object.values(await getSiteSettings());
@@ -203,9 +205,20 @@ async function applySettings({
     world: "MAIN",
     allFrames: false,
   });
-  await setFrameScript(REFRESH_POLICY_ID, "refresh-policy.js", throttleOn, {
+  // Watches the top page's own navigations, so it lives in that world too
+  const guardOn = adRedirectGuard || overrides.some((s) => s.adRedirectGuard);
+  await setFrameScript(AD_REDIRECT_GUARD_ID, "ad-redirect-guard.js", guardOn, {
+    world: "MAIN",
     allFrames: false,
   });
+  await setFrameScript(
+    PAGE_WORLD_POLICY_ID,
+    "page-world-policy.js",
+    throttleOn || guardOn,
+    { allFrames: false },
+  );
+  // Renamed to page-world-policy.js; drop the old registration
+  await setFrameScript("refresh-policy", "page-world-policy.js", false);
   await setFrameScript("cosmetic", "cosmetic.js", true);
   await syncSiteRules();
 }

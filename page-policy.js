@@ -18,6 +18,7 @@
     notificationRules: false,
     adChurnRules: false,
     refreshThrottle: false,
+    adRedirectGuard: false,
     aggressiveHeavyAds: false,
     cosmetic: true,
   };

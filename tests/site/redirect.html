@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Ad redirect</title></head>
+<body>
+<!-- ?to=<url> sets the link. With &ad, a same-origin ad frame (no src, like
+     Google's) sends the whole tab to that URL after half a second, with no
+     click. -->
+<a id="link" href="#">Go</a>
+<script>
+  const params = new URLSearchParams(location.search);
+  const to = params.get("to");
+  document.getElementById("link").href = to;
+  if (params.has("ad")) {
+    const frame = document.createElement("iframe");
+    document.body.append(frame);
+    frame.contentWindow.eval(
+      `setTimeout(() => { top.location.href = ${JSON.stringify(to)}; }, 500)`,
+    );
+  }
+</script>
+</body>
+</html>

@@ -36,6 +36,7 @@ const toggles = {
   notificationRules: document.getElementById("notificationRulesToggle"),
   adChurnRules: document.getElementById("adChurnRulesToggle"),
   refreshThrottle: document.getElementById("refreshThrottleToggle"),
+  adRedirectGuard: document.getElementById("adRedirectGuardToggle"),
   aggressiveHeavyAds: document.getElementById("aggressiveHeavyAdsToggle"),
   annoyanceRules: $("annoyanceRulesToggle"),
 };

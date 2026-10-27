@@ -20,6 +20,7 @@ existing global and per-site Default/On/Off controls. Rule 1 blocks
 other. Rules 2-16 block 15 cookie-sync frame URLs copied from the live page,
 sub_frame only. imprchmp.taboola.com and i.liadm.com were seen but left out
 because their purpose is unclear.
+Later: rules 28-30 match sync frames by URL pattern; see ADR-024.
 
 ## Consequences
 + Banners still load: the same companies' scripts and bids are untouched; only

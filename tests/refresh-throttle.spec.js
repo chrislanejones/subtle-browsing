@@ -34,6 +34,21 @@ test.describe("slow ad refresh", () => {
     expect(await refreshAll(page)).toBe(0);
   });
 
+  test("a slot whose box is replaced gets its first load again", async ({ ext, page }) => {
+    await ext.setSettings({ refreshThrottle: true });
+    await page.goto(`${FIRST}/refresh.html`);
+    await expect.poll(() => refreshAll(page)).toBe(0);
+
+    // Like an infinite-scroll page reusing slot "a" for the next article
+    const sent = await page.evaluate(() => {
+      document.getElementById("a").replaceWith(Object.assign(document.createElement("div"), { id: "a" }));
+      googletag.pubads().refresh();
+      return window.calls.at(-1);
+    });
+    expect(sent).toEqual(["a"]);
+    expect(await refreshAll(page)).toBe(0);
+  });
+
   test("a site turned off is left alone", async ({ ext, page }) => {
     await ext.setSettings({ refreshThrottle: true });
     await ext.setSync({ siteSettings: { "127.0.0.1": { refreshThrottle: false } } });

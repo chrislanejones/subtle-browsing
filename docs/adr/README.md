@@ -35,3 +35,5 @@ for a new one.
 | [020](020-live-site-checks-are-separate-from-regression-tests.md) | Live-site checks are separate from regression tests | Draft (1.6.0) | 2026-10-26 |
 | [021](021-ad-refresh-and-sync-frames-are-an-opt-in-list.md) | Ad refresh and sync frames are an opt-in list | Draft | 2026-10-26 |
 | [022](022-slow-ad-refresh-wraps-googletag-in-the-page-world.md) | Slow ad refresh wraps googletag in the page's world | Draft | 2026-10-26 |
+| [023](023-stop-ad-redirects-cancels-unclicked-cross-site-navigations.md) | Stop ad redirects cancels cross-site navigations nobody clicked for | Draft | 2026-10-27 |
+| [024](024-sync-frames-are-also-matched-by-url-pattern-rules.md) | Sync frames are also matched by three URL-pattern rules | Draft | 2026-10-27 |

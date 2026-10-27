@@ -16,16 +16,24 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
   only when they load as a frame. Found on a local news article that grew to
   1.2–1.3 GB while left open: a new ad auction about every 30 seconds and 28
   invisible frames, none heavy enough on its own to trip the heavy-ad limits.
-  A Variety article that reached 3.2 GB added 10 more (Rubicon, AppNexus,
-  Seedtag, Outbrain, Amazon and others). The memory savings are not measured
-  yet.
+  A Variety article that reached 3.2 GB added 10 more by name (Rubicon,
+  AppNexus, Seedtag, Outbrain, Amazon and others) and 3 patterns that catch
+  sync frames from anyone else. On that article it went from 3.2 GB in 76
+  processes to 1.0 GB in 12, with Slow ad refresh and Stop ad redirects on
+  too.
 - The README links each built-in list and has a table of the URLs each one
   catches.
 - **Slow ad refresh**, a new switch that's off by default. It wraps Google's
   ad tag so each slot's first load goes through, then refreshes at most once
   every 2 minutes and not while the tab is hidden. Banners still show; they
   just rotate less often. Works on any site using Google's ad tag, not only
-  Browsi ones. Per-site On/Off works like the other switches.
+  Browsi ones. Per-site On/Off works like the other switches. A slot that
+  gets a new box, like on a page that keeps loading articles as you scroll,
+  gets its first load again.
+- **Stop ad redirects**, a new switch that's off by default. It stops an ad
+  from sending the whole tab to another site without a click. Found on the
+  same Variety article, where an ad sent the tab to a fake McAfee warning
+  page twice in a row.
 
 ### Changed
 - The toolbar count only shows for the first 7 minutes of each hour. The

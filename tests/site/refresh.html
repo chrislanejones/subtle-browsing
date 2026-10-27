@@ -9,7 +9,10 @@
   window.calls = [];
   const slots = [];
   const slot = (name) => {
-    const s = { name };
+    const box = document.createElement("div");
+    box.id = name;
+    document.body.append(box);
+    const s = { name, getSlotElementId: () => name };
     slots.push(s);
     return s;
   };
