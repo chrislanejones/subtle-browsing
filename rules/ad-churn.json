@@ -15,5 +15,15 @@
   {"id": 14, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||prebid.a-mo.net/isyn", "resourceTypes": ["sub_frame"]}},
   {"id": 15, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||ads.pubmatic.com/AdServer/js/user_sync.html", "resourceTypes": ["sub_frame"]}},
   {"id": 16, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||gum.criteo.com/syncframe", "resourceTypes": ["sub_frame"]}},
-  {"id": 17, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||i.liadm.com/sync-container", "resourceTypes": ["sub_frame"]}}
+  {"id": 17, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||i.liadm.com/sync-container", "resourceTypes": ["sub_frame"]}},
+  {"id": 18, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||widgets.outbrain.com/widgetOBUserSync/", "resourceTypes": ["sub_frame"]}},
+  {"id": 19, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||s.amazon-adsystem.com/iu3", "resourceTypes": ["sub_frame"]}},
+  {"id": 20, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||sync.cootlogix.com/api/user/html/", "resourceTypes": ["sub_frame"]}},
+  {"id": 21, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||sync.receptivity.io/pbs/iframe", "resourceTypes": ["sub_frame"]}},
+  {"id": 22, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||s.seedtag.com/cs/cookiesync/", "resourceTypes": ["sub_frame"]}},
+  {"id": 23, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||public.servenobid.com/sync.html", "resourceTypes": ["sub_frame"]}},
+  {"id": 24, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||cs.krushmedia.com/pbserverIframe", "resourceTypes": ["sub_frame"]}},
+  {"id": 25, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||eus.rubiconproject.com/usync.html", "resourceTypes": ["sub_frame"]}},
+  {"id": 26, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||acdn.adnxs.com/dmp/async_usersync.html", "resourceTypes": ["sub_frame"]}},
+  {"id": 27, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||srv.scalibur.io/adserver/sync", "resourceTypes": ["sub_frame"]}}
 ]

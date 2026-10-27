@@ -110,7 +110,7 @@ same choices.
 | **All heavy third-party embeds** | Broadens Heavy ads to unrecognized third-party frames. Heavy ads must also be on. |
 | **Newsletter offers** | Uses [`rules/annoyances.json`](rules/annoyances.json): OptinMonster, Privy, Justuno, Sumo, Klaviyo forms and similar. |
 | **Notification requests** | Uses [`rules/notifications.json`](rules/notifications.json): OneSignal, PushEngage, iZooto, Webpushr, Aimtell and PushCrew. |
-| **Ad refresh and sync frames** | Uses [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts, plus 16 hidden cookie-sync frames from ad auctions (OpenX, PubMatic, Criteo, TripleLift, Index Exchange, LiveIntent and others). |
+| **Ad refresh and sync frames** | Uses [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts, plus 26 hidden cookie-sync frames from ad auctions (OpenX, PubMatic, Rubicon, AppNexus, Criteo, TripleLift, Index Exchange, LiveIntent and others). |
 | **Slow ad refresh** | Wraps Google's ad tag (`googletag.pubads().refresh()`) in [`refresh-throttle.js`](refresh-throttle.js). Every slot's first load goes through; after that each slot refreshes at most once every 2 minutes, and not while the tab is hidden. |
 
 More on each:
@@ -144,7 +144,8 @@ More on each:
   past 1.2 GB. The page itself never changed. The ads did: a new auction
   about every 30 seconds, Browsi swapping in fresh ads, and 28 invisible
   frames syncing cookies between ad companies. No single frame is heavy,
-  so the heavy-ad limits never trip. This switch blocks Browsi and those
+  so the heavy-ad limits never trip. A Variety article that hit 3.2 GB had
+  13 of these frames. The 10 that weren't on the list are now. This switch blocks Browsi and those
   sync frames by their sync URLs, and only when they load as a frame, so
   the same companies' visible banners still show. It's off by default until
   the memory savings are measured.
@@ -163,7 +164,7 @@ More on each:
 | Video ad companies | [`rules/video-ads.json`](rules/video-ads.json) | 19 |
 | Newsletter offers | [`rules/annoyances.json`](rules/annoyances.json) | 18 |
 | Notification requests | [`rules/notifications.json`](rules/notifications.json) | 6 |
-| Ad refresh and sync frames | [`rules/ad-churn.json`](rules/ad-churn.json) | 17 |
+| Ad refresh and sync frames | [`rules/ad-churn.json`](rules/ad-churn.json) | 27 |
 
 Each rule's `urlFilter` is the URL it catches. Your own blocked URLs are on
 the settings page, and on an unpacked install the DevTools log lists every
