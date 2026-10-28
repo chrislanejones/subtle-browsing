@@ -1,5 +1,6 @@
-// Renders the Web Store promo tiles (440x280 small, 1400x560 marquee) from
-// the Quiet shield icon. Run `node scripts/generate-promo-tiles.js`.
+// Renders the Web Store promo tiles (440x280 small, 1400x560 marquee) and the
+// GitHub social preview (1280x640) from the Quiet shield icon.
+// Run `node scripts/generate-promo-tiles.js`.
 import { chromium } from "@playwright/test";
 import { readFileSync } from "node:fs";
 const icon = readFileSync("docs/store/branding/shield/icon256.png").toString("base64");
@@ -22,6 +23,8 @@ const tile = (w, h, iconSize, font, padX, padY) => `<!doctype html><html><body s
 for (const [name, w, h, iconSize, font, padX, padY] of [
   ["promo-small-440x280", 440, 280, 64, 34, 30, 24],
   ["promo-marquee-1400x560", 1400, 560, 150, 84, 72, 54],
+  // GitHub's repo social preview (Settings → Social preview), 1280x640
+  ["github-social-1280x640", 1280, 640, 160, 90, 76, 58],
 ]) {
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   await page.setContent(tile(w, h, iconSize, font, padX, padY));
