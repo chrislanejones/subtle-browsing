@@ -70,7 +70,7 @@ on every bad ad by hand.
 | Stop ad redirects | Stops an ad from sending the whole tab to another site without a click | No |
 | Site controls | Override individual protections for a site and its subdomains | Inherit defaults |
 | Hide on this site | Hide a picked element only on its hostname; undo in settings or DevTools | — |
-| On / Off on this site / Off everywhere | The bar at the top of the popup. Turns everything off for one site in case it breaks, or for every site at once | On |
+| On / Off on site / Off / 10 min off | The Blocking card at the bottom of the popup. Turns everything off for one site in case it breaks, for every site at once, or for one site for 10 minutes | On |
 | Blocked-today counter | The toolbar icon shows how many requests were blocked today, for the first 7 minutes of each hour | — |
 | Block a URL | Type a URL to block it on every site | — |
 | Element picker | Click an ad to see the domains and URLs inside it, then block one | — |
@@ -201,13 +201,16 @@ on. Your personal URL blocks stay active.
 
 ### Turning it off
 
-The bar at the top of the popup has three choices.
+Open the **Blocking** card at the bottom of the popup. Closed, it shows where
+things stand, like "On" or "Off until 3:42 PM". Inside is one bar with four
+choices.
 
 | Choice | What it does |
 | --- | --- |
 | **On** | Blocks as usual |
-| **Off on this site** | Stops everything on the site you're on, in case it breaks |
-| **Off everywhere** | Stops everything on every site. The toolbar icon says **off** until you turn it back on |
+| **Off on site** | Stops everything on the site you're on, in case it breaks |
+| **Off** | Stops everything on every site. The toolbar icon says **off** until you turn it back on |
+| **10 min off** | Stops everything on the site you're on for 10 minutes, then blocking comes back on its own |
 
 - "Everything" means your own block list, the built-in lists, the autoplay
   stopper, heavy ad removal and hidden elements.
@@ -217,8 +220,8 @@ The bar at the top of the popup has three choices.
   back on with **Unpause** on the settings page.
 - Off everywhere follows your Chrome sign-in like the paused sites do.
 
-A **Pause for 10 minutes** button temporarily pauses an active site in this
-browser. Its deadline survives restarts. Blocking resumes without reloading
+**10 min off** only works while blocking is on, and only in this browser. Its
+deadline survives restarts. Blocking resumes without reloading
 open pages; use Restore or reload for content already removed. Timed pauses
 appear in Settings but are not synced or exported.
 
