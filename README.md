@@ -4,7 +4,7 @@
 
 # URL Blocker
 
-**Version 1.6.0** (10-26-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
+**Version 1.7.0** (10-28-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
 
 A Chrome extension that goes after the ads people actually hate (autoplay
 video, pop-ups, ads that spin up your fan) and leaves normal banner ads
@@ -12,34 +12,19 @@ alone. You can also block any URL yourself, or click an ad on the page to
 block where it came from. Your list and switches follow your Chrome sign-in
 to every computer.
 
-## Unreleased improvements
+## Latest update: 1.7.0
 
-The working tree adds serialized rule saving, explicit Domain / Exact URL /
-Advanced pattern modes with a matching preview, internationalized domains,
-accurate inherited-pause status, and a local ten-minute pause. Popup actions
-and settings controls come before global defaults and activity charts.
-Blocking and hiding offer immediate Undo; stopped autoplay videos can be
-restored. Settings can resume global blocking. Store installs distinguish
-unavailable network statistics from zero activity.
+The popup is back in a sensible order: today's count, the switches, the
+settings link, the picker, Block a URL, and a Blocking card at the bottom with
+**On**, **Off on site**, **Off** and **10 min off**. The settings page opens on
+activity and charts, with the switches on the left and your list on the right.
 
-See [testing and current live-site limits](docs/Testing.md) and
-[the unreleased changelog](CHANGELOG.md#unreleased). This is not a Web Store release.
+Blocking a URL now asks how to match it: the whole domain, one exact address,
+or an advanced pattern, with a preview of what it will catch. New blocks and
+picker hides have Undo, stopped autoplay videos can be restored, and settings
+saved from two windows at once no longer overwrite each other.
 
-## Latest update: 1.6.0
-
-Heavy ads now need ad evidence before removal, and a **Restore this content**
-button brings them back. For especially noisy sites, **All heavy third-party
-embeds** extends the same limits to unrecognized embeds. It is off by default
-because it can stop legitimate videos and tools too.
-
-The toolbar popup and Chrome DevTools panel now have independent site controls.
-You can allow autoplay on one site while leaving video-ad and personal URL
-blocking on. The picker can **Hide on this site**, and newsletter offers and
-notification requests have separate switches. Saved site overrides and hidden
-elements sync, export and import with the other settings.
-
-Detailed changes: [Changelog](CHANGELOG.md#160--10-26-2026).
-Implementation decisions: [ADRs 016–020](docs/adr/README.md).
+Detailed changes: [Changelog](CHANGELOG.md#170--10-28-2026).
 Live news, shopping, sports and streaming checks, including limitations:
 [Testing and compatibility](docs/Testing.md).
 
@@ -482,6 +467,7 @@ This extension:
 
 | Version | Date | Highlights |
 | --- | --- | --- |
+| 1.7.0 | 10-28-2026 | Popup reordered with a Blocking card, URL match modes with a preview, Undo, ten-minute pause, settings opens on activity |
 | 1.6.0 | 10-26-2026 | Selective heavy-ad removal with Restore, broader embed mode, site controls, site-only hiding, separate prompt lists, live-site checks |
 | 1.5.1 | 10-26-2026 | Second-computer sync merge fix, picker shows ports, one entry per domain regardless of case, end-to-end test suite |
 | 1.5.0 | 10-26-2026 | Settings sync, settings page with backups, Alt+Shift+K shortcut, Google IMA stand-in, no more blank ad boxes |

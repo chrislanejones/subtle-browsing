@@ -9,6 +9,11 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
 ## Unreleased
 
+## 1.7.0 — 10-28-2026
+
+A popup in a sensible order, URL match modes with a preview, Undo, and a
+ten-minute pause. Source tag: `v1.7.0`.
+
 ### Popup and settings layout (10-28-2026)
 - The popup puts the switches back up top. In order: today's count, the Block
   by default switches, the link to the settings page, Select element to block,
