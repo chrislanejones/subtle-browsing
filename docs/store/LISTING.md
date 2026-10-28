@@ -19,12 +19,31 @@ builds `dist/url-blocker-<version>.zip` from the last commit.
 | Language | English (United States) |
 | Store icon | `images/icon128.png` |
 | Screenshots (1280×800) | `docs/store/screenshot-1-popup.png`, `docs/store/screenshot-2-settings.png` |
+| Small promo tile (440×280) | `docs/store/promo-small-440x280.png` |
+| Marquee promo tile (1400×560, optional) | `docs/store/promo-marquee-1400x560.png` |
 | Homepage URL | https://github.com/chrislanejones/subtle-browsing |
 | Support URL | https://github.com/chrislanejones/subtle-browsing/issues |
+
+Rebuild the tiles with `node scripts/generate-promo-tiles.js`. They lighten the
+shield so it stands out on the dark card.
 
 The screenshots leave out the blocked-today count and the charts. Chrome
 only reports blocked requests to unpacked installs, so store installs show
 those as unavailable.
+
+### Icon
+
+The icon is **Quiet shield**: a teal shield with a white pause symbol, for
+fewer interruptions and no unwanted autoplay. It's about calmer browsing, not
+malware protection, so don't pitch it as a security guarantee. The store PNG
+is a 128×128 transparent canvas with the artwork fitted inside 96×96, following
+[Google's icon guidance](https://developer.chrome.com/docs/webstore/images#extension_icon).
+The extension also includes 16, 32 and 48 pixel PNGs for smaller surfaces.
+
+The source is `docs/store/branding/shield/master.png`, and its prompt is in
+`docs/store/branding/shield/prompt.txt`. Run `pnpm run icons` (needs
+ImageMagick 7) to rebuild the exports. `docs/store/branding/options.html`
+compares it with the two runner-up options.
 
 ### Description
 

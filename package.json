@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "icons": "node scripts/generate-icons.js",
     "test": "playwright test",
     "package": "node scripts/package.js",
     "test:live": "node scripts/check-live-sites.js",
