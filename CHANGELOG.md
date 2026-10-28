@@ -35,6 +35,11 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
   same Variety article, where an ad sent the tab to a fake McAfee warning
   page twice in a row.
 
+- **Off everywhere.** The popup's **Pause on (site)** switch is now a bar
+  at the top with three choices: **On**, **Off on this site** and **Off
+  everywhere**. Off everywhere stops blocking on every site at once, and the
+  toolbar icon says **off** until it's turned back on.
+
 ### Changed
 - The toolbar count only shows for the first 7 minutes of each hour. The
   rest of the hour it's just the icon. The popup still shows the count any

@@ -33,7 +33,12 @@
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "sync") return;
     if (changes.hiddenElements) rules = changes.hiddenElements.newValue ?? [];
-    if (changes.hiddenElements || changes.pausedSites) render();
+    if (
+      changes.hiddenElements ||
+      changes.pausedSites ||
+      changes.pausedEverywhere
+    )
+      render();
   });
   document.addEventListener("DOMContentLoaded", render, { once: true });
 })();

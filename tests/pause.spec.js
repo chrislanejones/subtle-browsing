@@ -3,6 +3,7 @@ import { FIRST } from "./helpers/env.js";
 import { quietEval } from "./helpers/quiet.js";
 
 const PAUSED_SITES_RULE_ID = 1_000_000;
+const PAUSED_EVERYWHERE_RULE_ID = 1_000_001;
 
 // quietEval: a Playwright evaluate() would count as a click and let autoplay run
 const probe = (page) =>
@@ -56,4 +57,56 @@ test("allowed requests on a paused site aren't counted as blocks", async ({ ext,
   await page.waitForTimeout(1500);
   expect(await ext.logUrls()).toEqual([]);
   expect(await ext.sw.evaluate(() => chrome.action.getBadgeText({}))).toBe("");
+});
+
+// The popup's three-way control sends setPower
+async function setPower(ext, page, mode) {
+  const tabId = await ext.tabIdOf(page);
+  const reloaded = page.waitForEvent("load");
+  const response = await ext.sendMessage({ action: "setPower", mode, site: "127.0.0.1", tabId });
+  expect(response).toEqual({ ok: true });
+  await reloaded;
+}
+
+test("off everywhere lets everything through and shows off on the badge, on restores both", async ({ ext, page }) => {
+  await ext.setBlockedUrls(["localhost"]);
+  await page.goto(`${FIRST}/pause.html`);
+  await expect.poll(() => probe(page)).toEqual({ adLoaded: false, videoPlaying: false, triedToPlay: true });
+  await expect.poll(async () => (await ext.logUrls()).length).toBe(1); // the block before turning off
+
+  await setPower(ext, page, "everywhere");
+  expect(await ext.getSync("pausedEverywhere")).toEqual({ pausedEverywhere: true });
+  const allow = (await ext.dynamicRules()).find((r) => r.id === PAUSED_EVERYWHERE_RULE_ID);
+  expect(allow).toEqual({
+    id: PAUSED_EVERYWHERE_RULE_ID,
+    priority: 10,
+    action: { type: "allowAllRequests" },
+    condition: { resourceTypes: ["main_frame", "sub_frame"] },
+  });
+  await expect.poll(() => probe(page)).toEqual({ adLoaded: true, videoPlaying: true, triedToPlay: true });
+  await expect.poll(() => ext.sw.evaluate(() => chrome.action.getBadgeText({}))).toBe("off");
+  await page.waitForTimeout(1500); // the allowed requests aren't logged
+  expect(await ext.logUrls()).toHaveLength(1);
+
+  await setPower(ext, page, "on");
+  expect(await ext.getSync("pausedEverywhere")).toEqual({ pausedEverywhere: false });
+  expect(await ext.getSync("pausedSites")).toEqual({ pausedSites: [] });
+  expect((await ext.dynamicRules()).map((r) => r.id)).toEqual([1]);
+  await expect.poll(() => probe(page)).toEqual({ adLoaded: false, videoPlaying: false, triedToPlay: true });
+  await expect.poll(() => ext.sw.evaluate(() => chrome.action.getBadgeText({}))).toBe("");
+});
+
+test("off on this site clears off everywhere, and on unpauses the site", async ({ ext, page }) => {
+  await page.goto(`${FIRST}/pause.html`);
+  await setPower(ext, page, "everywhere");
+  await setPower(ext, page, "site");
+  expect(await ext.getSync(["pausedEverywhere", "pausedSites"])).toEqual({ pausedEverywhere: false, pausedSites: ["127.0.0.1"] });
+  expect((await ext.dynamicRules()).map((r) => r.id)).toEqual([PAUSED_SITES_RULE_ID]);
+  await setPower(ext, page, "on");
+  expect(await ext.getSync("pausedSites")).toEqual({ pausedSites: [] });
+});
+
+test("setPower rejects a bad mode or site", async ({ ext }) => {
+  expect(await ext.sendMessage({ action: "setPower", mode: "sideways" })).toEqual({ error: "Invalid power mode." });
+  expect(await ext.sendMessage({ action: "setPower", mode: "site", site: "not a site" })).toEqual({ error: "Invalid site." });
 });

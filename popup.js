@@ -5,8 +5,10 @@ import {
   onBlockedUrlsChanged,
 } from "./blocklist.js";
 import {
+  getPausedEverywhere,
   getPausedSites,
   getSettings,
+  onPausedEverywhereChanged,
   onPausedSitesChanged,
   onSettingsChanged,
   siteKey,
@@ -86,25 +88,47 @@ onSettingsChanged((settings) => {
     checkbox.checked = settings[key];
 });
 
-// "Pause on this site", for web pages only
+// On / Off on this site / Off everywhere. "This site" needs a web page.
 const [activeTab] = await chrome.tabs.query({
   active: true,
   currentWindow: true,
 });
-if (/^https?:/.test(activeTab?.url ?? "")) {
-  const site = siteKey(new URL(activeTab.url).hostname);
-  const pauseSiteToggle = document.getElementById("pauseSiteToggle");
-  document.getElementById("siteName").textContent = site;
-  pauseSiteToggle.checked = (await getPausedSites()).includes(site);
-  document.getElementById("siteRow").hidden = false;
+const site = /^https?:/.test(activeTab?.url ?? "")
+  ? siteKey(new URL(activeTab.url).hostname)
+  : null;
+const powerInputs = [...document.querySelectorAll('input[name="power"]')];
+const powerDesc = document.getElementById("powerDesc");
+document.querySelector('input[value="site"]').disabled = !site;
 
-  // background.js updates the rules, then reloads the tab
-  pauseSiteToggle.addEventListener("change", () => {
+function renderPower(mode) {
+  for (const input of powerInputs) input.checked = input.value === mode;
+  const name = document.createElement("b");
+  name.textContent = site;
+  if (mode === "everywhere")
+    powerDesc.replaceChildren("Nothing is blocked on any site.");
+  else if (mode === "site")
+    powerDesc.replaceChildren("Nothing is blocked on ", name, ".");
+  else if (site)
+    powerDesc.replaceChildren("Blocking on ", name, ". Changes reload the tab.");
+  else powerDesc.replaceChildren("Blocking on every site.");
+}
+async function currentPower() {
+  if (await getPausedEverywhere()) return "everywhere";
+  return site && (await getPausedSites()).includes(site) ? "site" : "on";
+}
+renderPower(await currentPower());
+onPausedSitesChanged(async () => renderPower(await currentPower()));
+onPausedEverywhereChanged(async () => renderPower(await currentPower()));
+
+// background.js updates the rules, then reloads the tab
+for (const input of powerInputs) {
+  input.addEventListener("change", () => {
+    renderPower(input.value);
     chrome.runtime.sendMessage({
-      action: "pauseSite",
-      site,
-      paused: pauseSiteToggle.checked,
-      tabId: activeTab.id,
+      action: "setPower",
+      mode: input.value,
+      site: site ?? undefined,
+      tabId: site ? activeTab.id : undefined,
     });
   });
 }

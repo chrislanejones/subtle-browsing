@@ -27,6 +27,7 @@
     site,
     enabled(key) {
       if (
+        state.pausedEverywhere === true ||
         (state.pausedSites ?? []).some(
           (s) => site === s || site.endsWith(`.${s}`),
         )
@@ -43,13 +44,18 @@
     },
   });
   policy.ready = chrome.storage.sync
-    .get(["settings", "siteSettings", "pausedSites"])
+    .get(["settings", "siteSettings", "pausedSites", "pausedEverywhere"])
     .then((value) => {
       state = value;
     });
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "sync") return;
-    for (const key of ["settings", "siteSettings", "pausedSites"])
+    for (const key of [
+      "settings",
+      "siteSettings",
+      "pausedSites",
+      "pausedEverywhere",
+    ])
       if (changes[key]) state[key] = changes[key].newValue;
   });
 })();

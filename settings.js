@@ -3,6 +3,7 @@
 
 const STORAGE_KEY = "settings";
 const PAUSED_SITES_KEY = "pausedSites";
+const PAUSED_EVERYWHERE_KEY = "pausedEverywhere";
 export const DEFAULTS = {
   videoAdRules: true, // rules/video-ads.json
   autoplayGuard: true, // autoplay-guard.js
@@ -56,6 +57,25 @@ export function onPausedSitesChanged(callback) {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === "sync" && changes[PAUSED_SITES_KEY]) {
       callback(changes[PAUSED_SITES_KEY].newValue || []);
+    }
+  });
+}
+
+// The popup's "Off everywhere": one flag that pauses every site at once
+export async function getPausedEverywhere() {
+  const { [PAUSED_EVERYWHERE_KEY]: paused = false } =
+    await chrome.storage.sync.get(PAUSED_EVERYWHERE_KEY);
+  return paused === true;
+}
+
+export async function setPausedEverywhere(paused) {
+  await chrome.storage.sync.set({ [PAUSED_EVERYWHERE_KEY]: paused === true });
+}
+
+export function onPausedEverywhereChanged(callback) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "sync" && changes[PAUSED_EVERYWHERE_KEY]) {
+      callback(changes[PAUSED_EVERYWHERE_KEY].newValue === true);
     }
   });
 }

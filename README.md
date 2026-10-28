@@ -72,7 +72,7 @@ on every bad ad by hand.
 | Stop ad redirects | Stops an ad from sending the whole tab to another site without a click | No |
 | Site controls | Override individual protections for a site and its subdomains | Inherit defaults |
 | Hide on this site | Hide a picked element only on its hostname; undo in settings or DevTools | — |
-| Pause on this site | Turns everything off for one site, in case it breaks | — |
+| On / Off on this site / Off everywhere | The bar at the top of the popup. Turns everything off for one site in case it breaks, or for every site at once | On |
 | Blocked-today counter | The toolbar icon shows how many requests were blocked today, for the first 7 minutes of each hour | — |
 | Block a URL | Type a URL to block it on every site | — |
 | Element picker | Click an ad to see the domains and URLs inside it, then block one | — |
@@ -195,20 +195,27 @@ on. Your personal URL blocks stay active.
 - Changes reload the inspected/active tab after the rules are applied.
 - Choices cover that hostname (without `www.`) and its subdomains. A more
   specific site's choice wins; Default inherits the parent or global choice.
-- **Pause on this site** still disables everything, including hidden elements.
+- **Off on this site** still disables everything, including hidden elements.
 - Remove overrides with **Reset site** in settings or DevTools; reload open
   pages afterward. Content that was already removed needs Restore or reload.
 
-### Pausing a site
+### Turning it off
 
-If a site breaks, open the popup on that site and turn on
-**Pause on (site)**.
+The bar at the top of the popup has three choices.
 
-- Everything stops on that site: your own block list, the built-in lists,
-  the autoplay stopper and heavy ad removal.
-- The tab reloads.
-- Turn it off to start blocking again, or click **Unpause** next to the
-  site on the settings page.
+| Choice | What it does |
+| --- | --- |
+| **On** | Blocks as usual |
+| **Off on this site** | Stops everything on the site you're on, in case it breaks |
+| **Off everywhere** | Stops everything on every site. The toolbar icon says **off** until you turn it back on |
+
+- "Everything" means your own block list, the built-in lists, the autoplay
+  stopper, heavy ad removal and hidden elements.
+- The tab you're on reloads. Other open tabs catch up the next time they
+  load.
+- **On** undoes both, for the site you're on. A site can also be turned
+  back on with **Unpause** on the settings page.
+- Off everywhere follows your Chrome sign-in like the paused sites do.
 
 ### Blocked-today counter
 
@@ -298,7 +305,7 @@ Open it either way:
 
 | What | Where it's kept |
 | --- | --- |
-| Block list, paused sites, switches, site overrides, hidden elements | Synced: follows your Chrome sign-in to every computer |
+| Block list, paused sites, Off everywhere, switches, site overrides, hidden elements | Synced: follows your Chrome sign-in to every computer |
 | Request log, blocked-today count | This computer only |
 
 - Chrome does the syncing, through your Google account. The extension

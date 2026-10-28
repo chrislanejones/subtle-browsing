@@ -4,10 +4,13 @@ import {
   onBlockedUrlsChanged,
 } from "./blocklist.js";
 import {
+  getPausedEverywhere,
   getPausedSites,
   getSettings,
+  onPausedEverywhereChanged,
   onPausedSitesChanged,
   onSettingsChanged,
+  setPausedEverywhere,
   setSitePaused,
   getSiteSettings,
   setSiteSetting,
@@ -44,6 +47,7 @@ const PAGE_WORLD_POLICY_ID = "page-world-policy";
 const HEAVY_AD_BYTES = 4 * 1024 * 1024;
 // Block rules use IDs 1..N, so the paused-sites rule sits far above them
 const PAUSED_SITES_RULE_ID = 1_000_000;
+const PAUSED_EVERYWHERE_RULE_ID = 1_000_001;
 const BADGE_COLOR = "#3a6d45";
 const MIDNIGHT_ALARM = "midnight";
 const BADGE_WINDOW_ALARM = "badge-window";
@@ -74,6 +78,10 @@ chrome.runtime.onStartup.addListener(setUpBadge);
 
 onBlockedUrlsChanged(() => queue(syncDynamicRules));
 onPausedSitesChanged(() => queue(syncDynamicRules));
+onPausedEverywhereChanged(() => {
+  queue(syncDynamicRules);
+  showBadge();
+});
 onSettingsChanged((settings) => {
   queue(() => applySettings(settings));
 });
@@ -119,11 +127,13 @@ function toUrlFilter(entry) {
 }
 
 async function syncDynamicRules() {
-  const [blockedUrls, pausedSites, oldRules] = await Promise.all([
-    getBlockedUrls(),
-    getPausedSites(),
-    chrome.declarativeNetRequest.getDynamicRules(),
-  ]);
+  const [blockedUrls, pausedSites, pausedEverywhere, oldRules] =
+    await Promise.all([
+      getBlockedUrls(),
+      getPausedSites(),
+      getPausedEverywhere(),
+      chrome.declarativeNetRequest.getDynamicRules(),
+    ]);
 
   const addRules = blockedUrls
     .map(toUrlFilter)
@@ -146,6 +156,16 @@ async function syncDynamicRules() {
         requestDomains: pausedSites,
         resourceTypes: ["main_frame", "sub_frame"],
       },
+    });
+  }
+
+  // The same rule with no site in it covers every page
+  if (pausedEverywhere) {
+    addRules.push({
+      id: PAUSED_EVERYWHERE_RULE_ID,
+      priority: 10,
+      action: { type: "allowAllRequests" },
+      condition: { resourceTypes: ["main_frame", "sub_frame"] },
     });
   }
 
@@ -254,8 +274,11 @@ async function setFrameScript(id, file, enabled, options = {}) {
 
 chrome.declarativeNetRequest.onRuleMatchedDebug?.addListener(
   ({ request, rule }) => {
-    // The paused-sites rule lets requests through; it doesn't block them
-    if (rule.rulesetId === "_dynamic" && rule.ruleId === PAUSED_SITES_RULE_ID)
+    // The pause rules let requests through; they don't block them
+    if (
+      rule.rulesetId === "_dynamic" &&
+      [PAUSED_SITES_RULE_ID, PAUSED_EVERYWHERE_RULE_ID].includes(rule.ruleId)
+    )
       return;
     if (rule.rulesetId === "_session" && sessionAllowIds.has(rule.ruleId))
       return;
@@ -291,16 +314,19 @@ async function setUpBadge() {
 }
 
 async function showBadge() {
+  // "off" stays up all hour, so a paused extension isn't forgotten
+  const off = await getPausedEverywhere();
   if (!canCountBlocks) {
     // Without the debug event there's no daily total, so let Chrome show
     // each tab's own blocked count instead
     await chrome.declarativeNetRequest.setExtensionActionOptions({
-      displayActionCountAsBadgeText: badgeWindowOpen(),
+      displayActionCountAsBadgeText: !off && badgeWindowOpen(),
     });
+    await chrome.action.setBadgeText({ text: off ? "off" : "" });
     return;
   }
   await chrome.action.setBadgeText({
-    text: badgeText(await getBlockedToday()),
+    text: off ? "off" : badgeText(await getBlockedToday()),
   });
 }
 
@@ -354,7 +380,7 @@ async function flushLogs() {
     blockedUrlLogs: [...blockedUrlLogs, ...entries].slice(-MAX_LOG_ENTRIES),
     blockedToday: { date: today(), count },
   });
-  await chrome.action.setBadgeText({ text: badgeText(count) });
+  await showBadge();
 }
 
 // Heavy ads: adds up what each third-party frame downloads, counting nested
@@ -522,6 +548,17 @@ async function pauseSite(site, paused, tabId) {
   await chrome.tabs.reload(tabId);
 }
 
+// The popup's On / Off on this site / Off everywhere control
+async function setPower(mode, site, tabId) {
+  if (!["on", "site", "everywhere"].includes(mode))
+    throw new Error("Invalid power mode.");
+  if (site !== undefined && !validSite(site)) throw new Error("Invalid site.");
+  await setPausedEverywhere(mode === "everywhere");
+  if (site && mode !== "everywhere") await setSitePaused(site, mode === "site");
+  await queue(syncDynamicRules);
+  if (Number.isInteger(tabId)) await chrome.tabs.reload(tabId);
+}
+
 // Keyboard shortcut (Alt+Shift+K unless changed at chrome://extensions/shortcuts)
 chrome.commands.onCommand.addListener(async (command, tab) => {
   if (command !== PICKER_COMMAND || !(tab?.id >= 0)) return;
@@ -596,6 +633,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case "heavyAdRemoved":
       logBlockedUrl(`Heavy ad (${message.reason}): ${message.url}`);
       return;
+
+    case "setPower":
+      setPower(message.mode, message.site, message.tabId)
+        .then(() => sendResponse({ ok: true }))
+        .catch((error) => sendResponse({ error: error.message }));
+      return true;
 
     case "pauseSite":
       pauseSite(message.site, message.paused, message.tabId)

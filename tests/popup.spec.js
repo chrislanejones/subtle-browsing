@@ -1,6 +1,6 @@
 // The toolbar popup, opened as a tab. In a tab the active tab is the popup
-// itself, so "Pause on this site" stays hidden; pause.spec.js covers the
-// message it sends.
+// itself, so "Off on this site" is disabled; pause.spec.js covers the
+// message the control sends.
 
 import { test, expect } from "./helpers/extension.js";
 
@@ -84,14 +84,30 @@ test.describe("popup", () => {
     await expect(page.locator("#statusMessage")).toHaveText("The selector can't run on this page.");
   });
 
-  test("hides the pause row off web pages and fits under 600px with it shown", async ({ ext, page }) => {
+  test("the power control shows the state and disables this-site off web pages", async ({ ext, page }) => {
     await page.goto(ext.url("popup.html"));
     await expect(page.locator("#blockedToday")).toBeVisible();
-    await expect(page.locator("#siteRow")).toBeHidden();
-    // Worst case: the pause row shown as it is on a web page
+    await expect(page.locator('input[name="power"][value="on"]')).toBeChecked();
+    await expect(page.locator('input[name="power"][value="site"]')).toBeDisabled();
+    await expect(page.locator("#powerDesc")).toHaveText("Blocking on every site.");
+
+    // Turned off from another window, the popup follows
+    await ext.setSync({ pausedEverywhere: true });
+    await expect(page.locator('input[name="power"][value="everywhere"]')).toBeChecked();
+    await expect(page.locator("#powerDesc")).toHaveText("Nothing is blocked on any site.");
+
+    await page.locator('label:has(input[name="power"][value="on"])').click();
+    await expect.poll(() => ext.getSync("pausedEverywhere")).toEqual({ pausedEverywhere: false });
+    await expect(page.locator("#powerDesc")).toHaveText("Blocking on every site.");
+  });
+
+  test("fits under 600px with a long site name", async ({ ext, page }) => {
+    await page.goto(ext.url("popup.html"));
+    await expect(page.locator("#blockedToday")).toBeVisible();
+    // Worst case: the longest description, as it is on a web page
     await page.evaluate(() => {
-      document.getElementById("siteRow").hidden = false;
-      document.getElementById("siteName").textContent = "www.a-rather-long-site-name.example.com";
+      document.getElementById("powerDesc").innerHTML =
+        "Blocking on <b>www.a-rather-long-site-name.example.com</b>. Changes reload the tab.";
     });
     // With a short viewport, scrollHeight is the content's own height
     await page.setViewportSize({ width: 360, height: 100 });
