@@ -38,6 +38,10 @@
         margin-bottom: 6px;
         padding: 0;
       }
+      .power legend kbd {
+        float: right;
+        font-weight: 400;
+      }
       .segments {
         clear: both;
         display: flex;
@@ -116,7 +120,9 @@
     </header>
 
     <fieldset id="powerRow" class="card power">
-      <legend class="row-title">Blocking</legend>
+      <legend class="row-title">
+        Blocking <kbd id="toggleShortcut" hidden></kbd>
+      </legend>
       <div class="segments">
         <label
           ><input type="radio" name="power" value="on" checked /><span

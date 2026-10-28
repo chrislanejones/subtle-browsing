@@ -39,6 +39,9 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
   at the top with three choices: **On**, **Off on this site** and **Off
   everywhere**. Off everywhere stops blocking on every site at once, and the
   toolbar icon says **off** until it's turned back on.
+- **Alt+Shift+O** turns blocking off on the site you're on and reloads the
+  tab. Press it again to turn it back on. The popup and settings page show
+  it, and it can be changed at `chrome://extensions/shortcuts`.
 
 ### Changed
 - The toolbar count only shows for the first 7 minutes of each hour. The

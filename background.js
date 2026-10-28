@@ -14,6 +14,7 @@ import {
   setSitePaused,
   getSiteSettings,
   setSiteSetting,
+  siteKey,
   validSite,
 } from "./settings.js";
 
@@ -55,6 +56,7 @@ const BADGE_WINDOW_ALARM = "badge-window";
 // badge clears and only the icon shows
 const BADGE_MINUTES = 7;
 const PICKER_COMMAND = "start-picker";
+const TOGGLE_SITE_COMMAND = "toggle-site";
 
 // Only fires for unpacked installs with the declarativeNetRequestFeedback permission
 const canCountBlocks = Boolean(chrome.declarativeNetRequest.onRuleMatchedDebug);
@@ -561,11 +563,25 @@ async function setPower(mode, site, tabId) {
 
 // Keyboard shortcut (Alt+Shift+K unless changed at chrome://extensions/shortcuts)
 chrome.commands.onCommand.addListener(async (command, tab) => {
-  if (command !== PICKER_COMMAND || !(tab?.id >= 0)) return;
+  if (!(tab?.id >= 0)) return;
+  if (command === TOGGLE_SITE_COMMAND) {
+    toggleSite(tab).catch((error) => console.warn(error.message));
+    return;
+  }
+  if (command !== PICKER_COMMAND) return;
   sendToTab(tab.id, { action: "startSelector" }).catch((error) =>
     console.warn("Can't start the selector on this page:", error.message),
   );
 });
+
+// Alt+Shift+O: off on this site, or back on if it's off here or everywhere
+async function toggleSite(tab) {
+  if (!/^https?:/.test(tab.url ?? "")) return;
+  const site = siteKey(new URL(tab.url).hostname);
+  const off =
+    (await getPausedEverywhere()) || (await getPausedSites()).includes(site);
+  await setPower(off ? "on" : "site", site, tab.id);
+}
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== CONTEXT_MENU_ID || !(tab?.id >= 0)) return;
@@ -636,6 +652,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case "setPower":
       setPower(message.mode, message.site, message.tabId)
+        .then(() => sendResponse({ ok: true }))
+        .catch((error) => sendResponse({ error: error.message }));
+      return true;
+
+    // The shortcut's own path, so tests can reach it without a real key press
+    case "toggleSite":
+      chrome.tabs
+        .get(message.tabId)
+        .then(toggleSite)
         .then(() => sendResponse({ ok: true }))
         .catch((error) => sendResponse({ error: error.message }));
       return true;

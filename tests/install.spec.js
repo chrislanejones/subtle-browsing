@@ -47,6 +47,14 @@ test.describe("fresh install", () => {
     });
   });
 
+  test("suggests Alt+Shift+O for turning a site off and on", async ({ ext }) => {
+    const commands = await ext.sw.evaluate(() => chrome.commands.getAll());
+    expect(commands.find((c) => c.name === "toggle-site")).toMatchObject({
+      shortcut: "Alt+Shift+O",
+      description: "Turn blocking off or on for this site",
+    });
+  });
+
   test("schedules the badge reset for just after local midnight", async ({ ext }) => {
     const alarm = await ext.sw.evaluate(async () => {
       const found = await chrome.alarms.get("midnight");

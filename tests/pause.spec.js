@@ -110,3 +110,24 @@ test("setPower rejects a bad mode or site", async ({ ext }) => {
   expect(await ext.sendMessage({ action: "setPower", mode: "sideways" })).toEqual({ error: "Invalid power mode." });
   expect(await ext.sendMessage({ action: "setPower", mode: "site", site: "not a site" })).toEqual({ error: "Invalid site." });
 });
+
+// Alt+Shift+O runs toggleSite; a real key press doesn't reach Chrome's
+// shortcut handling under Playwright, so the test sends its message
+async function toggleSite(ext, page) {
+  const tabId = await ext.tabIdOf(page);
+  const reloaded = page.waitForEvent("load");
+  expect(await ext.sendMessage({ action: "toggleSite", tabId })).toEqual({ ok: true });
+  await reloaded;
+}
+
+test("the shortcut turns this site off, then back on, and clears off everywhere", async ({ ext, page }) => {
+  await page.goto(`${FIRST}/pause.html`);
+  await toggleSite(ext, page);
+  expect(await ext.getSync("pausedSites")).toEqual({ pausedSites: ["127.0.0.1"] });
+  await toggleSite(ext, page);
+  expect(await ext.getSync("pausedSites")).toEqual({ pausedSites: [] });
+
+  await setPower(ext, page, "everywhere");
+  await toggleSite(ext, page);
+  expect(await ext.getSync(["pausedEverywhere", "pausedSites"])).toEqual({ pausedEverywhere: false, pausedSites: [] });
+});

@@ -139,19 +139,23 @@ function renderPausedSites(sites) {
 renderPausedSites(await getPausedSites());
 onPausedSitesChanged(renderPausedSites);
 
-// Keyboard shortcut: Chrome only lets the user change it on its own page
+// Keyboard shortcuts: Chrome only lets the user change them on its own page
 async function renderShortcut() {
   const commands = await chrome.commands.getAll();
-  const shortcut = commands.find(
-    (command) => command.name === "start-picker",
-  )?.shortcut;
-  const desc = $("shortcutDesc");
-  if (shortcut) {
-    const key = document.createElement("kbd");
-    key.textContent = shortcut;
-    desc.replaceChildren(key);
-  } else {
-    desc.textContent = "Not set";
+  for (const [name, id] of [
+    ["start-picker", "shortcutDesc"],
+    ["toggle-site", "toggleShortcutDesc"],
+  ]) {
+    const shortcut = commands.find((command) => command.name === name)
+      ?.shortcut;
+    const desc = $(id);
+    if (shortcut) {
+      const key = document.createElement("kbd");
+      key.textContent = shortcut;
+      desc.replaceChildren(key);
+    } else {
+      desc.textContent = "Not set";
+    }
   }
 }
 renderShortcut();

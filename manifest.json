@@ -64,6 +64,12 @@
         "default": "Alt+Shift+K"
       },
       "description": "Select an ad to block"
+    },
+    "toggle-site": {
+      "suggested_key": {
+        "default": "Alt+Shift+O"
+      },
+      "description": "Turn blocking off or on for this site"
     }
   },
   "web_accessible_resources": [

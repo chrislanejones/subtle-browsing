@@ -44,18 +44,17 @@ document.getElementById("manageButton").addEventListener("click", () => {
   window.close();
 });
 
-// Show the picker shortcut, which may have been changed at chrome://extensions/shortcuts
-const [pickerCommand] = await chrome.commands
-  .getAll()
-  .then((commands) =>
-    commands.filter(
-      (command) => command.name === "start-picker" && command.shortcut,
-    ),
-  );
-if (pickerCommand) {
-  const pickerShortcut = document.getElementById("pickerShortcut");
-  pickerShortcut.textContent = pickerCommand.shortcut;
-  pickerShortcut.hidden = false;
+// Show the shortcuts, which may have been changed at chrome://extensions/shortcuts
+const commands = await chrome.commands.getAll();
+for (const [name, id] of [
+  ["start-picker", "pickerShortcut"],
+  ["toggle-site", "toggleShortcut"],
+]) {
+  const shortcut = commands.find((command) => command.name === name)?.shortcut;
+  if (!shortcut) continue;
+  const key = document.getElementById(id);
+  key.textContent = shortcut;
+  key.hidden = false;
 }
 
 // Blocking switches, saved as soon as they change

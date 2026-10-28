@@ -76,7 +76,7 @@ on every bad ad by hand.
 | Blocked-today counter | The toolbar icon shows how many requests were blocked today, for the first 7 minutes of each hour | — |
 | Block a URL | Type a URL to block it on every site | — |
 | Element picker | Click an ad to see the domains and URLs inside it, then block one | — |
-| Keyboard shortcut | Alt+Shift+K starts the picker | — |
+| Keyboard shortcuts | Alt+Shift+K starts the picker. Alt+Shift+O turns the site you're on off, and again to turn it back on | — |
 | Right-click menu | **Block ad element** starts the picker | — |
 | Settings page | Full block list with search, paused sites, the shortcut, backups | — |
 | Settings sync | Your list, paused sites and switches follow your Chrome sign-in | — |
@@ -258,12 +258,15 @@ The bar at the top of the popup has three choices.
    page has not removed it itself. Hiding an overlay does not repair a site's
    scroll lock, and a structural selector can need updating after a redesign.
 
-### Using the keyboard shortcut
+### Using the keyboard shortcuts
 
 - Press **Alt+Shift+K** on any page to start the picker, then carry on from
   step 4 above.
-- The popup and settings page show the current shortcut.
-- If Chrome didn't assign it, the settings page shows **Not set**. Click
+- Press **Alt+Shift+O** when a page isn't working. It turns blocking off on
+  that site and reloads the tab. Press it again to turn it back on. If
+  **Off everywhere** is on, it turns everything back on.
+- The popup and settings page show the current shortcuts.
+- If Chrome didn't assign one, the settings page shows **Not set**. Click
   **Change** there, or go to `chrome://extensions/shortcuts`, and pick
   your own.
 
@@ -286,7 +289,7 @@ Open it either way:
 | Hidden elements and site overrides | Unhide elements and reset per-site choices |
 | Blocked URLs | Add a URL, search your list, remove entries |
 | Paused sites | See every paused site and **Unpause** any of them |
-| Keyboard shortcut | See the picker shortcut; **Change** opens Chrome's shortcut page |
+| Keyboard shortcuts | See both shortcuts; **Change** opens Chrome's shortcut page |
 | Backup | **Export backup** and **Import backup** (see [Sync and backups](#sync-and-backups)) |
 
 ### Using the DevTools panel

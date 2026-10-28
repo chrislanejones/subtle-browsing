@@ -26,6 +26,7 @@ test.describe("settings page", () => {
     await expect(rows(page, "pausedList")).toHaveText(["example.org"]);
     await expect(page.locator("#pausedCount")).toHaveText("1 total");
     await expect(page.locator("#shortcutDesc kbd")).toHaveText("Alt+Shift+K");
+    await expect(page.locator("#toggleShortcutDesc kbd")).toHaveText("Alt+Shift+O");
   });
 
   test("adds a URL with Enter or the button, normalized", async ({ ext, page }) => {
