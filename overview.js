@@ -1,6 +1,6 @@
 // The top of the settings page: totals, charts of what was blocked, and a
-// table of every kind of blocking. The counts come from blockStats, which
-// background.js keeps for the last 30 days.
+// table of every kind of blocking. The counts come from the stats-YYYY-MM-DD
+// keys background.js keeps for the last 30 days.
 import { getBlockedUrls } from "./blocklist.js";
 import {
   getPausedEverywhere,
@@ -327,23 +327,26 @@ function barList(entries, { keyOf, label = (k) => k, unit = "blocked" } = {}) {
 const empty = (text) => el("p", { className: "note empty" }, text);
 
 async function render() {
-  const [
-    { blockStats: stats = {}, blockedToday, blockedUrlLogs = [] },
-    sync,
-    settings,
-    siteSettings,
-    urls,
-    paused,
-    off,
-  ] = await Promise.all([
-    chrome.storage.local.get(["blockStats", "blockedToday", "blockedUrlLogs"]),
-    chrome.storage.sync.get("hiddenElements"),
-    getSettings(),
-    getSiteSettings(),
-    getBlockedUrls(),
-    getPausedSites(),
-    getPausedEverywhere(),
-  ]);
+  const [local, sync, settings, siteSettings, urls, paused, off] =
+    await Promise.all([
+      chrome.storage.local.get([
+        "blockedToday",
+        "blockedUrlLogs",
+        ...lastDays(30).map((day) => `stats-${day}`),
+      ]),
+      chrome.storage.sync.get("hiddenElements"),
+      getSettings(),
+      getSiteSettings(),
+      getBlockedUrls(),
+      getPausedSites(),
+      getPausedEverywhere(),
+    ]);
+  const { blockedToday, blockedUrlLogs = [] } = local;
+  const stats = Object.fromEntries(
+    Object.entries(local)
+      .filter(([key]) => key.startsWith("stats-"))
+      .map(([key, day]) => [key.slice("stats-".length), day]),
+  );
   const canCount = Boolean(chrome.declarativeNetRequest.onRuleMatchedDebug);
   const today = localDate(new Date());
   const week = lastDays(7);
@@ -526,11 +529,27 @@ const ruleCountsPromise = Promise.all(
   ]),
 ).then(Object.fromEntries);
 
+// A busy tab elsewhere changes storage about once a second. Redraw at most
+// every 5 seconds, and not at all while this tab is hidden.
 export async function mountOverview() {
   await render();
-  let timer;
-  chrome.storage.onChanged.addListener(() => {
-    clearTimeout(timer);
-    timer = setTimeout(render, 300);
+  let timer = null;
+  let stale = false;
+  const redraw = () => {
+    if (document.hidden) {
+      stale = true;
+      return;
+    }
+    timer ??= setTimeout(() => {
+      timer = null;
+      render();
+    }, 5000);
+  };
+  chrome.storage.onChanged.addListener(redraw);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && stale) {
+      stale = false;
+      render();
+    }
   });
 }

@@ -1,5 +1,5 @@
 // The settings page overview: totals, charts and the "What gets blocked"
-// table, fed by the daily blockStats the worker keeps
+// table, fed by the stats-YYYY-MM-DD keys the worker keeps
 
 import { test, expect } from "./helpers/extension.js";
 import { FIRST } from "./helpers/env.js";
@@ -15,17 +15,30 @@ test("a block is counted by type, blocked domain and the site it was on", async 
   await ext.setBlockedUrls(["localhost"]);
   await page.goto(`${FIRST}/pause.html`);
   await expect
-    .poll(async () => (await ext.getLocal("blockStats")).blockStats?.[today()])
+    .poll(async () => (await ext.getLocal(`stats-${today()}`))[`stats-${today()}`])
     .toEqual({ types: { personal: 1 }, hosts: { localhost: 1 }, pages: { "127.0.0.1": 1 } });
   const [entry] = (await ext.getLocal("blockedUrlLogs")).blockedUrlLogs;
   expect(entry).toMatchObject({ type: "personal", host: "localhost", page: "127.0.0.1" });
 });
 
-test("days past 30 are dropped when the stats are written", async ({ ext, page }) => {
-  await ext.setLocal({ blockStats: { [daysAgo(29)]: { types: { video_ads: 1 }, hosts: {}, pages: {} }, [daysAgo(30)]: { types: { video_ads: 1 }, hosts: {}, pages: {} } } });
+const statsKeys = async (ext) => Object.keys(await ext.getLocal()).filter((k) => k.startsWith("stats-")).sort();
+const day = (types) => ({ types, hosts: {}, pages: {} });
+
+test("the first block of a day drops days past 30", async ({ ext, page }) => {
+  await ext.setLocal({ [`stats-${daysAgo(29)}`]: day({ video_ads: 1 }), [`stats-${daysAgo(30)}`]: day({ video_ads: 1 }) });
   await ext.setBlockedUrls(["localhost"]);
   await page.goto(`${FIRST}/pause.html`);
-  await expect.poll(async () => Object.keys((await ext.getLocal("blockStats")).blockStats).sort()).toEqual([daysAgo(29), today()].sort());
+  await expect.poll(() => statsKeys(ext)).toEqual([`stats-${daysAgo(29)}`, `stats-${today()}`]);
+});
+
+test("the single blockStats key from the first charts version is split into days", async ({ ext, page }) => {
+  await ext.setLocal({ blockStats: { [daysAgo(1)]: day({ video_ads: 4 }), [today()]: day({ personal: 2 }), [daysAgo(40)]: day({ video_ads: 9 }) } });
+  await ext.setBlockedUrls(["localhost"]);
+  await page.goto(`${FIRST}/pause.html`);
+  await expect.poll(() => statsKeys(ext)).toEqual([`stats-${daysAgo(1)}`, `stats-${today()}`]);
+  expect(await ext.getLocal("blockStats")).toEqual({});
+  // Today's earlier counts are kept and added to
+  expect((await ext.getLocal(`stats-${today()}`))[`stats-${today()}`].types).toEqual({ personal: 3 });
 });
 
 test.describe("overview", () => {
@@ -35,11 +48,9 @@ test.describe("overview", () => {
     await ext.setSync({ blockedUrls: ["connatix.com", "teads.tv"], pausedSites: ["example.org"] });
     await ext.setLocal({
       blockedToday: { date: today(), count: 12 },
-      blockStats: {
-        [today()]: { types: { video_ads: 9, personal: 3 }, hosts: { "connatix.com": 8, "teads.tv": 4 }, pages: { "variety.com": 12 } },
-        [daysAgo(3)]: { types: { ad_churn: 20 }, hosts: { "sync.cootlogix.com": 20 }, pages: { "variety.com": 20 } },
-        [daysAgo(20)]: { types: { video_ads: 100 }, hosts: {}, pages: {} },
-      },
+      [`stats-${today()}`]: { types: { video_ads: 9, personal: 3 }, hosts: { "connatix.com": 8, "teads.tv": 4 }, pages: { "variety.com": 12 } },
+      [`stats-${daysAgo(3)}`]: { types: { ad_churn: 20 }, hosts: { "sync.cootlogix.com": 20 }, pages: { "variety.com": 20 } },
+      [`stats-${daysAgo(20)}`]: { types: { video_ads: 100 }, hosts: {}, pages: {} },
     });
     await page.goto(ext.url("options.html"));
 

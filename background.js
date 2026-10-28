@@ -38,6 +38,7 @@ const MAX_LOG_ENTRIES = 100;
 // by the site it was blocked on
 const STATS_DAYS = 30;
 const STATS_HOSTS_PER_DAY = 200;
+const STATS_PREFIX = "stats-";
 const STATS_TYPES = {
   video_ads: "video_ads",
   annoyances: "annoyances",
@@ -329,7 +330,7 @@ async function setUpBadge() {
   await showBadge();
 }
 
-async function showBadge() {
+async function showBadge(count) {
   // "off" stays up all hour, so a paused extension isn't forgotten
   const off = await getPausedEverywhere();
   if (!canCountBlocks) {
@@ -342,7 +343,7 @@ async function showBadge() {
     return;
   }
   await chrome.action.setBadgeText({
-    text: off ? "off" : badgeText(await getBlockedToday()),
+    text: off ? "off" : badgeText(count ?? (await getBlockedToday())),
   });
 }
 
@@ -395,18 +396,29 @@ async function flushLogs() {
   const entries = unsavedLogs;
   unsavedLogs = [];
 
-  const { blockedUrlLogs = [] } =
-    await chrome.storage.local.get("blockedUrlLogs");
-  const count = (await getBlockedToday()) + entries.length;
+  // One read and one write per flush. Only today's counts are rewritten, so
+  // a busy page writes about 14 KB a second at most, not all 30 days.
+  const dayKey = STATS_PREFIX + today();
+  const stored = await chrome.storage.local.get([
+    "blockedUrlLogs",
+    "blockedToday",
+    dayKey,
+  ]);
+  const { blockedUrlLogs = [], blockedToday } = stored;
+  let day = stored[dayKey];
+  if (!day) {
+    // First block of the day
+    await pruneStats();
+    day = (await chrome.storage.local.get(dayKey))[dayKey];
+  }
+  const count =
+    (blockedToday?.date === today() ? blockedToday.count : 0) + entries.length;
   await chrome.storage.local.set({
     blockedUrlLogs: [...blockedUrlLogs, ...entries].slice(-MAX_LOG_ENTRIES),
     blockedToday: { date: today(), count },
-    blockStats: addToStats(
-      (await chrome.storage.local.get("blockStats")).blockStats,
-      entries,
-    ),
+    [dayKey]: addToDay(day, entries),
   });
-  await showBadge();
+  await showBadge(count);
 }
 
 function hostOf(url) {
@@ -417,9 +429,8 @@ function hostOf(url) {
   }
 }
 
-// { "YYYY-MM-DD": { types: {}, hosts: {}, pages: {} } }, last STATS_DAYS days
-function addToStats(stats = {}, entries) {
-  const day = (stats[today()] ??= { types: {}, hosts: {}, pages: {} });
+// "stats-YYYY-MM-DD": { types: {}, hosts: {}, pages: {} }, one key per day
+function addToDay(day = { types: {}, hosts: {}, pages: {} }, entries) {
   const add = (counts, key) => key && (counts[key] = (counts[key] ?? 0) + 1);
   for (const entry of entries) {
     add(day.types, entry.type);
@@ -431,11 +442,25 @@ function addToStats(stats = {}, entries) {
     if (top.length > STATS_HOSTS_PER_DAY)
       day[key] = Object.fromEntries(top.slice(0, STATS_HOSTS_PER_DAY));
   }
+  return day;
+}
+
+// Once a day: drops days past STATS_DAYS, and splits the single blockStats
+// key the first version of the charts used
+async function pruneStats() {
+  const all = await chrome.storage.local.get(null);
   const oldest = new Date();
   oldest.setDate(oldest.getDate() - (STATS_DAYS - 1));
-  const cutoff = oldest.toLocaleDateString("en-CA");
-  for (const date of Object.keys(stats)) if (date < cutoff) delete stats[date];
-  return stats;
+  const cutoff = STATS_PREFIX + oldest.toLocaleDateString("en-CA");
+  const moved = {};
+  for (const [date, day] of Object.entries(all.blockStats ?? {}))
+    if (!all[STATS_PREFIX + date]) moved[STATS_PREFIX + date] = day;
+  const old = Object.keys({ ...all, ...moved }).filter(
+    (key) => key.startsWith(STATS_PREFIX) && key < cutoff,
+  );
+  for (const key of old) delete moved[key];
+  if (Object.keys(moved).length) await chrome.storage.local.set(moved);
+  await chrome.storage.local.remove([...old, "blockStats"]);
 }
 
 // Heavy ads: adds up what each third-party frame downloads, counting nested
