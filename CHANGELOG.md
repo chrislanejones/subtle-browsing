@@ -9,6 +9,18 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
 ## Unreleased
 
+### Popup and settings layout (10-28-2026)
+- The popup puts the switches back up top. In order: today's count, the Block
+  by default switches, the link to the settings page, Select element to block,
+  Block a URL, and a Blocking card at the bottom.
+- The Blocking card holds On, Off on site, Off and 10 min off in one bar. Closed,
+  it still shows where things stand, like "Off until 3:42 PM". This site's own
+  controls live inside it.
+- Block a URL is its own card. The match mode sits next to the title, and the
+  example in the box changes to fit the mode.
+- The settings page opens on Activity and diagnostics, no dropdown. The
+  switches sit under it on the left, Blocked URLs on the right.
+
 ### Reliability and recovery (10-28-2026)
 - Serialize URL, setting, site, hidden-element and backup mutations through the
   worker so simultaneous extension windows preserve each other's changes.
@@ -18,8 +30,7 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 - Show inherited pause scope and effective site protections. Confirm power
   changes and display failures beside the controls. Preserve unchanged network
   rules, and bypass cached blocked resources when reloading after changes.
-- Put picker and saved rules first in the popup; global defaults and activity
-  charts use disclosure. Settings has an immediate global Resume action.
+- Settings has an immediate global Resume action.
 - Add persistent Undo for new blocks and picker hiding. Restore unloaded
   autoplay videos and collapsed frames; floating recovery stays in view.
 - Add a ten-minute site pause with a local persisted deadline and alarm. Resume

@@ -87,6 +87,7 @@ export async function getPauseState(site) {
       parents.find((s) => s !== site) ??
       temporary.find(([s]) => s !== site)?.[0],
     until: temporary[0]?.[1],
+    permanent: parents.length > 0,
   };
 }
 

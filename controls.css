@@ -86,12 +86,15 @@ select:disabled {
 .site-state {
   margin: 6px 0;
 }
+/* Settings page: activity sits above the switches and lists, always open */
 #activity {
-  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
 }
-#activity > summary {
-  margin-bottom: 12px;
-}
-#pauseTenMinutes {
-  margin-top: 6px;
+.activity-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
 }

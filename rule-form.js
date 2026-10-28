@@ -24,7 +24,9 @@ export function showUndo(status, message, undo) {
   status.append(button);
 }
 
-export function mountRuleForm(input, button, status) {
+// modeSlot puts the match select somewhere other than above the field;
+// placeholders swaps the field's example to suit the chosen mode
+export function mountRuleForm(input, button, status, options = {}) {
   const modes = document.createElement("label");
   modes.className = "rule-mode";
   modes.append("Match ");
@@ -38,7 +40,9 @@ export function mountRuleForm(input, button, status) {
   ])
     select.add(new Option(label, value));
   modes.append(select);
-  if (input.parentElement.classList.contains("toolbar")) input.before(modes);
+  if (options.modeSlot) options.modeSlot.append(modes);
+  else if (input.parentElement.classList.contains("toolbar"))
+    input.before(modes);
   else input.parentElement.before(modes);
   const preview = document.createElement("p");
   preview.id = "rulePreview";
@@ -53,6 +57,8 @@ export function mountRuleForm(input, button, status) {
       preview.textContent = error.message;
     }
     preview.hidden = !input.value.trim();
+    if (options.placeholders?.[select.value])
+      input.placeholder = options.placeholders[select.value];
   };
   select.addEventListener("change", renderPreview);
   input.addEventListener("input", renderPreview);

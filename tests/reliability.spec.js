@@ -153,6 +153,7 @@ test("power failures retain confirmed state and expose an error", async ({
         ? Promise.resolve({ error: "Could not save test change" })
         : original(message);
   });
+  await page.locator("#powerRow > summary").click();
   await page.locator('label:has(input[value="everywhere"])').click();
   await expect(page.locator('input[value="on"]')).toBeChecked();
   await expect(page.locator("#powerStatus")).toContainText(
@@ -208,7 +209,7 @@ test("temporary pauses expire without reloading a page or losing typed input", a
     .toBe(0);
 });
 
-test("settings starts with controls, resumes blocking, and retains reset feedback", async ({
+test("settings leads with activity, resumes blocking, and retains reset feedback", async ({
   ext,
   page,
 }) => {
@@ -217,8 +218,11 @@ test("settings starts with controls, resumes blocking, and retains reset feedbac
     siteSettings: { "example.com": { autoplayGuard: false } },
   });
   await page.goto(ext.url("options.html"));
-  await expect(page.locator("#activity")).not.toHaveAttribute("open", "");
-  expect((await page.locator("#urlInput").boundingBox()).y).toBeLessThan(500);
+  // Activity leads, always open; switches and the list sit below it
+  await expect(page.locator("#activity")).toBeVisible();
+  const activity = await page.locator("#activity").boundingBox();
+  const grid = await page.locator(".settings-grid").boundingBox();
+  expect(activity.y).toBeLessThan(grid.y);
   await page
     .getByRole("button", { name: "Resume blocking", exact: true })
     .click();
@@ -239,7 +243,6 @@ test("store-style diagnostics distinguish unavailable network data from zero", a
     chrome.declarativeNetRequest.onRuleMatchedDebug = undefined;
   });
   await page.goto(ext.url("options.html"));
-  await page.locator("#activity > summary").click();
   await expect(page.locator("#tiles .tile-value").first()).toHaveText(
     "Unavailable",
   );

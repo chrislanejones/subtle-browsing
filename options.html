@@ -452,6 +452,68 @@
       </span>
     </header>
 
+    <section id="activity" aria-labelledby="activityHeading">
+      <h2 id="activityHeading" class="activity-title">
+        Activity and diagnostics
+      </h2>
+      <section aria-labelledby="overviewHeading">
+        <h2 id="overviewHeading" class="section-label">Overview</h2>
+        <div id="tiles" class="tiles"></div>
+        <p id="countNote" class="note" hidden>
+          Chrome only reports each block to unpacked installs, so the network
+          totals and charts are unavailable here. The toolbar icon shows each
+          tab's request count; heavy-content removals can still appear in recent
+          activity.
+        </p>
+      </section>
+
+      <div class="grid-2">
+        <section class="card panel" aria-labelledby="perDayHeading">
+          <h3 id="perDayHeading">Blocks per day</h3>
+          <p class="note">Last 14 days, by type</p>
+          <div id="perDay"></div>
+        </section>
+        <section class="card panel" aria-labelledby="byTypeHeading">
+          <h3 id="byTypeHeading">What was blocked</h3>
+          <p class="note">Last 7 days, by type</p>
+          <div id="byType"></div>
+        </section>
+        <section class="card panel" aria-labelledby="topHostsHeading">
+          <h3 id="topHostsHeading">Most blocked domains</h3>
+          <p class="note">Last 7 days, top 10 ad and tracking domains</p>
+          <div id="topHosts"></div>
+        </section>
+        <section class="card panel" aria-labelledby="topPagesHeading">
+          <h3 id="topPagesHeading">Sites with the most blocks</h3>
+          <p class="note">Last 7 days, the sites you were on</p>
+          <div id="topPages"></div>
+        </section>
+      </div>
+
+      <section aria-labelledby="kindsHeading">
+        <h2 id="kindsHeading" class="section-label">What gets blocked</h2>
+        <div class="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Type</th>
+                <th scope="col">What it stops</th>
+                <th scope="col">How</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="num">Last 7 days</th>
+              </tr>
+            </thead>
+            <tbody id="kinds"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="recentHeading">
+        <h2 id="recentHeading" class="section-label">Recent blocks</h2>
+        <div id="recent" class="card table-wrap"></div>
+      </section>
+    </section>
+
     <div class="settings-grid">
       <div class="settings-col">
         <fieldset class="group">
@@ -628,65 +690,6 @@
       </div>
     </div>
 
-    <details id="activity" class="protections">
-      <summary>Activity and diagnostics</summary>
-      <section aria-labelledby="overviewHeading">
-        <h2 id="overviewHeading" class="section-label">Overview</h2>
-        <div id="tiles" class="tiles"></div>
-        <p id="countNote" class="note" hidden>
-          Chrome only reports each block to unpacked installs, so the network
-          totals and charts are unavailable here. The toolbar icon shows each
-          tab's request count; heavy-content removals can still appear in recent
-          activity.
-        </p>
-      </section>
-
-      <div class="grid-2">
-        <section class="card panel" aria-labelledby="perDayHeading">
-          <h3 id="perDayHeading">Blocks per day</h3>
-          <p class="note">Last 14 days, by type</p>
-          <div id="perDay"></div>
-        </section>
-        <section class="card panel" aria-labelledby="byTypeHeading">
-          <h3 id="byTypeHeading">What was blocked</h3>
-          <p class="note">Last 7 days, by type</p>
-          <div id="byType"></div>
-        </section>
-        <section class="card panel" aria-labelledby="topHostsHeading">
-          <h3 id="topHostsHeading">Most blocked domains</h3>
-          <p class="note">Last 7 days, top 10 ad and tracking domains</p>
-          <div id="topHosts"></div>
-        </section>
-        <section class="card panel" aria-labelledby="topPagesHeading">
-          <h3 id="topPagesHeading">Sites with the most blocks</h3>
-          <p class="note">Last 7 days, the sites you were on</p>
-          <div id="topPages"></div>
-        </section>
-      </div>
-
-      <section aria-labelledby="kindsHeading">
-        <h2 id="kindsHeading" class="section-label">What gets blocked</h2>
-        <div class="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Type</th>
-                <th scope="col">What it stops</th>
-                <th scope="col">How</th>
-                <th scope="col">Status</th>
-                <th scope="col" class="num">Last 7 days</th>
-              </tr>
-            </thead>
-            <tbody id="kinds"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section aria-labelledby="recentHeading">
-        <h2 id="recentHeading" class="section-label">Recent blocks</h2>
-        <div id="recent" class="card table-wrap"></div>
-      </section>
-    </details>
     <script type="module" src="options.js"></script>
   </body>
 </html>

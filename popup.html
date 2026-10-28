@@ -8,6 +8,13 @@
     <style>
       body {
         width: 360px;
+        gap: 10px;
+      }
+      /* Tighter rows so the open dropdown still fits Chrome's 600px popup */
+      .row {
+        min-height: 42px;
+        padding-top: 5px;
+        padding-bottom: 5px;
       }
 
       /* Opens the settings page; replaces the old in-popup list */
@@ -26,24 +33,62 @@
         color: var(--color-ink-2);
       }
 
-      /* On / Off on this site / Off everywhere: real radios, drawn as one bar */
-      .power {
+      /* Bottom dropdown: the summary names the current state, the body holds
+         On / Off on site / Off / 10 min off as real radios drawn as one bar */
+      .power > summary {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        min-height: 42px;
+        padding: 0 var(--space-md);
+        list-style: none;
+        cursor: pointer;
+      }
+      .power > summary::-webkit-details-marker {
+        display: none;
+      }
+      .power > summary:hover {
+        background: var(--color-hover);
+      }
+      .power > summary:focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: -2px;
+      }
+      .power-state {
+        margin-left: auto;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--color-ink-2);
+      }
+      .power-state.off {
+        color: var(--color-warn);
+      }
+      .power > summary kbd {
+        margin-left: 0;
+      }
+      .chevron {
+        flex: none;
+        color: var(--color-ink-2);
+        transition: transform var(--dur-fast) var(--ease-out);
+      }
+      .power[open] .chevron {
+        transform: rotate(180deg);
+      }
+      .power-body {
         margin: 0;
-        padding: 10px var(--space-md);
+        padding: 0 var(--space-md) var(--space-md);
+        border: 0;
         min-width: 0;
       }
-      .power legend {
-        float: left;
-        width: 100%;
-        margin-bottom: 6px;
-        padding: 0;
-      }
-      .power legend kbd {
-        float: right;
-        font-weight: 400;
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
       }
       .segments {
-        clear: both;
         display: flex;
         border: 1px solid var(--color-control-edge);
         border-radius: var(--radius-md);
@@ -66,11 +111,12 @@
       }
       .segments span {
         flex: 1;
-        padding: 6px 4px;
+        padding: 6px 2px;
         text-align: center;
         font-size: 12px;
         line-height: 16px;
         font-weight: 500;
+        white-space: nowrap;
         cursor: pointer;
         transition: background-color var(--dur-fast) var(--ease-out);
       }
@@ -94,10 +140,46 @@
         background: none;
       }
       #powerDesc {
-        margin: 6px 0 0;
+        margin: var(--space-sm) 0 0;
       }
       #powerDesc b {
         overflow-wrap: anywhere;
+      }
+      .power-body .site-state {
+        margin: var(--space-md) 0 var(--space-sm);
+        padding-top: var(--space-md);
+        border-top: 1px solid var(--color-line);
+      }
+
+      /* Block a URL: title and match mode on one line, then the field */
+      .block-card {
+        padding: var(--space-md);
+      }
+      .block-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-sm);
+      }
+      .block-head .rule-mode {
+        margin: 0;
+        font-size: 12px;
+      }
+      .block-head .rule-mode select {
+        height: 26px;
+        padding: 0 4px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+      }
+      .block-card .rule-preview {
+        margin: var(--space-sm) var(--space-2xs) 0;
+      }
+      .block-card .status {
+        margin-top: var(--space-sm);
+      }
+      #selectorButton {
+        margin-top: 0;
       }
 
       kbd {
@@ -119,34 +201,113 @@
       <p id="blockedToday" class="stat" hidden></p>
     </header>
 
-    <fieldset id="powerRow" class="card power">
-      <legend class="row-title">
-        Blocking <kbd id="toggleShortcut" hidden></kbd>
+    <fieldset class="group">
+      <legend class="section-label">
+        Block by default
       </legend>
-      <div class="segments">
-        <label
-          ><input type="radio" name="power" value="on" checked /><span
-            >On</span
-          ></label
-        >
-        <label id="powerSite"
-          ><input type="radio" name="power" value="site" /><span
-            >Off on this site</span
-          ></label
-        >
-        <label
-          ><input type="radio" name="power" value="everywhere" /><span
-            >Off everywhere</span
-          ></label
-        >
+      <div class="card">
+        <label class="row">
+          <span class="row-text">
+            <span class="row-title">Video ad companies</span>
+            <span class="row-desc">Connatix, Primis, Teads and similar</span>
+          </span>
+          <input type="checkbox" id="videoAdRulesToggle" class="switch" />
+        </label>
+        <label class="row">
+          <span class="row-text">
+            <span class="row-title">Muted autoplay videos</span>
+            <span class="row-desc">Paused; videos you start still play</span>
+          </span>
+          <input type="checkbox" id="autoplayGuardToggle" class="switch" />
+        </label>
+        <label class="row">
+          <span class="row-text">
+            <span class="row-title">Heavy ads</span>
+            <span class="row-desc">Over 4 MB, or hogging the CPU</span>
+          </span>
+          <input type="checkbox" id="heavyAdsToggle" class="switch" />
+        </label>
+        <details id="extraProtections" class="protections">
+          <summary>Offers, prompts and broader limits</summary>
+          <label class="row">
+            <span class="row-text">
+              <span class="row-title">Newsletter offers</span>
+              <span class="row-desc"
+                >Newsletter sign-ups and promotional overlays</span
+              >
+            </span>
+            <input type="checkbox" id="annoyanceRulesToggle" class="switch" />
+          </label>
+          <label class="row"
+            ><span class="row-text"
+              ><span class="row-title">Notification requests</span
+              ><span class="row-desc">Website push-prompt tools</span></span
+            ><input
+              type="checkbox"
+              id="notificationRulesToggle"
+              class="switch"
+          /></label>
+          <label class="row"
+            ><span class="row-text"
+              ><span class="row-title">Ad refresh and sync frames</span
+              ><span class="row-desc"
+                >Browsi ad refresh and hidden cookie-sync frames</span
+              ></span
+            ><input type="checkbox" id="adChurnRulesToggle" class="switch"
+          /></label>
+          <label class="row"
+            ><span class="row-text"
+              ><span class="row-title">Slow ad refresh</span
+              ><span class="row-desc"
+                >Each ad slot refreshes at most every 2 minutes</span
+              ></span
+            ><input type="checkbox" id="refreshThrottleToggle" class="switch"
+          /></label>
+          <label class="row"
+            ><span class="row-text"
+              ><span class="row-title">Stop ad redirects</span
+              ><span class="row-desc"
+                >Ads can't send the whole tab to another site without a
+                click</span
+              ></span
+            ><input type="checkbox" id="adRedirectGuardToggle" class="switch"
+          /></label>
+          <label class="row"
+            ><span class="row-text"
+              ><span class="row-title">All heavy third-party embeds</span
+              ><span class="row-desc"
+                >Broader Heavy ads mode; may stop legitimate content</span
+              ></span
+            ><input
+              type="checkbox"
+              id="aggressiveHeavyAdsToggle"
+              class="switch"
+          /></label>
+        </details>
       </div>
-      <p id="powerDesc" class="row-desc"></p>
-      <p id="powerStatus" class="status" role="status"></p>
-      <button id="pauseTenMinutes" class="btn btn-plain">
-        Pause for 10 minutes
-      </button>
     </fieldset>
 
+    <button id="manageButton" class="card row manage-row">
+      <span class="row-text">
+        <span class="row-title">Blocked URLs and paused sites</span>
+        <span id="manageSummary" class="row-desc"></span>
+      </span>
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M6 3.5L10.5 8 6 12.5"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
     <button id="selectorButton" class="btn btn-secondary">
       <svg
         width="16"
@@ -172,125 +333,76 @@
       Select element to block
       <kbd id="pickerShortcut" hidden></kbd>
     </button>
-    <details id="siteControls" class="protections" hidden></details>
 
-    <button id="manageButton" class="card row manage-row">
-      <span class="row-text">
-        <span class="row-title">Blocked URLs and paused sites</span>
-        <span id="manageSummary" class="row-desc"></span>
-      </span>
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M6 3.5L10.5 8 6 12.5"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </button>
-    <section>
-      <label for="urlInput" class="section-label">Block a URL</label>
+    <section class="card block-card" aria-labelledby="blockHeading">
+      <div class="block-head">
+        <label id="blockHeading" for="urlInput" class="row-title"
+          >Block a URL</label
+        >
+        <div id="ruleModeSlot"></div>
+      </div>
       <div class="add-row">
-        <input type="text" id="urlInput" placeholder="example.com" />
+        <input
+          type="text"
+          id="urlInput"
+          placeholder="example.com"
+          autocomplete="off"
+          spellcheck="false"
+        />
         <button id="addButton" class="btn btn-primary">Block</button>
       </div>
-
       <p id="statusMessage" class="status" role="status"></p>
     </section>
 
-    <details id="globalDefaults" class="protections">
-      <summary>Defaults for all sites</summary>
-      <fieldset class="group">
-        <legend class="section-label">
-          Global defaults, overridden by site choices
-        </legend>
-        <div class="card">
-          <label class="row">
-            <span class="row-text">
-              <span class="row-title">Video ad companies</span>
-              <span class="row-desc">Connatix, Primis, Teads and similar</span>
-            </span>
-            <input type="checkbox" id="videoAdRulesToggle" class="switch" />
-          </label>
-          <label class="row">
-            <span class="row-text">
-              <span class="row-title">Muted autoplay videos</span>
-              <span class="row-desc">Paused; videos you start still play</span>
-            </span>
-            <input type="checkbox" id="autoplayGuardToggle" class="switch" />
-          </label>
-          <label class="row">
-            <span class="row-text">
-              <span class="row-title">Heavy ads</span>
-              <span class="row-desc">Over 4 MB, or hogging the CPU</span>
-            </span>
-            <input type="checkbox" id="heavyAdsToggle" class="switch" />
-          </label>
-          <details id="extraProtections" class="protections">
-            <summary>Offers, prompts and broader limits</summary>
-            <label class="row">
-              <span class="row-text">
-                <span class="row-title">Newsletter offers</span>
-                <span class="row-desc"
-                  >Newsletter sign-ups and promotional overlays</span
-                >
-              </span>
-              <input type="checkbox" id="annoyanceRulesToggle" class="switch" />
-            </label>
-            <label class="row"
-              ><span class="row-text"
-                ><span class="row-title">Notification requests</span
-                ><span class="row-desc">Website push-prompt tools</span></span
-              ><input
-                type="checkbox"
-                id="notificationRulesToggle"
-                class="switch"
-            /></label>
-            <label class="row"
-              ><span class="row-text"
-                ><span class="row-title">Ad refresh and sync frames</span
-                ><span class="row-desc"
-                  >Browsi ad refresh and hidden cookie-sync frames</span
-                ></span
-              ><input type="checkbox" id="adChurnRulesToggle" class="switch"
-            /></label>
-            <label class="row"
-              ><span class="row-text"
-                ><span class="row-title">Slow ad refresh</span
-                ><span class="row-desc"
-                  >Each ad slot refreshes at most every 2 minutes</span
-                ></span
-              ><input type="checkbox" id="refreshThrottleToggle" class="switch"
-            /></label>
-            <label class="row"
-              ><span class="row-text"
-                ><span class="row-title">Stop ad redirects</span
-                ><span class="row-desc"
-                  >Ads can't send the whole tab to another site without a
-                  click</span
-                ></span
-              ><input type="checkbox" id="adRedirectGuardToggle" class="switch"
-            /></label>
-            <label class="row"
-              ><span class="row-text"
-                ><span class="row-title">All heavy third-party embeds</span
-                ><span class="row-desc"
-                  >Broader Heavy ads mode; may stop legitimate content</span
-                ></span
-              ><input
-                type="checkbox"
-                id="aggressiveHeavyAdsToggle"
-                class="switch"
-            /></label>
-          </details>
+    <details id="powerRow" class="card power">
+      <summary>
+        <span class="row-title">Blocking</span>
+        <span id="powerState" class="power-state"></span>
+        <kbd id="toggleShortcut" hidden></kbd>
+        <svg
+          class="chevron"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M4 6l4 4 4-4"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </summary>
+      <fieldset class="power-body">
+        <legend class="visually-hidden">Blocking</legend>
+        <div class="segments">
+          <label
+            ><input type="radio" name="power" value="on" checked /><span
+              >On</span
+            ></label
+          >
+          <label
+            ><input type="radio" name="power" value="site" /><span
+              >Off on site</span
+            ></label
+          >
+          <label
+            ><input type="radio" name="power" value="everywhere" /><span
+              >Off</span
+            ></label
+          >
+          <label
+            ><input type="radio" name="power" value="temporary" /><span
+              >10 min off</span
+            ></label
+          >
         </div>
+        <p id="powerDesc" class="row-desc"></p>
+        <p id="powerStatus" class="status" role="status"></p>
+        <details id="siteControls" class="protections" hidden></details>
       </fieldset>
     </details>
 

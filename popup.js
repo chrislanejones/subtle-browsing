@@ -90,7 +90,8 @@ onSettingsChanged((settings) => {
     checkbox.checked = settings[key];
 });
 
-// On / Off on this site / Off everywhere. "This site" needs a web page.
+// On / Off on site / Off / 10 min off. The two site choices need a web page,
+// and a timed pause can only start while blocking is on.
 const [activeTab] = await chrome.tabs.query({
   active: true,
   currentWindow: true,
@@ -99,27 +100,43 @@ const site = /^https?:/.test(activeTab?.url ?? "")
   ? siteKey(new URL(activeTab.url).hostname)
   : null;
 const powerInputs = [...document.querySelectorAll('input[name="power"]')];
+const powerState = document.getElementById("powerState");
 const powerDesc = document.getElementById("powerDesc");
 const powerStatus = document.getElementById("powerStatus");
-const temporaryButton = document.getElementById("pauseTenMinutes");
-document.querySelector('input[value="site"]').disabled = !site;
+const clock = (time) =>
+  new Date(time).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 let confirmedPower = "on";
+function enablePower() {
+  for (const input of powerInputs)
+    input.disabled =
+      (input.value === "site" && !site) ||
+      (input.value === "temporary" &&
+        (!site || !["on", "temporary"].includes(confirmedPower)));
+}
 async function renderPower() {
   const state = await getPauseState(site);
-  confirmedPower = state.mode;
-  temporaryButton.disabled = !site || state.mode !== "on";
-  for (const input of powerInputs) input.checked = input.value === state.mode;
+  confirmedPower =
+    state.mode === "site" && state.until && !state.permanent
+      ? "temporary"
+      : state.mode;
+  for (const input of powerInputs)
+    input.checked = input.value === confirmedPower;
+  enablePower();
+  powerState.textContent = {
+    on: "On",
+    site: "Off on this site",
+    everywhere: "Off everywhere",
+    temporary: `Off until ${clock(state.until)}`,
+  }[confirmedPower];
+  powerState.classList.toggle("off", confirmedPower !== "on");
   const name = document.createElement("b");
   name.textContent = site;
   if (state.mode === "everywhere")
     powerDesc.textContent = "Nothing is blocked on any site.";
   else if (state.mode === "site") {
     powerDesc.replaceChildren("Nothing is blocked on ", name, ".");
-    if (state.until)
-      powerDesc.append(
-        ` Resumes at ${new Date(state.until).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`,
-      );
+    if (state.until) powerDesc.append(` Resumes at ${clock(state.until)}.`);
     if (state.inheritedFrom)
       powerDesc.append(
         ` Paused by ${state.inheritedFrom}. On also resumes that parent site and its subdomains.`,
@@ -143,7 +160,6 @@ async function changePower(mode) {
     input.checked = input.value === confirmedPower;
     input.disabled = true;
   }
-  temporaryButton.disabled = true;
   try {
     const response = await chrome.runtime.sendMessage({
       action: "setPower",
@@ -158,14 +174,10 @@ async function changePower(mode) {
     powerStatus.textContent = error.message;
   } finally {
     await renderPower();
-    for (const input of powerInputs)
-      input.disabled = input.value === "site" && !site;
-    temporaryButton.disabled = !site || confirmedPower !== "on";
   }
 }
 for (const input of powerInputs)
   input.addEventListener("change", () => changePower(input.value));
-temporaryButton.addEventListener("click", () => changePower("temporary"));
 
 // The daily count needs the debug event, which only unpacked installs have
 const blockedToday = document.getElementById("blockedToday");
@@ -190,7 +202,14 @@ if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
   blockedToday.hidden = false;
 }
 
-mountRuleForm(urlInput, addButton, statusMessage);
+mountRuleForm(urlInput, addButton, statusMessage, {
+  modeSlot: document.getElementById("ruleModeSlot"),
+  placeholders: {
+    domain: "example.com",
+    exact: "https://example.com/page",
+    pattern: "||ads.example.com^",
+  },
+});
 
 selectorButton.addEventListener("click", async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

@@ -73,7 +73,6 @@ test.describe("popup", () => {
     await expect(page.locator("#heavyAdsToggle")).not.toBeChecked();
     await expect(page.locator("#annoyanceRulesToggle")).not.toBeChecked();
 
-    await page.locator("#globalDefaults > summary").click();
     await page.locator("#extraProtections summary").click();
     await page.locator("#annoyanceRulesToggle").check();
     await page.locator("#autoplayGuardToggle").uncheck();
@@ -142,6 +141,10 @@ test.describe("popup", () => {
     await expect(
       page.locator('input[name="power"][value="site"]'),
     ).toBeDisabled();
+    await expect(
+      page.locator('input[name="power"][value="temporary"]'),
+    ).toBeDisabled();
+    await expect(page.locator("#powerState")).toHaveText("On");
     await expect(page.locator("#powerDesc")).toHaveText(
       "Blocking on every site.",
     );
@@ -155,6 +158,8 @@ test.describe("popup", () => {
       "Nothing is blocked on any site.",
     );
 
+    await page.locator("#powerRow > summary").click();
+    await expect(page.locator("#powerState")).toHaveText("Off everywhere");
     await page.locator('label:has(input[name="power"][value="on"])').click();
     await expect
       .poll(() => ext.getSync("pausedEverywhere"))

@@ -105,7 +105,6 @@ test.describe("overview", () => {
       },
     });
     await page.goto(ext.url("options.html"));
-    await page.locator("#activity > summary").click();
 
     const tiles = page.locator("#tiles .tile");
     await expect(tiles.locator(".tile-label")).toHaveText([
@@ -183,7 +182,6 @@ test.describe("overview", () => {
     page,
   }) => {
     await page.goto(ext.url("options.html"));
-    await page.locator("#activity > summary").click();
     await expect(page.locator("#perDay")).toHaveText(
       "Nothing blocked yet in the last 14 days.",
     );
