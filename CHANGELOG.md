@@ -16,6 +16,10 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
   ad (Tunnel to Towers) covered the top 192 pixels of every article once you
   scrolled. It still shows; it just doesn't follow you down the page.
 
+### Changed
+- **New icon.** The flower is gone. The icon is now a teal shield with a pause
+  symbol on a white tile, so it's easy to spot on a dark toolbar.
+
 ## 1.7.0 — 10-28-2026
 
 A popup in a sensible order, URL match modes with a preview, Undo, and a

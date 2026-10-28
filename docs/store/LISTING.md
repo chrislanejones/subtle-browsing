@@ -24,8 +24,8 @@ builds `dist/url-blocker-<version>.zip` from the last commit.
 | Homepage URL | https://github.com/chrislanejones/subtle-browsing |
 | Support URL | https://github.com/chrislanejones/subtle-browsing/issues |
 
-Rebuild the tiles with `node scripts/generate-promo-tiles.js`. They lighten the
-shield so it stands out on the dark card.
+Rebuild the tiles with `node scripts/generate-promo-tiles.js`. They put the
+shield on the same white tile as the icon so it stands out on the dark card.
 
 The screenshots leave out the blocked-today count and the charts. Chrome
 only reports blocked requests to unpacked installs, so store installs show
@@ -39,6 +39,8 @@ malware protection, so don't pitch it as a security guarantee. The store PNG
 is a 128×128 transparent canvas with the artwork fitted inside 96×96, following
 [Google's icon guidance](https://developer.chrome.com/docs/webstore/images#extension_icon).
 The extension also includes 16, 32 and 48 pixel PNGs for smaller surfaces.
+Every size puts the shield on a white rounded tile, because the dark teal
+disappeared on dark toolbars.
 
 The source is `docs/store/branding/shield/master.png`, and its prompt is in
 `docs/store/branding/shield/prompt.txt`. Run `pnpm run icons` (needs
