@@ -17,5 +17,6 @@
   {"id": 17, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||innovid.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "media", "image", "ping", "other"]}},
   {"id": 18, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||vdo.ai^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "media", "image", "ping", "other"]}},
   {"id": 19, "priority": 1, "action": {"type": "redirect", "redirect": {"extensionPath": "/stubs/ima3.js"}}, "condition": {"urlFilter": "||imasdk.googleapis.com/js/sdkloader/ima3.js", "resourceTypes": ["script"]}},
-  {"id": 20, "priority": 1, "action": {"type": "redirect", "redirect": {"extensionPath": "/stubs/ima3.js"}}, "condition": {"urlFilter": "||imasdk.googleapis.com/js/sdkloader/ima3_debug.js", "resourceTypes": ["script"]}}
+  {"id": 20, "priority": 1, "action": {"type": "redirect", "redirect": {"extensionPath": "/stubs/ima3.js"}}, "condition": {"urlFilter": "||imasdk.googleapis.com/js/sdkloader/ima3_debug.js", "resourceTypes": ["script"]}},
+  {"id": 21, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||celtra.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "media", "image", "ping", "other"]}}
 ]

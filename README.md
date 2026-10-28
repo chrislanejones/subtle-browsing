@@ -61,7 +61,7 @@ on every bad ad by hand.
 
 | Feature | What it does | On at install |
 | --- | --- | --- |
-| Video ad blocking | Blocks the companies that serve video ads (Connatix, Primis, AnyClip, Teads and others), and swaps Google's video ad engine for a stand-in that says "no ads". Banner ads still show | Yes |
+| Video ad blocking | Blocks the companies that serve video ads (Connatix, Primis, AnyClip, Teads, Celtra and others), and swaps Google's video ad engine for a stand-in that says "no ads". Banner ads still show | Yes |
 | Autoplay stopper | Pauses muted videos that start before you click anything, and hides paused ads that float in a corner. Videos you start play normally | Yes |
 | Heavy ad removal | Stops identified third-party ads at 4 MB or 5 seconds of long tasks in 30 seconds; offers Restore | Yes |
 | Broader heavy-embed mode | Applies those limits to unrecognized third-party embeds too; may stop legitimate content | No |
@@ -176,7 +176,7 @@ More on each:
 
 | Switch | List | Rules |
 | --- | --- | --- |
-| Video ad companies | [`rules/video-ads.json`](rules/video-ads.json) | 19 |
+| Video ad companies | [`rules/video-ads.json`](rules/video-ads.json) | 20 |
 | Newsletter offers | [`rules/annoyances.json`](rules/annoyances.json) | 18 |
 | Notification requests | [`rules/notifications.json`](rules/notifications.json) | 6 |
 | Ad refresh and sync frames | [`rules/ad-churn.json`](rules/ad-churn.json) | 30 |

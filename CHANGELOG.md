@@ -10,6 +10,10 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 ## Unreleased
 
 ### Added
+- **Video ad companies** now blocks Celtra (`celtra.com`). A Mercedes video ad
+  played in CNN's header ad slot: Google's ad tag loaded the creative from
+  Celtra's servers, which weren't on the list. Google's banner hosts are left
+  alone, so banners still show.
 - **Ad refresh and sync frames**, a new switch that's off by default. It uses
   [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts are
   blocked outright, and 26 hidden cookie-sync frames are blocked by their sync URL,

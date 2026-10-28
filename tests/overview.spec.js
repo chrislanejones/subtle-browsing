@@ -67,7 +67,7 @@ test.describe("overview", () => {
     const kinds = page.locator("#kinds tr");
     await expect(kinds).toHaveCount(10);
     await expect(kinds.first()).toContainText("Video ad companies");
-    await expect(kinds.first()).toContainText("19 rules");
+    await expect(kinds.first()).toContainText("20 rules");
     await expect(kinds.first().locator(".state")).toHaveText("On");
     await expect(kinds.nth(1)).toContainText("2 URLs");
     await expect(kinds.nth(2)).toContainText("30 rules");
