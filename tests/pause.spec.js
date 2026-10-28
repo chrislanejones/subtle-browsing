@@ -69,6 +69,8 @@ async function setPower(ext, page, mode) {
 }
 
 test("off everywhere lets everything through and shows off on the badge, on restores both", async ({ ext, page }) => {
+  // Past the hourly count window, so the badge is blank unless it says "off"
+  await ext.badgeWindow(false);
   await ext.setBlockedUrls(["localhost"]);
   await page.goto(`${FIRST}/pause.html`);
   await expect.poll(() => probe(page)).toEqual({ adLoaded: false, videoPlaying: false, triedToPlay: true });
