@@ -9,6 +9,13 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
 ## Unreleased
 
+### Added
+- **Pinned ads**, a new switch that's on by default. An ad that sticks to the
+  top of the window while you scroll now stays at the top of the page instead
+  and scrolls away like a normal banner. On Fox News a Jetpack Digital takeover
+  ad (Tunnel to Towers) covered the top 192 pixels of every article once you
+  scrolled. It still shows; it just doesn't follow you down the page.
+
 ## 1.7.0 — 10-28-2026
 
 A popup in a sensible order, URL match modes with a preview, Undo, and a

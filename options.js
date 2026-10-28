@@ -68,6 +68,7 @@ const toggles = {
   adChurnRules: document.getElementById("adChurnRulesToggle"),
   refreshThrottle: document.getElementById("refreshThrottleToggle"),
   adRedirectGuard: document.getElementById("adRedirectGuardToggle"),
+  pinnedAds: document.getElementById("pinnedAdsToggle"),
   aggressiveHeavyAds: document.getElementById("aggressiveHeavyAdsToggle"),
   annoyanceRules: $("annoyanceRulesToggle"),
 };

@@ -19,6 +19,7 @@
     adChurnRules: false,
     refreshThrottle: false,
     adRedirectGuard: false,
+    pinnedAds: true,
     aggressiveHeavyAds: false,
     cosmetic: true,
   };

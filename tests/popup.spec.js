@@ -87,6 +87,7 @@ test.describe("popup", () => {
         adChurnRules: false,
         refreshThrottle: false,
         adRedirectGuard: false,
+        pinnedAds: true,
         aggressiveHeavyAds: false,
       });
     // The worker applies them

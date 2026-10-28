@@ -68,6 +68,7 @@ on every bad ad by hand.
 | Ad refresh and sync frames | Blocks Browsi's ad refresh and the hidden cookie-sync frames that ad auctions open. [See the URLs](rules/ad-churn.json) | No |
 | Slow ad refresh | Lets each Google ad slot refresh at most once every 2 minutes, and not in a hidden tab | No |
 | Stop ad redirects | Stops an ad from sending the whole tab to another site without a click | No |
+| Pinned ads | An ad stuck to the top of the window while you scroll stays at the top of the page instead, and scrolls away like a banner. The site's own sticky header is left alone | Yes |
 | Site controls | Override individual protections for a site and its subdomains | Inherit defaults |
 | Hide on this site | Hide a picked element only on its hostname; undo in settings or DevTools | — |
 | On / Off on site / Off / 10 min off | The Blocking card at the bottom of the popup. Turns everything off for one site in case it breaks, for every site at once, or for one site for 10 minutes | On |

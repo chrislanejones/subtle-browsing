@@ -98,7 +98,7 @@ test.describe("settings page", () => {
       hiddenElements: [],
       blockedUrls: ["connatix.com", "teads.tv", "primis.tech"],
       pausedSites: ["example.org"],
-      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: false, notificationRules: false, adChurnRules: false, refreshThrottle: false, adRedirectGuard: false, aggressiveHeavyAds: false },
+      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: false, notificationRules: false, adChurnRules: false, refreshThrottle: false, adRedirectGuard: false, pinnedAds: true, aggressiveHeavyAds: false },
     });
     expect(new Date(backup.exportedAt).toISOString()).toBe(backup.exportedAt);
     await expect(page.locator("#backupStatus")).toHaveText("Backup saved to your downloads.");
@@ -117,7 +117,7 @@ test.describe("settings page", () => {
     expect(await ext.getSync()).toEqual({
       blockedUrls: ["connatix.com", "teads.tv", "primis.tech", "anyclip.com"],
       pausedSites: ["example.org", "news.example"],
-      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: true, notificationRules: true, adChurnRules: false, refreshThrottle: false, adRedirectGuard: false, aggressiveHeavyAds: false },
+      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: true, notificationRules: true, adChurnRules: false, refreshThrottle: false, adRedirectGuard: false, pinnedAds: true, aggressiveHeavyAds: false },
     });
     // The page and the worker both pick it up
     await expect(rows(page, "urlList").first()).toHaveText("anyclip.com");

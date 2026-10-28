@@ -37,3 +37,4 @@ for a new one.
 | [022](022-slow-ad-refresh-wraps-googletag-in-the-page-world.md) | Slow ad refresh wraps googletag in the page's world | Draft | 2026-10-26 |
 | [023](023-stop-ad-redirects-cancels-unclicked-cross-site-navigations.md) | Stop ad redirects cancels cross-site navigations nobody clicked for | Draft | 2026-10-27 |
 | [024](024-sync-frames-are-also-matched-by-url-pattern-rules.md) | Sync frames are also matched by three URL-pattern rules | Draft | 2026-10-27 |
+| [025](025-pinned-ads-are-unpinned-with-css-not-hidden.md) | Pinned ads are un-pinned with CSS, not hidden or blocked | Draft | 2026-10-28 |

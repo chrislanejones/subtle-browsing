@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Pinned ads</title>
+  </head>
+  <body style="margin: 0">
+    <!-- The site's own sticky header has to stay pinned -->
+    <header id="siteHeader" style="position: fixed; top: 0; right: 0; width: 200px; height: 40px; z-index: 5">
+      Menu
+    </header>
+    <!-- Jetpack's masthead: absolute at first, fixed once you scroll -->
+    <div id="jpplaceholder" style="height: 200px"></div>
+    <div id="jpmasthead" style="position: absolute; top: 0px; width: 100%; height: 200px; z-index: 2000000000">
+      <div id="ias_trackable" class="ias_trackable"></div>
+      <div class="jpstage">Takeover ad</div>
+    </div>
+    <!-- A Google out-of-page slot pinned to the window -->
+    <div class="ad gam-inst">
+      <div id="google_ads_iframe_/1/site/oop_0__container__" style="position: fixed; top: 0px; width: 100%; height: 200px; z-index: 1">
+        <iframe id="google_ads_iframe_/1/site/oop_0" style="border: 0; width: 100%; height: 200px"></iframe>
+      </div>
+    </div>
+    <!-- Some other ad vendor, pinned, with a Moat tracker -->
+    <div id="otherAd" style="position: fixed; bottom: 0px; width: 100%; height: 90px">
+      <div class="moat_trackable"></div>
+      Anchor ad
+    </div>
+    <article style="height: 3000px">Article text</article>
+    <script>
+      addEventListener("scroll", () => {
+        const masthead = document.getElementById("jpmasthead");
+        masthead.className = "jpfixed";
+        masthead.style.position = "fixed";
+      });
+    </script>
+  </body>
+</html>

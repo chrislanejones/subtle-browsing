@@ -85,6 +85,12 @@ const KINDS = [
     rule: "Page script",
   },
   {
+    setting: "pinnedAds",
+    name: "Pinned ads",
+    what: "Ads pinned to the window scroll away with the page",
+    rule: "Page style",
+  },
+  {
     setting: "aggressiveHeavyAds",
     name: "All heavy third-party embeds",
     what: "Heavy ads, widened to any third-party frame",
