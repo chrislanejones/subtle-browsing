@@ -20,6 +20,7 @@ const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".png": "image/png",
+  ".svg": "image/svg+xml",
   ".webm": "video/webm",
   ".json": "application/json",
 };
@@ -41,9 +42,13 @@ function sendWithRange(req, res, body, type) {
     return;
   }
   const start = match[1] ? Number(match[1]) : 0;
-  const end = match[2] ? Math.min(Number(match[2]), body.length - 1) : body.length - 1;
+  const end = match[2]
+    ? Math.min(Number(match[2]), body.length - 1)
+    : body.length - 1;
   if (start > end || start >= body.length) {
-    send(res, 416, Buffer.alloc(0), { "Content-Range": `bytes */${body.length}` });
+    send(res, 416, Buffer.alloc(0), {
+      "Content-Range": `bytes */${body.length}`,
+    });
     return;
   }
   send(res, 206, body.subarray(start, end + 1), {
@@ -55,16 +60,27 @@ function sendWithRange(req, res, body, type) {
 
 const server = createServer(async (req, res) => {
   const { pathname } = new URL(req.url, "http://fixture");
+  if (pathname === "/redirect-to-third")
+    return send(res, 302, Buffer.from("redirect"), {
+      Location: `${THIRD}/compatibility.html`,
+    });
   if (pathname === "/health") return send(res, 200, Buffer.from("ok"));
   if (pathname === "/big.bin") {
-    return send(res, 200, BIG_BODY, { "Content-Type": "application/octet-stream" });
+    return send(res, 200, BIG_BODY, {
+      "Content-Type": "application/octet-stream",
+    });
   }
   if (pathname === "/half.bin") {
-    return send(res, 200, HALF_BODY, { "Content-Type": "application/octet-stream" });
+    return send(res, 200, HALF_BODY, {
+      "Content-Type": "application/octet-stream",
+    });
   }
 
-  const file = normalize(join(SITE_DIR, pathname === "/" ? "index.html" : pathname));
-  if (!file.startsWith(SITE_DIR)) return send(res, 403, Buffer.from("forbidden"));
+  const file = normalize(
+    join(SITE_DIR, pathname === "/" ? "index.html" : pathname),
+  );
+  if (!file.startsWith(SITE_DIR))
+    return send(res, 403, Buffer.from("forbidden"));
   let body;
   try {
     body = await readFile(file);
@@ -77,7 +93,7 @@ const server = createServer(async (req, res) => {
       body
         .toString("utf8")
         .replaceAll("__FIRST__", FIRST)
-        .replaceAll("__THIRD__", THIRD)
+        .replaceAll("__THIRD__", THIRD),
     );
   }
   sendWithRange(req, res, body, type);

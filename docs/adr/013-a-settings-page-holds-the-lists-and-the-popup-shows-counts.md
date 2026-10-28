@@ -37,3 +37,9 @@ about 580 px, or a switch added to one page's HTML but not the other.
 
 ## 1.6.0 follow-up
 1.6.0 adds per-site controls to the popup and DevTools, plus saved hidden elements and site overrides in settings and DevTools. See [ADR-017](017-site-protections-use-tab-session-rules.md).
+
+## Unreleased follow-up, 2026-10-28
+The popup prioritizes picker, current-site state and saved-rule management.
+Global defaults are collapsed. Settings puts editable controls and lists before
+collapsed activity. Inline Undo, confirmed power feedback, contextual reset
+buttons and a global Resume action provide recovery without opening DevTools.

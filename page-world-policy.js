@@ -15,6 +15,7 @@
     );
   send();
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "sync") send(); // page-policy.js's listener already ran
+    if (area === "sync" || (area === "local" && changes.temporaryPauses))
+      send(); // page-policy.js's listener already ran
   });
 })();

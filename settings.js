@@ -1,3 +1,4 @@
+import { mutate } from "./storage-client.js";
 // On/off switches and paused sites, shared by the background, popup and
 // settings page. Stored in chrome.storage.sync like the block list.
 
@@ -23,9 +24,7 @@ export async function getSettings() {
 }
 
 export async function updateSettings(changes) {
-  await chrome.storage.sync.set({
-    [STORAGE_KEY]: { ...(await getSettings()), ...changes },
-  });
+  return mutate("settings", { changes });
 }
 
 export function onSettingsChanged(callback) {
@@ -47,10 +46,48 @@ export async function getPausedSites() {
   return pausedSites;
 }
 
+export async function getAllPausedSites() {
+  const [sites, local] = await Promise.all([
+    getPausedSites(),
+    chrome.storage.local.get("temporaryPauses"),
+  ]);
+  return [
+    ...new Set([
+      ...sites,
+      ...Object.entries(local.temporaryPauses ?? {})
+        .filter(([, until]) => until > Date.now())
+        .map(([site]) => site),
+    ]),
+  ];
+}
+
 export async function setSitePaused(site, paused) {
-  const pausedSites = (await getPausedSites()).filter((item) => item !== site);
-  if (paused) pausedSites.push(site);
-  await chrome.storage.sync.set({ [PAUSED_SITES_KEY]: pausedSites });
+  return mutate("pauseSite", { site, paused });
+}
+export const matchesSite = (site, parent) =>
+  site === parent || site.endsWith(`.${parent}`);
+export async function getPauseState(site) {
+  const [sync, local] = await Promise.all([
+    chrome.storage.sync.get(["pausedEverywhere", "pausedSites"]),
+    chrome.storage.local.get("temporaryPauses"),
+  ]);
+  const parents = (sync.pausedSites ?? [])
+    .filter((s) => site && matchesSite(site, s))
+    .sort((a, b) => b.length - a.length);
+  const temporary = Object.entries(local.temporaryPauses ?? {})
+    .filter(([s, until]) => site && matchesSite(site, s) && until > Date.now())
+    .sort((a, b) => b[1] - a[1]);
+  return {
+    mode: sync.pausedEverywhere
+      ? "everywhere"
+      : parents.length || temporary.length
+        ? "site"
+        : "on",
+    inheritedFrom:
+      parents.find((s) => s !== site) ??
+      temporary.find(([s]) => s !== site)?.[0],
+    until: temporary[0]?.[1],
+  };
 }
 
 export function onPausedSitesChanged(callback) {
@@ -114,17 +151,5 @@ export function validSite(site) {
   );
 }
 export async function setSiteSetting(site, key, value) {
-  if (
-    !validSite(site) ||
-    !(key in FEATURES) ||
-    ![true, false, null].includes(value)
-  )
-    throw new Error("Invalid site setting.");
-  const sites = await getSiteSettings();
-  const entry = { ...sites[site] };
-  if (value === null) delete entry[key];
-  else entry[key] = value;
-  if (Object.keys(entry).length) sites[site] = entry;
-  else delete sites[site];
-  await chrome.storage.sync.set({ siteSettings: sites });
+  return mutate("siteSetting", { site, key, value });
 }

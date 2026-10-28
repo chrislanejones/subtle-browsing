@@ -48,3 +48,10 @@ block list over 200 entries in any backup file.
 
 ## 1.6.0 follow-up
 1.6.0 also syncs siteSettings and hiddenElements, each under its own per-item quota. Both are included in backups. See [ADR-017](017-site-protections-use-tab-session-rules.md) and [ADR-018](018-picker-hiding-is-host-scoped-css.md).
+
+## Unreleased follow-up, 2026-10-28
+All extension UI read-modify-write operations now run through the worker queue
+via `storage-client.js` and `storage-mutations.js`, including imports. This
+prevents simultaneous local windows from overwriting one another. Chrome Sync's
+cross-device conflict behavior and quotas remain unchanged. Temporary pauses
+use a local deadline and alarm instead of sync, and are excluded from backups.

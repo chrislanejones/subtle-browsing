@@ -47,11 +47,9 @@
     if (!frame || restored.has(frame) || removed.has(frame)) return;
     await subtlePolicy.ready;
     if (!heavy) {
-      if (subtlePolicy.enabled("autoplayGuard"))
-        frame.style.setProperty("display", "none", "important");
-      return;
+      if (!subtlePolicy.enabled("autoplayGuard")) return;
     }
-    if (!subtlePolicy.enabled("heavyAds")) return;
+    if (heavy && !subtlePolicy.enabled("heavyAds")) return;
     // First-party frames are spared even in the broader opt-in mode.
     let host;
     try {
@@ -60,9 +58,13 @@
       return;
     }
     const top = subtlePolicy.site;
-    if (host === top || host.endsWith(`.${top}`) || top.endsWith(`.${host}`))
+    if (
+      heavy &&
+      (host === top || host.endsWith(`.${top}`) || top.endsWith(`.${host}`))
+    )
       return;
-    if (!isAd(frame) && !subtlePolicy.enabled("aggressiveHeavyAds")) return;
+    if (heavy && !isAd(frame) && !subtlePolicy.enabled("aggressiveHeavyAds"))
+      return;
     // Interaction inside the frame is checked in the child; interaction with
     // the frame element itself is another conservative exemption.
     if (document.activeElement === frame) return;
@@ -79,10 +81,12 @@
     box.style.cssText =
       "font:13px/1.5 system-ui;padding:10px;background:light-dark(#f4f6f7,#252a2e);color:light-dark(#25313a,#e5edf2);border:1px solid #85939c;border-radius:6px;color-scheme:light dark";
     const reason =
-      typeof event.data.reason === "string"
+      heavy && typeof event.data.reason === "string"
         ? event.data.reason.slice(0, 80)
         : "resource limit";
-    box.append(`Heavy content stopped (${reason}). `);
+    box.append(
+      heavy ? `Heavy content stopped (${reason}). ` : "Autoplay stopped. ",
+    );
     const button = document.createElement("button");
     button.textContent = "Restore this content";
     button.style.cssText = "font:inherit;cursor:pointer;padding:4px 8px";
@@ -90,9 +94,12 @@
       "click",
       () => {
         restored.add(frame);
-        if (saved.srcdoc !== null) frame.setAttribute("srcdoc", saved.srcdoc);
-        if (saved.src !== null) frame.setAttribute("src", saved.src);
-        else frame.removeAttribute("src");
+        if (heavy) {
+          if (saved.srcdoc !== null) frame.setAttribute("srcdoc", saved.srcdoc);
+          if (saved.src !== null) frame.setAttribute("src", saved.src);
+          else frame.removeAttribute("src");
+        } else
+          frame.contentWindow.postMessage("url-blocker:restore-autoplay", "*");
         if (saved.display)
           frame.style.setProperty("display", saved.display, saved.priority);
         else frame.style.removeProperty("display");
@@ -104,17 +111,20 @@
     box.append(button);
     root.append(box);
     frame.before(placeholder);
-    frame.removeAttribute("srcdoc");
-    frame.src = "about:blank";
+    if (heavy) {
+      frame.removeAttribute("srcdoc");
+      frame.src = "about:blank";
+    }
     frame.style.setProperty("display", "none", "important");
-    chrome.runtime
-      .sendMessage({
-        action: "heavyAdRemoved",
-        reason,
-        url: saved.src
-          ? new URL(saved.src, location.href).href
-          : "embedded content",
-      })
-      .catch(() => {});
+    if (heavy)
+      chrome.runtime
+        .sendMessage({
+          action: "heavyAdRemoved",
+          reason,
+          url: saved.src
+            ? new URL(saved.src, location.href).href
+            : "embedded content",
+        })
+        .catch(() => {});
   });
 })();

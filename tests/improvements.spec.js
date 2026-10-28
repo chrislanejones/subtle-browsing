@@ -198,7 +198,10 @@ test("ad refresh and sync frames switch is off by default and only blocks sync f
   // Chrome silently skips a pattern over its regex memory limit
   for (const rule of sync.filter((r) => r.condition.regexFilter))
     expect(
-      await ext.sw.evaluate((regex) => chrome.declarativeNetRequest.isRegexSupported({ regex }), rule.condition.regexFilter),
+      await ext.sw.evaluate(
+        (regex) => chrome.declarativeNetRequest.isRegexSupported({ regex }),
+        rule.condition.regexFilter,
+      ),
       `rule ${rule.id}`,
     ).toEqual({ isSupported: true });
 
@@ -207,8 +210,14 @@ test("ad refresh and sync frames switch is off by default and only blocks sync f
   const blocked = (url, initiator = "https://variety.com") =>
     ext.sw.evaluate(
       async ([url, initiator]) =>
-        (await chrome.declarativeNetRequest.testMatchOutcome({ url, initiator, type: "sub_frame", tabId: -1 }))
-          .matchedRules.length > 0,
+        (
+          await chrome.declarativeNetRequest.testMatchOutcome({
+            url,
+            initiator,
+            type: "sub_frame",
+            tabId: -1,
+          })
+        ).matchedRules.length > 0,
       [url, initiator],
     );
   for (const url of [
@@ -258,7 +267,7 @@ test("picker hides a URL-less element only here, persists and can be undone in D
   await panel
     .getByText("Hidden elements and site overrides", { exact: true })
     .click();
-  await panel.getByRole("button", { name: "Unhide", exact: true }).click();
+  await panel.getByRole("button", { name: /^Unhide / }).click();
   await expect(page.locator("#offer")).toBeVisible();
   expect(await ext.getSync("blockedUrls")).toEqual({});
 });

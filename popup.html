@@ -141,123 +141,38 @@
         >
       </div>
       <p id="powerDesc" class="row-desc"></p>
-    </fieldset>
-
-    <fieldset class="group">
-      <legend class="section-label">Block by default</legend>
-      <div class="card">
-        <label class="row">
-          <span class="row-text">
-            <span class="row-title">Video ad companies</span>
-            <span class="row-desc">Connatix, Primis, Teads and similar</span>
-          </span>
-          <input type="checkbox" id="videoAdRulesToggle" class="switch" />
-        </label>
-        <label class="row">
-          <span class="row-text">
-            <span class="row-title">Muted autoplay videos</span>
-            <span class="row-desc">Paused; videos you start still play</span>
-          </span>
-          <input type="checkbox" id="autoplayGuardToggle" class="switch" />
-        </label>
-        <label class="row">
-          <span class="row-text">
-            <span class="row-title">Heavy ads</span>
-            <span class="row-desc">Over 4 MB, or hogging the CPU</span>
-          </span>
-          <input type="checkbox" id="heavyAdsToggle" class="switch" />
-        </label>
-        <details id="extraProtections" class="protections">
-          <summary>Offers, prompts and broader limits</summary>
-          <label class="row">
-            <span class="row-text">
-              <span class="row-title">Newsletter offers</span>
-              <span class="row-desc"
-                >Newsletter sign-ups and promotional overlays</span
-              >
-            </span>
-            <input type="checkbox" id="annoyanceRulesToggle" class="switch" />
-          </label>
-          <label class="row"
-            ><span class="row-text"
-              ><span class="row-title">Notification requests</span
-              ><span class="row-desc">Website push-prompt tools</span></span
-            ><input type="checkbox" id="notificationRulesToggle" class="switch"
-          /></label>
-          <label class="row"
-            ><span class="row-text"
-              ><span class="row-title">Ad refresh and sync frames</span
-              ><span class="row-desc"
-                >Browsi ad refresh and hidden cookie-sync frames</span
-              ></span
-            ><input type="checkbox" id="adChurnRulesToggle" class="switch"
-          /></label>
-          <label class="row"
-            ><span class="row-text"
-              ><span class="row-title">Slow ad refresh</span
-              ><span class="row-desc"
-                >Each ad slot refreshes at most every 2 minutes</span
-              ></span
-            ><input type="checkbox" id="refreshThrottleToggle" class="switch"
-          /></label>
-          <label class="row"
-            ><span class="row-text"
-              ><span class="row-title">Stop ad redirects</span
-              ><span class="row-desc"
-                >Ads can't send the whole tab to another site without a click</span
-              ></span
-            ><input type="checkbox" id="adRedirectGuardToggle" class="switch"
-          /></label>
-          <label class="row"
-            ><span class="row-text"
-              ><span class="row-title">All heavy third-party embeds</span
-              ><span class="row-desc"
-                >Broader Heavy ads mode; may stop legitimate content</span
-              ></span
-            ><input
-              type="checkbox"
-              id="aggressiveHeavyAdsToggle"
-              class="switch"
-          /></label>
-        </details>
-      </div>
-    </fieldset>
-
-    <details id="siteControls" class="protections" hidden></details>
-
-    <section>
-      <label for="urlInput" class="section-label">Block a URL</label>
-      <div class="add-row">
-        <input type="text" id="urlInput" placeholder="example.com" />
-        <button id="addButton" class="btn btn-primary">Block</button>
-      </div>
-      <button id="selectorButton" class="btn btn-secondary">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M6 2.5H3.5a1 1 0 0 0-1 1V6M10 2.5h2.5a1 1 0 0 1 1 1V6M2.5 10v2.5a1 1 0 0 0 1 1H6"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-          />
-          <path
-            d="M8.5 8.5l5.25 1.9-2.3.95-.95 2.3z"
-            fill="currentColor"
-            stroke="currentColor"
-            stroke-width="1"
-            stroke-linejoin="round"
-          />
-        </svg>
-        Select element to block
-        <kbd id="pickerShortcut" hidden></kbd>
+      <p id="powerStatus" class="status" role="status"></p>
+      <button id="pauseTenMinutes" class="btn btn-plain">
+        Pause for 10 minutes
       </button>
-      <p id="statusMessage" class="status" role="status"></p>
-    </section>
+    </fieldset>
+
+    <button id="selectorButton" class="btn btn-secondary">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M6 2.5H3.5a1 1 0 0 0-1 1V6M10 2.5h2.5a1 1 0 0 1 1 1V6M2.5 10v2.5a1 1 0 0 0 1 1H6"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
+        <path
+          d="M8.5 8.5l5.25 1.9-2.3.95-.95 2.3z"
+          fill="currentColor"
+          stroke="currentColor"
+          stroke-width="1"
+          stroke-linejoin="round"
+        />
+      </svg>
+      Select element to block
+      <kbd id="pickerShortcut" hidden></kbd>
+    </button>
+    <details id="siteControls" class="protections" hidden></details>
 
     <button id="manageButton" class="card row manage-row">
       <span class="row-text">
@@ -280,6 +195,104 @@
         />
       </svg>
     </button>
+    <section>
+      <label for="urlInput" class="section-label">Block a URL</label>
+      <div class="add-row">
+        <input type="text" id="urlInput" placeholder="example.com" />
+        <button id="addButton" class="btn btn-primary">Block</button>
+      </div>
+
+      <p id="statusMessage" class="status" role="status"></p>
+    </section>
+
+    <details id="globalDefaults" class="protections">
+      <summary>Defaults for all sites</summary>
+      <fieldset class="group">
+        <legend class="section-label">
+          Global defaults, overridden by site choices
+        </legend>
+        <div class="card">
+          <label class="row">
+            <span class="row-text">
+              <span class="row-title">Video ad companies</span>
+              <span class="row-desc">Connatix, Primis, Teads and similar</span>
+            </span>
+            <input type="checkbox" id="videoAdRulesToggle" class="switch" />
+          </label>
+          <label class="row">
+            <span class="row-text">
+              <span class="row-title">Muted autoplay videos</span>
+              <span class="row-desc">Paused; videos you start still play</span>
+            </span>
+            <input type="checkbox" id="autoplayGuardToggle" class="switch" />
+          </label>
+          <label class="row">
+            <span class="row-text">
+              <span class="row-title">Heavy ads</span>
+              <span class="row-desc">Over 4 MB, or hogging the CPU</span>
+            </span>
+            <input type="checkbox" id="heavyAdsToggle" class="switch" />
+          </label>
+          <details id="extraProtections" class="protections">
+            <summary>Offers, prompts and broader limits</summary>
+            <label class="row">
+              <span class="row-text">
+                <span class="row-title">Newsletter offers</span>
+                <span class="row-desc"
+                  >Newsletter sign-ups and promotional overlays</span
+                >
+              </span>
+              <input type="checkbox" id="annoyanceRulesToggle" class="switch" />
+            </label>
+            <label class="row"
+              ><span class="row-text"
+                ><span class="row-title">Notification requests</span
+                ><span class="row-desc">Website push-prompt tools</span></span
+              ><input
+                type="checkbox"
+                id="notificationRulesToggle"
+                class="switch"
+            /></label>
+            <label class="row"
+              ><span class="row-text"
+                ><span class="row-title">Ad refresh and sync frames</span
+                ><span class="row-desc"
+                  >Browsi ad refresh and hidden cookie-sync frames</span
+                ></span
+              ><input type="checkbox" id="adChurnRulesToggle" class="switch"
+            /></label>
+            <label class="row"
+              ><span class="row-text"
+                ><span class="row-title">Slow ad refresh</span
+                ><span class="row-desc"
+                  >Each ad slot refreshes at most every 2 minutes</span
+                ></span
+              ><input type="checkbox" id="refreshThrottleToggle" class="switch"
+            /></label>
+            <label class="row"
+              ><span class="row-text"
+                ><span class="row-title">Stop ad redirects</span
+                ><span class="row-desc"
+                  >Ads can't send the whole tab to another site without a
+                  click</span
+                ></span
+              ><input type="checkbox" id="adRedirectGuardToggle" class="switch"
+            /></label>
+            <label class="row"
+              ><span class="row-text"
+                ><span class="row-title">All heavy third-party embeds</span
+                ><span class="row-desc"
+                  >Broader Heavy ads mode; may stop legitimate content</span
+                ></span
+              ><input
+                type="checkbox"
+                id="aggressiveHeavyAdsToggle"
+                class="switch"
+            /></label>
+          </details>
+        </div>
+      </fieldset>
+    </details>
 
     <script type="module" src="popup.js"></script>
   </body>

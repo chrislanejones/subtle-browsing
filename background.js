@@ -1,5 +1,6 @@
+import { applyMutation } from "./storage-mutations.js";
 import {
-  addBlockedUrl,
+  ruleCondition,
   getBlockedUrls,
   onBlockedUrlsChanged,
 } from "./blocklist.js";
@@ -10,12 +11,11 @@ import {
   onPausedEverywhereChanged,
   onPausedSitesChanged,
   onSettingsChanged,
-  setPausedEverywhere,
-  setSitePaused,
   getSiteSettings,
-  setSiteSetting,
   siteKey,
   validSite,
+  matchesSite,
+  getPauseState,
 } from "./settings.js";
 
 const RESOURCE_TYPES = [
@@ -105,7 +105,7 @@ onSettingsChanged((settings) => {
 let pending = Promise.resolve();
 function queue(task) {
   const result = pending.then(task);
-  pending = result.catch((error) => console.error(error));
+  pending = result.catch((error) => console.warn(error.message));
   return result;
 }
 
@@ -132,31 +132,49 @@ async function moveSettingsToSync() {
   await chrome.storage.local.remove(keys);
 }
 
-// A bare domain blocks the site and its subdomains, but not look-alikes such
-// as notexample.com. Anything with a path is matched as typed.
-function toUrlFilter(entry) {
-  const filter = /^[\w.-]+$/.test(entry) ? `||${entry}^` : entry;
-  // Chrome rejects the whole rule set if one filter has non-ASCII characters
-  return /^[\x20-\x7e]+$/.test(filter) ? filter : null;
+// Preserve unchanged allowAllRequests rules: removing and re-adding one can
+// discard the exemption attached to an already-loaded frame.
+function ruleKey(value) {
+  if (Array.isArray(value)) return `[${value.map(ruleKey).sort().join(",")}]`;
+  if (value && typeof value === "object")
+    return `{${Object.keys(value)
+      .sort()
+      .map((k) => `${k}:${ruleKey(value[k])}`)
+      .join(",")}}`;
+  return JSON.stringify(value);
+}
+function ruleChanges(old, next) {
+  const before = new Map(old.map((rule) => [rule.id, ruleKey(rule)]));
+  const after = new Map(next.map((rule) => [rule.id, ruleKey(rule)]));
+  return {
+    removeRuleIds: old
+      .filter((rule) => after.get(rule.id) !== before.get(rule.id))
+      .map((rule) => rule.id),
+    addRules: next.filter((rule) => before.get(rule.id) !== after.get(rule.id)),
+  };
 }
 
 async function syncDynamicRules() {
-  const [blockedUrls, pausedSites, pausedEverywhere, oldRules] =
+  const [blockedUrls, savedPauses, pausedEverywhere, oldRules, local] =
     await Promise.all([
       getBlockedUrls(),
       getPausedSites(),
       getPausedEverywhere(),
       chrome.declarativeNetRequest.getDynamicRules(),
+      chrome.storage.local.get("temporaryPauses"),
     ]);
+  const pausedSites = [
+    ...new Set([...savedPauses, ...Object.keys(local.temporaryPauses ?? {})]),
+  ];
 
   const addRules = blockedUrls
-    .map(toUrlFilter)
+    .map(ruleCondition)
     .filter(Boolean)
-    .map((urlFilter, index) => ({
+    .map((condition, index) => ({
       id: index + 1, // Rule IDs must be > 0
       priority: 3,
       action: { type: "block" },
-      condition: { urlFilter, resourceTypes: RESOURCE_TYPES },
+      condition: { ...condition, resourceTypes: RESOURCE_TYPES },
     }));
 
   // Lets everything on a paused site's pages through, including the
@@ -184,10 +202,9 @@ async function syncDynamicRules() {
   }
 
   // One call swaps the old rules for the new ones
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: oldRules.map((rule) => rule.id),
-    addRules,
-  });
+  const changes = ruleChanges(oldRules, addRules);
+  if (changes.removeRuleIds.length || changes.addRules.length)
+    await chrome.declarativeNetRequest.updateDynamicRules(changes);
 }
 
 async function applySettings({
@@ -234,7 +251,8 @@ async function applySettings({
   );
   // Google's ad tag runs in the top page, and only the page's own world can
   // wrap it; the isolated half passes in this site's on/off choice
-  const throttleOn = refreshThrottle || overrides.some((s) => s.refreshThrottle);
+  const throttleOn =
+    refreshThrottle || overrides.some((s) => s.refreshThrottle);
   await setFrameScript(REFRESH_THROTTLE_ID, "refresh-throttle.js", throttleOn, {
     world: "MAIN",
     allFrames: false,
@@ -278,9 +296,7 @@ async function setFrameScript(id, file, enabled, options = {}) {
       },
     ]);
   } else if (enabled) {
-    await chrome.scripting.updateContentScripts([
-      { id, js },
-    ]);
+    await chrome.scripting.updateContentScripts([{ id, js }]);
   } else if (!enabled && registered.length > 0) {
     await chrome.scripting.unregisterContentScripts({ ids: [id] });
   }
@@ -337,7 +353,7 @@ async function showBadge(count) {
     // Without the debug event there's no daily total, so let Chrome show
     // each tab's own blocked count instead
     await chrome.declarativeNetRequest.setExtensionActionOptions({
-      displayActionCountAsBadgeText: !off && badgeWindowOpen(),
+      displayActionCountAsBadgeText: !off,
     });
     await chrome.action.setBadgeText({ text: off ? "off" : "" });
     return;
@@ -595,16 +611,24 @@ async function syncSiteRules() {
       }
     }
   }
-  await chrome.declarativeNetRequest.updateSessionRules({
-    removeRuleIds: old.map((r) => r.id),
-    addRules: rules,
-  });
+  const changes = ruleChanges(old, rules);
+  if (changes.removeRuleIds.length || changes.addRules.length)
+    await chrome.declarativeNetRequest.updateSessionRules(changes);
   sessionAllowIds = allows;
 }
+let siteRefreshQueued = false;
+function scheduleSiteRules() {
+  if (siteRefreshQueued) return;
+  siteRefreshQueued = true;
+  queue(async () => {
+    siteRefreshQueued = false;
+    await syncSiteRules();
+  });
+}
 chrome.tabs.onUpdated.addListener((id, change) => {
-  if (change.url || change.status === "loading") queue(syncSiteRules);
+  if (change.url || change.status === "loading") scheduleSiteRules();
 });
-chrome.tabs.onRemoved.addListener(() => queue(syncSiteRules));
+chrome.tabs.onRemoved.addListener(scheduleSiteRules);
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "sync" && changes.siteSettings)
     queue(async () => applySettings(await getSettings()));
@@ -623,20 +647,66 @@ async function sendToTab(tabId, message) {
 
 // Rules only affect new requests, so the tab reloads once they're in place
 async function pauseSite(site, paused, tabId) {
-  await setSitePaused(site, paused);
-  await queue(syncDynamicRules);
-  await chrome.tabs.reload(tabId);
+  await applyMutation("pauseSite", { site, paused });
+  await syncDynamicRules();
+  if (Number.isInteger(tabId))
+    await chrome.tabs.reload(tabId, { bypassCache: true });
 }
 
-// The popup's On / Off on this site / Off everywhere control
+// Temporary pauses are local to this browser, survive a worker restart, and
+// resume through an alarm without reloading pages or losing form input.
+const TEMPORARY_ALARM = "temporary-pauses";
+async function reconcileTemporaryPauses() {
+  const { temporaryPauses = {} } =
+    await chrome.storage.local.get("temporaryPauses");
+  const active = Object.fromEntries(
+    Object.entries(temporaryPauses).filter(([, until]) => until > Date.now()),
+  );
+  if (Object.keys(active).length !== Object.keys(temporaryPauses).length)
+    await chrome.storage.local.set({ temporaryPauses: active });
+  const next = Math.min(...Object.values(active));
+  if (Number.isFinite(next))
+    await chrome.alarms.create(TEMPORARY_ALARM, { when: next });
+  else await chrome.alarms.clear(TEMPORARY_ALARM);
+  await syncDynamicRules();
+}
+queue(reconcileTemporaryPauses);
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === TEMPORARY_ALARM) queue(reconcileTemporaryPauses);
+});
+
 async function setPower(mode, site, tabId) {
-  if (!["on", "site", "everywhere"].includes(mode))
+  if (!["on", "site", "everywhere", "temporary"].includes(mode))
     throw new Error("Invalid power mode.");
   if (site !== undefined && !validSite(site)) throw new Error("Invalid site.");
-  await setPausedEverywhere(mode === "everywhere");
-  if (site && mode !== "everywhere") await setSitePaused(site, mode === "site");
-  await queue(syncDynamicRules);
-  if (Number.isInteger(tabId)) await chrome.tabs.reload(tabId);
+  if (mode === "temporary" && !site)
+    throw new Error("Open a website to pause it.");
+  if (mode === "temporary" && (await getPauseState(site)).mode !== "on")
+    throw new Error("Resume blocking before starting a timed pause.");
+  const { pausedSites = [] } = await chrome.storage.sync.get("pausedSites");
+  const { temporaryPauses = {} } =
+    await chrome.storage.local.get("temporaryPauses");
+  // Resuming explicitly removes the ancestor pause too. The popup names that
+  // ancestor before this action so the wider effect is visible.
+  const pauses =
+    site && mode === "on"
+      ? pausedSites.filter((s) => !matchesSite(site, s))
+      : pausedSites.filter((s) => !(s === site && mode !== "everywhere"));
+  if (site && mode === "site") pauses.push(site);
+  if (site && mode !== "everywhere") {
+    for (const host of Object.keys(temporaryPauses))
+      if (host === site || (mode === "on" && matchesSite(site, host)))
+        delete temporaryPauses[host];
+  }
+  if (mode === "temporary") temporaryPauses[site] = Date.now() + 10 * 60 * 1000;
+  await chrome.storage.sync.set({
+    pausedEverywhere: mode === "everywhere",
+    pausedSites: pauses,
+  });
+  await chrome.storage.local.set({ temporaryPauses });
+  await reconcileTemporaryPauses();
+  if (Number.isInteger(tabId))
+    await chrome.tabs.reload(tabId, { bypassCache: true });
 }
 
 // Keyboard shortcut (Alt+Shift+K unless changed at chrome://extensions/shortcuts)
@@ -656,9 +726,8 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
 async function toggleSite(tab) {
   if (!/^https?:/.test(tab.url ?? "")) return;
   const site = siteKey(new URL(tab.url).hostname);
-  const off =
-    (await getPausedEverywhere()) || (await getPausedSites()).includes(site);
-  await setPower(off ? "on" : "site", site, tab.id);
+  const off = (await getPauseState(site)).mode !== "on";
+  await queue(() => setPower(off ? "on" : "site", site, tab.id));
 }
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -670,12 +739,31 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
+    case "mutate":
+      queue(async () => {
+        const result = await applyMutation(
+          message.operation,
+          message.data ?? {},
+        );
+        await syncDynamicRules();
+        if (
+          ["settings", "siteSetting", "resetSite", "importBackup"].includes(
+            message.operation,
+          )
+        )
+          await applySettings(await getSettings());
+        return result;
+      })
+        .then((result) => sendResponse({ result }))
+        .catch((error) => sendResponse({ error: error.message }));
+      return true;
+
     case "setSiteSetting":
       queue(async () => {
-        await setSiteSetting(message.site, message.key, message.value);
+        await applyMutation("siteSetting", message);
         await applySettings(await getSettings());
         if (Number.isInteger(message.tabId))
-          await chrome.tabs.reload(message.tabId);
+          await chrome.tabs.reload(message.tabId, { bypassCache: true });
       })
         .then(() => sendResponse({ ok: true }))
         .catch((error) => sendResponse({ error: error.message }));
@@ -712,8 +800,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
 
     case "blockUrl":
-      addBlockedUrl(message.url)
-        .then((added) => sendResponse({ added }))
+      queue(async () => {
+        const result = await applyMutation("blockUrl", {
+          url: message.url,
+          mode: message.mode,
+        });
+        await syncDynamicRules();
+        return result;
+      })
+        .then(sendResponse)
         .catch((error) => sendResponse({ error: error.message }));
       return true; // Keep the channel open for the async response
 
@@ -733,7 +828,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
 
     case "setPower":
-      setPower(message.mode, message.site, message.tabId)
+      queue(() => setPower(message.mode, message.site, message.tabId))
         .then(() => sendResponse({ ok: true }))
         .catch((error) => sendResponse({ error: error.message }));
       return true;
@@ -748,7 +843,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
 
     case "pauseSite":
-      pauseSite(message.site, message.paused, message.tabId)
+      queue(() => pauseSite(message.site, message.paused, message.tabId))
         .then(() => sendResponse({ ok: true }))
         .catch((error) => sendResponse({ error: error.message }));
       return true;

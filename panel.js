@@ -1,11 +1,12 @@
+import { mountRuleForm } from "./rule-form.js";
 import {
   mountSiteControls,
   mountGlobalControls,
   mountSavedRules,
 } from "./controls.js";
 import {
-  addBlockedUrl,
   getBlockedUrls,
+  ruleLabel,
   onBlockedUrlsChanged,
   removeBlockedUrl,
 } from "./blocklist.js";
@@ -58,6 +59,14 @@ function drawPendingLogs() {
 renderBlockedUrls(await getBlockedUrls());
 onBlockedUrlsChanged(renderBlockedUrls);
 
+if (!chrome.declarativeNetRequest.onRuleMatchedDebug) {
+  document.getElementById("logHeading").textContent = "Content interventions";
+  const note = document.createElement("p");
+  note.className = "row-desc";
+  note.textContent =
+    "Network logs are unavailable in this install. Chrome shows this tab’s request count on the toolbar. This log contains observed heavy-content removals.";
+  document.getElementById("logHeading").closest(".pane-head").after(note);
+}
 loadBlockedLogs();
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.blockedUrlLogs) {
@@ -66,23 +75,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 document.addEventListener("visibilitychange", drawPendingLogs);
 
-async function addUrl() {
-  const url = urlInput.value.trim();
-  if (!url) return;
-
-  try {
-    const added = await addBlockedUrl(url);
-    statusMessage.textContent = added ? "" : "This URL is already blocked.";
-    if (added) urlInput.value = "";
-  } catch (error) {
-    statusMessage.textContent = error.message;
-  }
-}
-
-addButton.addEventListener("click", addUrl);
-urlInput.addEventListener("keyup", (event) => {
-  if (event.key === "Enter") addUrl();
-});
+mountRuleForm(urlInput, addButton, statusMessage);
 
 refreshButton.addEventListener("click", loadBlockedLogs);
 clearLogsButton.addEventListener("click", () =>
@@ -141,14 +134,22 @@ function renderBlockedUrls(blockedUrls) {
     urlRow.className = "url-row";
 
     const urlText = document.createElement("span");
-    urlText.textContent = url;
+    urlText.textContent = ruleLabel(url);
     urlText.title = url;
 
     const removeButton = document.createElement("button");
     removeButton.textContent = "×";
     removeButton.title = "Remove";
     removeButton.setAttribute("aria-label", `Remove ${url}`);
-    removeButton.addEventListener("click", () => removeBlockedUrl(url));
+    removeButton.addEventListener("click", async () => {
+      removeButton.disabled = true;
+      try {
+        await removeBlockedUrl(url);
+      } catch (error) {
+        statusMessage.textContent = error.message;
+        removeButton.disabled = false;
+      }
+    });
 
     urlRow.append(urlText, removeButton);
     rows.append(urlRow);
@@ -194,6 +195,10 @@ function renderBlockedLogs(logs) {
 
   logCount.textContent = logs.length ? logs.length.toLocaleString() : "";
 
+  if (!chrome.declarativeNetRequest.onRuleMatchedDebug) {
+    noLogsMessage.textContent =
+      "Detailed network logs are unavailable in this install. Chrome shows this tab’s request count on the toolbar. Heavy-content removals appear here when observed.";
+  }
   if (logs.length === 0) {
     logsContainer.hidden = true;
     logsContainer.replaceChildren();

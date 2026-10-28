@@ -64,3 +64,34 @@ select:disabled {
   opacity: 0.6;
   cursor: wait;
 }
+.rule-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  color: var(--color-ink-2);
+}
+.rule-mode select {
+  font: inherit;
+  padding: 4px;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  border: 1px solid var(--color-control-edge);
+  border-radius: 4px;
+}
+.rule-preview {
+  overflow-wrap: anywhere;
+  margin: 6px 0;
+}
+.site-state {
+  margin: 6px 0;
+}
+#activity {
+  margin-top: 24px;
+}
+#activity > summary {
+  margin-bottom: 12px;
+}
+#pauseTenMinutes {
+  margin-top: 6px;
+}

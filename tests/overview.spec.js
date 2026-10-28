@@ -11,63 +11,149 @@ const daysAgo = (n) => {
   return date.toLocaleDateString("en-CA");
 };
 
-test("a block is counted by type, blocked domain and the site it was on", async ({ ext, page }) => {
+test("a block is counted by type, blocked domain and the site it was on", async ({
+  ext,
+  page,
+}) => {
   await ext.setBlockedUrls(["localhost"]);
   await page.goto(`${FIRST}/pause.html`);
   await expect
-    .poll(async () => (await ext.getLocal(`stats-${today()}`))[`stats-${today()}`])
-    .toEqual({ types: { personal: 1 }, hosts: { localhost: 1 }, pages: { "127.0.0.1": 1 } });
+    .poll(
+      async () => (await ext.getLocal(`stats-${today()}`))[`stats-${today()}`],
+    )
+    .toEqual({
+      types: { personal: 1 },
+      hosts: { localhost: 1 },
+      pages: { "127.0.0.1": 1 },
+    });
   const [entry] = (await ext.getLocal("blockedUrlLogs")).blockedUrlLogs;
-  expect(entry).toMatchObject({ type: "personal", host: "localhost", page: "127.0.0.1" });
+  expect(entry).toMatchObject({
+    type: "personal",
+    host: "localhost",
+    page: "127.0.0.1",
+  });
 });
 
-const statsKeys = async (ext) => Object.keys(await ext.getLocal()).filter((k) => k.startsWith("stats-")).sort();
+const statsKeys = async (ext) =>
+  Object.keys(await ext.getLocal())
+    .filter((k) => k.startsWith("stats-"))
+    .sort();
 const day = (types) => ({ types, hosts: {}, pages: {} });
 
 test("the first block of a day drops days past 30", async ({ ext, page }) => {
-  await ext.setLocal({ [`stats-${daysAgo(29)}`]: day({ video_ads: 1 }), [`stats-${daysAgo(30)}`]: day({ video_ads: 1 }) });
+  await ext.setLocal({
+    [`stats-${daysAgo(29)}`]: day({ video_ads: 1 }),
+    [`stats-${daysAgo(30)}`]: day({ video_ads: 1 }),
+  });
   await ext.setBlockedUrls(["localhost"]);
   await page.goto(`${FIRST}/pause.html`);
-  await expect.poll(() => statsKeys(ext)).toEqual([`stats-${daysAgo(29)}`, `stats-${today()}`]);
+  await expect
+    .poll(() => statsKeys(ext))
+    .toEqual([`stats-${daysAgo(29)}`, `stats-${today()}`]);
 });
 
-test("the single blockStats key from the first charts version is split into days", async ({ ext, page }) => {
-  await ext.setLocal({ blockStats: { [daysAgo(1)]: day({ video_ads: 4 }), [today()]: day({ personal: 2 }), [daysAgo(40)]: day({ video_ads: 9 }) } });
+test("the single blockStats key from the first charts version is split into days", async ({
+  ext,
+  page,
+}) => {
+  await ext.setLocal({
+    blockStats: {
+      [daysAgo(1)]: day({ video_ads: 4 }),
+      [today()]: day({ personal: 2 }),
+      [daysAgo(40)]: day({ video_ads: 9 }),
+    },
+  });
   await ext.setBlockedUrls(["localhost"]);
   await page.goto(`${FIRST}/pause.html`);
-  await expect.poll(() => statsKeys(ext)).toEqual([`stats-${daysAgo(1)}`, `stats-${today()}`]);
+  await expect
+    .poll(() => statsKeys(ext))
+    .toEqual([`stats-${daysAgo(1)}`, `stats-${today()}`]);
   expect(await ext.getLocal("blockStats")).toEqual({});
   // Today's earlier counts are kept and added to
-  expect((await ext.getLocal(`stats-${today()}`))[`stats-${today()}`].types).toEqual({ personal: 3 });
+  expect(
+    (await ext.getLocal(`stats-${today()}`))[`stats-${today()}`].types,
+  ).toEqual({ personal: 3 });
 });
 
 test.describe("overview", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
-  test("shows totals, charts by type and domain, and the table of what gets blocked", async ({ ext, page }) => {
-    await ext.setSync({ blockedUrls: ["connatix.com", "teads.tv"], pausedSites: ["example.org"] });
+  test("shows totals, charts by type and domain, and the table of what gets blocked", async ({
+    ext,
+    page,
+  }) => {
+    await ext.setSync({
+      blockedUrls: ["connatix.com", "teads.tv"],
+      pausedSites: ["example.org"],
+    });
     await ext.setLocal({
       blockedToday: { date: today(), count: 12 },
-      [`stats-${today()}`]: { types: { video_ads: 9, personal: 3 }, hosts: { "connatix.com": 8, "teads.tv": 4 }, pages: { "variety.com": 12 } },
-      [`stats-${daysAgo(3)}`]: { types: { ad_churn: 20 }, hosts: { "sync.cootlogix.com": 20 }, pages: { "variety.com": 20 } },
-      [`stats-${daysAgo(20)}`]: { types: { video_ads: 100 }, hosts: {}, pages: {} },
+      [`stats-${today()}`]: {
+        types: { video_ads: 9, personal: 3 },
+        hosts: { "connatix.com": 8, "teads.tv": 4 },
+        pages: { "variety.com": 12 },
+      },
+      [`stats-${daysAgo(3)}`]: {
+        types: { ad_churn: 20 },
+        hosts: { "sync.cootlogix.com": 20 },
+        pages: { "variety.com": 20 },
+      },
+      [`stats-${daysAgo(20)}`]: {
+        types: { video_ads: 100 },
+        hosts: {},
+        pages: {},
+      },
     });
     await page.goto(ext.url("options.html"));
+    await page.locator("#activity > summary").click();
 
     const tiles = page.locator("#tiles .tile");
-    await expect(tiles.locator(".tile-label")).toHaveText(["Blocked today", "Last 7 days", "Last 30 days", "Your blocked URLs", "Paused sites", "Hidden elements"]);
-    await expect(tiles.locator(".tile-value")).toHaveText(["12", "32", "132", "2", "1", "0"]);
+    await expect(tiles.locator(".tile-label")).toHaveText([
+      "Blocked today",
+      "Last 7 days",
+      "Last 30 days",
+      "Your blocked URLs",
+      "Paused sites",
+      "Hidden elements",
+    ]);
+    await expect(tiles.locator(".tile-value")).toHaveText([
+      "12",
+      "32",
+      "132",
+      "2",
+      "1",
+      "0",
+    ]);
     await expect(page.locator("#powerState")).toHaveText("Blocking is on");
 
     // 14 day columns; today's holds both of its types
     await expect(page.locator("#perDay .col-bar")).toHaveCount(14);
-    await expect(page.locator("#perDay .col-bar").last()).toHaveAttribute("aria-label", /: 12 blocked$/);
-    await expect(page.locator("#perDay .col-bar").last().locator(".seg")).toHaveCount(2);
+    await expect(page.locator("#perDay .col-bar").last()).toHaveAttribute(
+      "aria-label",
+      /: 12 blocked$/,
+    );
+    await expect(
+      page.locator("#perDay .col-bar").last().locator(".seg"),
+    ).toHaveCount(2);
 
-    await expect(page.locator("#byType .bar-name")).toHaveText(["Ad refresh and sync", "Video ads", "Your list"]);
-    await expect(page.locator("#byType .bar-value")).toHaveText(["20", "9", "3"]);
-    await expect(page.locator("#topHosts .bar-name")).toHaveText(["sync.cootlogix.com", "connatix.com", "teads.tv"]);
-    await expect(page.locator("#topPages .bar-name")).toHaveText(["variety.com"]);
+    await expect(page.locator("#byType .bar-name")).toHaveText([
+      "Ad refresh and sync",
+      "Video ads",
+      "Your list",
+    ]);
+    await expect(page.locator("#byType .bar-value")).toHaveText([
+      "20",
+      "9",
+      "3",
+    ]);
+    await expect(page.locator("#topHosts .bar-name")).toHaveText([
+      "sync.cootlogix.com",
+      "connatix.com",
+      "teads.tv",
+    ]);
+    await expect(page.locator("#topPages .bar-name")).toHaveText([
+      "variety.com",
+    ]);
     await expect(page.locator("#topPages .bar-value")).toHaveText(["32"]);
 
     // Hovering a bar shows its numbers
@@ -92,12 +178,22 @@ test.describe("overview", () => {
     await expect(page.locator("#powerState")).toHaveText("Off everywhere");
   });
 
-  test("with nothing counted yet, the charts say so and the page fills the window", async ({ ext, page }) => {
+  test("with nothing counted yet, the charts say so and the page fills the window", async ({
+    ext,
+    page,
+  }) => {
     await page.goto(ext.url("options.html"));
-    await expect(page.locator("#perDay")).toHaveText("Nothing blocked yet in the last 14 days.");
+    await page.locator("#activity > summary").click();
+    await expect(page.locator("#perDay")).toHaveText(
+      "Nothing blocked yet in the last 14 days.",
+    );
     await expect(page.locator("#recent")).toHaveText("Nothing blocked yet.");
-    const width = await page.locator(".grid-2").evaluate((el) => el.getBoundingClientRect().width);
+    const width = await page
+      .locator(".grid-2")
+      .evaluate((el) => el.getBoundingClientRect().width);
     expect(width).toBeGreaterThan(1100);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBe(1280);
   });
 });

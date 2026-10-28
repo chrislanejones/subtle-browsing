@@ -12,9 +12,77 @@
   const RESTART_WINDOW_MS = 2000;
   const recentPauses = new WeakMap();
   const unloaded = new WeakSet();
+  const restored = new WeakSet();
+  const saved = new WeakMap();
+  const waiting = new Set();
+
+  function restoreVideo(video) {
+    const record = saved.get(video);
+    if (!record) return;
+    restored.add(video);
+    waiting.delete(video);
+    if (record.container) {
+      if (record.display)
+        record.container.style.setProperty(
+          "display",
+          record.display,
+          record.priority,
+        );
+      else record.container.style.removeProperty("display");
+    }
+    if (unloaded.has(video)) {
+      if (record.src !== null) video.setAttribute("src", record.src);
+      for (const source of record.sources) video.append(source.cloneNode(true));
+      video.load();
+    }
+    record.placeholder?.remove();
+    video.controls = true;
+    video.play().catch(() => {});
+  }
+  function remember(video, container, showButton = true) {
+    let record = saved.get(video);
+    if (!record) {
+      record = {
+        src: video.getAttribute("src"),
+        sources: [...video.querySelectorAll("source")].map((s) =>
+          s.cloneNode(true),
+        ),
+      };
+      saved.set(video, record);
+      waiting.add(video);
+    }
+    if (!container || record.placeholder || !showButton) return;
+    record.container = container;
+    record.display = container.style.getPropertyValue("display");
+    record.priority = container.style.getPropertyPriority("display");
+    const placeholder = document.createElement("subtle-paused-video");
+    if (getComputedStyle(container).position === "fixed") {
+      const rect = container.getBoundingClientRect();
+      const left = Math.max(8, Math.min(rect.left, innerWidth - 150));
+      const top = Math.max(8, Math.min(rect.top, innerHeight - 44));
+      placeholder.style.cssText = `position:fixed;left:${left}px;top:${top}px;z-index:2147483647;max-width:calc(100vw - 16px)`;
+    }
+    const root = placeholder.attachShadow({ mode: "closed" });
+    const button = document.createElement("button");
+    button.textContent = "Play this video";
+    button.style.cssText =
+      "font:13px/1.5 system-ui;padding:6px 10px;cursor:pointer";
+    button.addEventListener("click", () => restoreVideo(video), { once: true });
+    root.append(button);
+    container.before(placeholder);
+    record.placeholder = placeholder;
+  }
+  window.addEventListener("message", (event) => {
+    if (
+      event.source === parent &&
+      event.data === "url-blocker:restore-autoplay"
+    )
+      for (const video of waiting) restoreVideo(video);
+  });
 
   function shouldPause(video) {
-    if (!subtlePolicy.enabled("autoplayGuard")) return false;
+    if (restored.has(video) || !subtlePolicy.enabled("autoplayGuard"))
+      return false;
     if (navigator.userActivation.isActive) return false; // Started by a click or key press
     return video.muted || video.volume === 0;
   }
@@ -34,6 +102,7 @@
       if (getComputedStyle(element).position === "fixed") {
         const { width, height } = element.getBoundingClientRect();
         if (width * height < halfWindow) {
+          remember(video, element);
           element.style.setProperty("display", "none", "important");
         }
         return;
@@ -44,6 +113,7 @@
 
   // Unloading doesn't fire a "pause" event, so players that restart on pause stop retrying
   function unload(video) {
+    remember(video, video, window.top === window);
     // An ad frame left with nothing to play has its box hidden by frame-collapse.js
     if (!unloaded.has(video) && window.top !== window) {
       parent.postMessage("url-blocker:collapse-frame", "*");

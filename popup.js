@@ -1,12 +1,9 @@
-import { mountSiteControls, mountSavedRules } from "./controls.js";
+import { mountRuleForm } from "./rule-form.js";
+import { mountSiteControls } from "./controls.js";
+import { getBlockedUrls, onBlockedUrlsChanged } from "./blocklist.js";
 import {
-  addBlockedUrl,
-  getBlockedUrls,
-  onBlockedUrlsChanged,
-} from "./blocklist.js";
-import {
-  getPausedEverywhere,
-  getPausedSites,
+  getPauseState,
+  getAllPausedSites,
   getSettings,
   onPausedEverywhereChanged,
   onPausedSitesChanged,
@@ -24,7 +21,7 @@ const statusMessage = document.getElementById("statusMessage");
 const manageSummary = document.getElementById("manageSummary");
 let counts = {
   urls: (await getBlockedUrls()).length,
-  sites: (await getPausedSites()).length,
+  sites: (await getAllPausedSites()).length,
 };
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 function renderSummary() {
@@ -35,9 +32,13 @@ onBlockedUrlsChanged((urls) => {
   counts.urls = urls.length;
   renderSummary();
 });
-onPausedSitesChanged((sites) => {
-  counts.sites = sites.length;
+async function renderPauseCount() {
+  counts.sites = (await getAllPausedSites()).length;
   renderSummary();
+}
+onPausedSitesChanged(renderPauseCount);
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.temporaryPauses) renderPauseCount();
 });
 document.getElementById("manageButton").addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
@@ -75,6 +76,8 @@ for (const [key, checkbox] of Object.entries(toggles)) {
   checkbox.addEventListener("change", async () => {
     try {
       await updateSettings({ [key]: checkbox.checked });
+      statusMessage.textContent =
+        "Default saved. Reload open pages to apply all changes.";
     } catch (error) {
       checkbox.checked = !checkbox.checked;
       statusMessage.textContent = error.message;
@@ -97,40 +100,72 @@ const site = /^https?:/.test(activeTab?.url ?? "")
   : null;
 const powerInputs = [...document.querySelectorAll('input[name="power"]')];
 const powerDesc = document.getElementById("powerDesc");
+const powerStatus = document.getElementById("powerStatus");
+const temporaryButton = document.getElementById("pauseTenMinutes");
 document.querySelector('input[value="site"]').disabled = !site;
 
-function renderPower(mode) {
-  for (const input of powerInputs) input.checked = input.value === mode;
+let confirmedPower = "on";
+async function renderPower() {
+  const state = await getPauseState(site);
+  confirmedPower = state.mode;
+  temporaryButton.disabled = !site || state.mode !== "on";
+  for (const input of powerInputs) input.checked = input.value === state.mode;
   const name = document.createElement("b");
   name.textContent = site;
-  if (mode === "everywhere")
-    powerDesc.replaceChildren("Nothing is blocked on any site.");
-  else if (mode === "site")
+  if (state.mode === "everywhere")
+    powerDesc.textContent = "Nothing is blocked on any site.";
+  else if (state.mode === "site") {
     powerDesc.replaceChildren("Nothing is blocked on ", name, ".");
-  else if (site)
-    powerDesc.replaceChildren("Blocking on ", name, ". Changes reload the tab.");
-  else powerDesc.replaceChildren("Blocking on every site.");
+    if (state.until)
+      powerDesc.append(
+        ` Resumes at ${new Date(state.until).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`,
+      );
+    if (state.inheritedFrom)
+      powerDesc.append(
+        ` Paused by ${state.inheritedFrom}. On also resumes that parent site and its subdomains.`,
+      );
+  } else if (site)
+    powerDesc.replaceChildren(
+      "Blocking on ",
+      name,
+      ". Changes reload the tab.",
+    );
+  else powerDesc.textContent = "Blocking on every site.";
 }
-async function currentPower() {
-  if (await getPausedEverywhere()) return "everywhere";
-  return site && (await getPausedSites()).includes(site) ? "site" : "on";
-}
-renderPower(await currentPower());
-onPausedSitesChanged(async () => renderPower(await currentPower()));
-onPausedEverywhereChanged(async () => renderPower(await currentPower()));
-
-// background.js updates the rules, then reloads the tab
-for (const input of powerInputs) {
-  input.addEventListener("change", () => {
-    renderPower(input.value);
-    chrome.runtime.sendMessage({
+await renderPower();
+onPausedSitesChanged(renderPower);
+onPausedEverywhereChanged(renderPower);
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.temporaryPauses) renderPower();
+});
+async function changePower(mode) {
+  for (const input of powerInputs) {
+    input.checked = input.value === confirmedPower;
+    input.disabled = true;
+  }
+  temporaryButton.disabled = true;
+  try {
+    const response = await chrome.runtime.sendMessage({
       action: "setPower",
-      mode: input.value,
+      mode,
       site: site ?? undefined,
       tabId: site ? activeTab.id : undefined,
     });
-  });
+    if (!response?.ok)
+      throw new Error(response?.error ?? "Could not change blocking.");
+    powerStatus.textContent = site ? "Saved. Tab reloaded." : "Saved.";
+  } catch (error) {
+    powerStatus.textContent = error.message;
+  } finally {
+    await renderPower();
+    for (const input of powerInputs)
+      input.disabled = input.value === "site" && !site;
+    temporaryButton.disabled = !site || confirmedPower !== "on";
+  }
 }
+for (const input of powerInputs)
+  input.addEventListener("change", () => changePower(input.value));
+temporaryButton.addEventListener("click", () => changePower("temporary"));
 
 // The daily count needs the debug event, which only unpacked installs have
 const blockedToday = document.getElementById("blockedToday");
@@ -155,23 +190,7 @@ if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
   blockedToday.hidden = false;
 }
 
-async function addUrl() {
-  const url = urlInput.value.trim();
-  if (!url) return;
-
-  try {
-    const added = await addBlockedUrl(url);
-    statusMessage.textContent = added ? "" : "This URL is already blocked.";
-    if (added) urlInput.value = "";
-  } catch (error) {
-    statusMessage.textContent = error.message;
-  }
-}
-
-addButton.addEventListener("click", addUrl);
-urlInput.addEventListener("keyup", (event) => {
-  if (event.key === "Enter") addUrl();
-});
+mountRuleForm(urlInput, addButton, statusMessage);
 
 selectorButton.addEventListener("click", async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

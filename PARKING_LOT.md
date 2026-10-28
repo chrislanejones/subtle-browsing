@@ -2,7 +2,6 @@
 
 - **GitHub repo description:** still "Yes, I am doing a Chrome Extention" with no topics. Suggested: `gh repo edit chrislanejones/subtle-browsing --description "Chrome extension that blocks video ads, muted autoplay, pop-ups and heavy ads, and leaves normal banner ads alone." --add-topic chrome-extension --add-topic manifest-v3 --add-topic ad-blocker`
 - **Sync caps the block list at about 300 entries:** `chrome.storage.sync` allows 8 KB per item. Past that, adding shows an error. Splitting the list across several keys would lift it.
-- **Off everywhere isn't on the settings page:** the popup and the toolbar's **off** show it, but the settings page's paused-sites list doesn't. A line there with a **Turn back on** button would make it easier to spot.
 - **Settings page tables on a narrow window:** below about 640px wide, the What gets blocked and Recent blocks tables scroll sideways. Fine for a settings tab, but a stacked layout would read better.
 - **Flaky under load:** "site autoplay exception keeps personal URL blocks active" (improvements.spec.js) failed once with the load average at 12.7 and passed on two reruns. Same family as the picker long-task test.
 - **Off everywhere reloads only the current tab:** other open tabs keep their old state until they load again. Reloading every tab could lose what people typed into forms, so it's left alone.
@@ -14,10 +13,9 @@
 - **webRequest wakes the worker per request:** the download count listens to every response header. Cheap per event, but it keeps the service worker awake on busy pages even with the switch off, because the listener has to be added at startup.
 - **Why not AdGuard's annoyance lists:** `@adguard/dnr-rulesets` is GPL-3.0-only, and this repo is MIT, so bundling it would relicense the project. Most of its annoyance filters are also element-hiding (CSS) rules, which Chrome's blocking rules can't apply. `rules/annoyances.json` is a small hand-made list instead. Cookie banners are left out on purpose: blocking a consent tool can leave the page scroll-locked.
 - **Video list coverage:** 1.6.0 adds baseline/protected smoke checks on PCWorld, Best Buy, ESPN and Vimeo, plus confirmed user-started Vimeo playback. Banner coverage remains partly inconclusive; see [Testing](docs/Testing.md). Vendors seen there but left alone because they also serve banners: Minute Media, JW Player (also plays the site's own videos). `fwmrm.net` (FreeWheel) is left out because TV-network sites use it for their real shows.
-- **Unloaded videos stay unloaded:** a video unloaded for restarting itself 3 times in 2 seconds can't be played later, even by clicking. Fine for ads; if a real video ever trips it, save the source and restore it on click.
 - **Picker only looks inside the clicked element:** clicking an ad image doesn't list the link wrapped around it. Consider walking up to the nearest `<a>` or ad container too.
 - **Install warning:** `host_permissions: <all_urls>` shows "read and change all your data" at install. Switching to `activeTab` would drop it for the popup and right-click paths, but the DevTools panel would lose the picker.
-- **Log needs an unpacked install:** `onRuleMatchedDebug` only fires for unpacked extensions, so the DevTools log stays empty for a Web Store install.
+- **Network log needs an unpacked install:** `onRuleMatchedDebug` only fires unpacked. Store UI now marks network data unavailable and shows heavy-content removals; actual Web Store publication remains untested.
 
 ## Follow-ups from 1.6.0
 

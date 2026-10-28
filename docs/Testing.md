@@ -4,6 +4,45 @@ Release: **1.6.0**, checked **10-26-2026**. This is the detailed verification
 companion to the [README](../README.md) and [Changelog](../CHANGELOG.md).
 The testing policy is [ADR-020](adr/020-live-site-checks-are-separate-from-regression-tests.md).
 
+## Unreleased verification, 10-28-2026
+
+`pnpm test`: **126 passed in 1.3 minutes**. `git diff --check` passed.
+
+The current implementation extends the release checks with simultaneous edits
+from separate extension windows, concurrent backup import, URL host boundaries,
+exact scheme/path/query matching, internationalized domains, legacy backup
+semantics, immediate Undo, failed power changes, inherited pauses in the actual
+toolbar, timed pause expiry and browser restart, autoplay restore, and recovery
+controls for floating video on long articles.
+
+Compatibility fixtures now verify a decoded 320×50 banner creative inside a
+third-party ad frame, plus advancing user-started video, with both default and
+optional protections. Eight tabs exercise site exceptions through HTTP redirects,
+subsequent cross-site navigation and tab closure. These assert final rule state;
+they do not claim that the earliest request can never precede an asynchronous
+site-rule refresh.
+
+The unpacked browser suite also simulates absence of `onRuleMatchedDebug` to
+verify Store-style unavailable states. This is not a signed Web Store install
+or Web Store publication.
+
+Current live observations: [raw results](testing/2026-10-28-live-sites.json).
+Each target was checked with separate baseline and protected profiles:
+
+| Target | Both profiles | Interpretation |
+| --- | --- | --- |
+| PCWorld | HTTP 200; no measured creative images | Page smoke check passed; banner preservation inconclusive |
+| Best Buy | Navigation timed out after 30 seconds | Inconclusive in both profiles |
+| ESPN | HTTP 200; no measured creative images | Page smoke check passed; banner preservation inconclusive |
+| Vimeo Watch | HTTP 403 | Browse compatibility inconclusive in both profiles |
+| Vimeo direct player | HTTP 200; clicked Play; playback advanced beyond one second | User-started playback passed in both profiles |
+
+The live checker now records decoded image creatives inside marked ad regions
+across frames. Empty ad slots do not count as rendered banners. Canvas/video
+creatives still require manual inspection. Screenshots remain local under
+`artifacts/live-2026-10-28/`. Set `LIVE_REPEATS=2` (maximum 5) to collect repeated
+paired samples; rotating ads can still make those samples incomparable.
+
 ## Repeatable regression checks
 
 ```sh

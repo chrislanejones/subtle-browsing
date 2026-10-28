@@ -1,9 +1,11 @@
+import { mutate } from "./storage-client.js";
 import {
   FEATURES,
   getSettings,
   updateSettings,
   getSiteSettings,
   siteKey,
+  getPauseState,
 } from "./settings.js";
 
 // Shared across toolbar, settings and DevTools. Native selects make the
@@ -12,6 +14,11 @@ export async function mountSiteControls(container, tab) {
   if (!container || !/^https?:/.test(tab?.url ?? "")) return;
   const site = siteKey(new URL(tab.url).hostname);
   container.hidden = false;
+  const effective = document.createElement("p");
+  effective.className = "row-desc site-state";
+  effective.id = "effectiveSiteState";
+  effective.setAttribute("role", "status");
+  container.before(effective);
   const heading = document.createElement("summary");
   heading.textContent = `Controls for ${site}`;
   const note = document.createElement("p");
@@ -80,6 +87,12 @@ export async function mountSiteControls(container, tab) {
         .sort(([a], [b]) => a.length - b.length)
         .map(([, value]) => value),
     );
+    const state = { ...inherited, ...sites[site] };
+    const pause = await getPauseState(site);
+    effective.textContent =
+      pause.mode !== "on"
+        ? "Protections paused on this site."
+        : `On this site: video ads ${state.videoAdRules ? "blocked" : "allowed"}, muted autoplay ${state.autoplayGuard ? "paused" : "allowed"}, heavy ads ${state.heavyAds ? "limited" : "allowed"}.`;
     for (const [key, select] of Object.entries(selects)) {
       select.value =
         typeof sites[site]?.[key] === "boolean" ? String(sites[site][key]) : "";
@@ -88,7 +101,15 @@ export async function mountSiteControls(container, tab) {
   }
   await render();
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "sync" && (changes.settings || changes.siteSettings)) render();
+    if (
+      (area === "sync" &&
+        (changes.settings ||
+          changes.siteSettings ||
+          changes.pausedSites ||
+          changes.pausedEverywhere)) ||
+      (area === "local" && changes.temporaryPauses)
+    )
+      render();
   });
 }
 
@@ -125,6 +146,10 @@ export async function mountGlobalControls(container) {
 }
 
 export async function mountSavedRules(container, site = null) {
+  const list = document.createElement("div");
+  const status = document.createElement("p");
+  status.setAttribute("role", "status");
+  container.replaceChildren(list, status);
   async function render() {
     const { hiddenElements = [], siteSettings = {} } =
       await chrome.storage.sync.get(["hiddenElements", "siteSettings"]);
@@ -136,17 +161,15 @@ export async function mountSavedRules(container, site = null) {
       label.textContent = `${rule.site}: ${rule.selector}`;
       const button = document.createElement("button");
       button.textContent = "Unhide";
+      button.setAttribute(
+        "aria-label",
+        `Unhide ${rule.selector} on ${rule.site}`,
+      );
       button.className = "btn";
       button.addEventListener("click", async () => {
         try {
-          const current =
-            (await chrome.storage.sync.get("hiddenElements")).hiddenElements ??
-            [];
-          await chrome.storage.sync.set({
-            hiddenElements: current.filter(
-              (r) => r.site !== rule.site || r.selector !== rule.selector,
-            ),
-          });
+          await mutate("unhide", { site: rule.site, selector: rule.selector });
+          status.textContent = "Element restored.";
         } catch (error) {
           status.textContent = error.message;
         }
@@ -165,12 +188,11 @@ export async function mountSavedRules(container, site = null) {
         .join(", ")}`;
       const button = document.createElement("button");
       button.textContent = "Reset site";
+      button.setAttribute("aria-label", `Reset site ${host}`);
       button.className = "btn";
       button.addEventListener("click", async () => {
         try {
-          const sites = await getSiteSettings();
-          delete sites[host];
-          await chrome.storage.sync.set({ siteSettings: sites });
+          await mutate("resetSite", { site: host });
           status.textContent =
             "Reset. Reload the site to apply to existing content.";
         } catch (error) {
@@ -182,10 +204,7 @@ export async function mountSavedRules(container, site = null) {
     }
     if (!fragment.childNodes.length)
       fragment.append("No hidden elements or site overrides yet.");
-    const status = document.createElement("p");
-    status.setAttribute("role", "status");
-    fragment.append(status);
-    container.replaceChildren(fragment);
+    list.replaceChildren(fragment);
   }
   await render();
   chrome.storage.onChanged.addListener((changes, area) => {

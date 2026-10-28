@@ -1,15 +1,18 @@
-import { mountSiteControls, mountSavedRules } from "./controls.js";
+import { mountRuleForm } from "./rule-form.js";
+import { mutate } from "./storage-client.js";
+import { mountSavedRules } from "./controls.js";
 import { mountOverview } from "./overview.js";
 import {
-  addBlockedUrl,
   getBlockedUrls,
-  normalizeUrl,
+  normalizeImportedRule,
+  ruleLabel,
   onBlockedUrlsChanged,
   removeBlockedUrl,
-  SYNC_FULL_MESSAGE,
 } from "./blocklist.js";
 import {
   getPausedSites,
+  getPausedEverywhere,
+  onPausedEverywhereChanged,
   getSettings,
   onPausedSitesChanged,
   onSettingsChanged,
@@ -29,6 +32,32 @@ const backupStatus = $("backupStatus");
 
 $("version").textContent = `Version ${chrome.runtime.getManifest().version}`;
 await mountOverview();
+async function renderPowerState() {
+  const off = await getPausedEverywhere();
+  $("powerState").textContent = off ? "Off everywhere" : "Blocking is on";
+  $("powerState").dataset.off = off;
+  $("resumeBlocking").hidden = !off;
+}
+await renderPowerState();
+onPausedEverywhereChanged(renderPowerState);
+$("resumeBlocking").addEventListener("click", async () => {
+  $("resumeBlocking").disabled = true;
+  try {
+    const result = await chrome.runtime.sendMessage({
+      action: "setPower",
+      mode: "on",
+    });
+    if (!result?.ok)
+      throw new Error(result?.error ?? "Could not resume blocking.");
+    blockedStatus.textContent =
+      "Blocking resumed. Reload pages to restore removed content.";
+  } catch (error) {
+    blockedStatus.textContent = error.message;
+  } finally {
+    $("resumeBlocking").disabled = false;
+    await renderPowerState();
+  }
+});
 
 // Blocking switches, kept in step with the popup
 const toggles = {
@@ -69,7 +98,16 @@ function listRow(text, buttonLabel, onClick) {
   button.className = "remove-btn";
   button.textContent = buttonLabel;
   button.setAttribute("aria-label", `${buttonLabel} ${text}`);
-  button.addEventListener("click", onClick);
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    try {
+      await onClick();
+    } catch (error) {
+      blockedStatus.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
   row.append(label, button);
   return row;
 }
@@ -100,7 +138,7 @@ function renderBlockedUrls() {
   }
   const rows = document.createDocumentFragment();
   for (const url of shown)
-    rows.append(listRow(url, "Remove", () => removeBlockedUrl(url)));
+    rows.append(listRow(ruleLabel(url), "Remove", () => removeBlockedUrl(url)));
   $("urlList").replaceChildren(rows);
 }
 renderBlockedUrls();
@@ -110,36 +148,47 @@ onBlockedUrlsChanged((urls) => {
 });
 searchInput.addEventListener("input", renderBlockedUrls);
 
-async function addUrl() {
-  const url = urlInput.value.trim();
-  if (!url) return;
-  try {
-    const added = await addBlockedUrl(url);
-    blockedStatus.textContent = added ? "" : "This URL is already blocked.";
-    if (added) urlInput.value = "";
-  } catch (error) {
-    blockedStatus.textContent = error.message;
-  }
-}
-$("addButton").addEventListener("click", addUrl);
-urlInput.addEventListener("keyup", (event) => {
-  if (event.key === "Enter") addUrl();
-});
+mountRuleForm(urlInput, $("addButton"), blockedStatus);
 
 // Paused sites
-function renderPausedSites(sites) {
-  $("pausedCount").textContent = `${sites.length} total`;
-  if (sites.length === 0) {
-    $("pausedList").replaceChildren(emptyRow("No paused sites."));
-    return;
-  }
+async function renderPausedSites() {
+  const sites = await getPausedSites();
+  const { temporaryPauses = {} } =
+    await chrome.storage.local.get("temporaryPauses");
+  const temporary = Object.entries(temporaryPauses).filter(
+    ([, until]) => until > Date.now(),
+  );
+  $("pausedCount").textContent =
+    `${sites.length + temporary.filter(([site]) => !sites.includes(site)).length} total`;
   const rows = document.createDocumentFragment();
   for (const site of sites)
     rows.append(listRow(site, "Unpause", () => setSitePaused(site, false)));
+  for (const [site, until] of temporary) {
+    if (sites.includes(site)) continue;
+    rows.append(
+      listRow(
+        `${site} (until ${new Date(until).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })})`,
+        "Resume",
+        async () => {
+          const result = await chrome.runtime.sendMessage({
+            action: "setPower",
+            mode: "on",
+            site,
+          });
+          if (!result?.ok)
+            throw new Error(result?.error ?? "Could not resume blocking.");
+        },
+      ),
+    );
+  }
+  if (!rows.childNodes.length) rows.append(emptyRow("No paused sites."));
   $("pausedList").replaceChildren(rows);
 }
-renderPausedSites(await getPausedSites());
+await renderPausedSites();
 onPausedSitesChanged(renderPausedSites);
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.temporaryPauses) renderPausedSites();
+});
 
 // Keyboard shortcuts: Chrome only lets the user change them on its own page
 async function renderShortcut() {
@@ -148,8 +197,9 @@ async function renderShortcut() {
     ["start-picker", "shortcutDesc"],
     ["toggle-site", "toggleShortcutDesc"],
   ]) {
-    const shortcut = commands.find((command) => command.name === name)
-      ?.shortcut;
+    const shortcut = commands.find(
+      (command) => command.name === name,
+    )?.shortcut;
     const desc = $(id);
     if (shortcut) {
       const key = document.createElement("kbd");
@@ -248,7 +298,13 @@ $("importFile").addEventListener("change", async (event) => {
       ? value.filter((item) => typeof item === "string")
       : [];
   const incomingUrls = strings(backup.blockedUrls)
-    .map(normalizeUrl)
+    .map((value) => {
+      try {
+        return normalizeImportedRule(value);
+      } catch {
+        return null;
+      }
+    })
     .filter(Boolean);
   const incomingSites = strings(backup.pausedSites)
     .map((site) => siteKey(site.trim().toLowerCase()))
@@ -275,42 +331,19 @@ $("importFile").addEventListener("change", async (event) => {
     return;
   }
 
-  const currentUrls = await getBlockedUrls();
-  const currentSites = await getPausedSites();
-  // De-duplicated first, so the count matches what's stored
-  const newUrls = [...new Set(incomingUrls)].filter(
-    (url) => !currentUrls.includes(url),
-  );
-  const newSites = [...new Set(incomingSites)].filter(
-    (site) => !currentSites.includes(site),
-  );
-  const currentOverrides = await getSiteSettings();
-  for (const [site, values] of Object.entries(incomingOverrides))
-    currentOverrides[site] = { ...currentOverrides[site], ...values };
-  const hidden =
-    (await chrome.storage.sync.get("hiddenElements")).hiddenElements ?? [];
-  for (const rule of incomingHidden)
-    if (
-      !hidden.some((r) => r.site === rule.site && r.selector === rule.selector)
-    )
-      hidden.push(rule);
   try {
-    // One write, so background.js rebuilds its rules once
-    await chrome.storage.sync.set({
-      blockedUrls: [...currentUrls, ...newUrls],
-      pausedSites: [...currentSites, ...newSites],
-      settings: { ...(await getSettings()), ...incomingSettings },
-      ...(Object.keys(currentOverrides).length
-        ? { siteSettings: currentOverrides }
-        : {}),
-      ...(hidden.length ? { hiddenElements: hidden } : {}),
+    const result = await mutate("importBackup", {
+      blockedUrls: incomingUrls,
+      pausedSites: incomingSites,
+      settings: incomingSettings,
+      siteSettings: incomingOverrides,
+      hiddenElements: incomingHidden,
     });
-  } catch {
-    backupStatus.textContent = SYNC_FULL_MESSAGE;
-    return;
+    backupStatus.className = "status ok";
+    backupStatus.textContent = `Imported ${result.urls} URLs and ${result.sites} paused sites.`;
+  } catch (error) {
+    backupStatus.textContent = error.message;
   }
-  backupStatus.className = "status ok";
-  backupStatus.textContent = `Imported ${newUrls.length} URLs and ${newSites.length} paused sites.`;
 });
 
 await mountSavedRules(document.getElementById("savedRules"));

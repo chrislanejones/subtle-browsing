@@ -4,7 +4,7 @@
 import { getBlockedUrls } from "./blocklist.js";
 import {
   getPausedEverywhere,
-  getPausedSites,
+  getAllPausedSites,
   getSettings,
   getSiteSettings,
 } from "./settings.js";
@@ -338,7 +338,7 @@ async function render() {
       getSettings(),
       getSiteSettings(),
       getBlockedUrls(),
-      getPausedSites(),
+      getAllPausedSites(),
       getPausedEverywhere(),
     ]);
   const { blockedToday, blockedUrlLogs = [] } = local;
@@ -357,16 +357,13 @@ async function render() {
   const hidden = (sync.hiddenElements ?? []).length;
   const overrides = Object.keys(siteSettings).length;
 
-  $("powerState").textContent = off ? "Off everywhere" : "Blocking is on";
-  $("powerState").dataset.off = off;
-
   $("tiles").replaceChildren(
-    tile("Blocked today", fmt(todayCount)),
-    tile("Last 7 days", fmt(weekTotal)),
+    tile("Blocked today", canCount ? fmt(todayCount) : "Unavailable"),
+    tile("Last 7 days", canCount ? fmt(weekTotal) : "Unavailable"),
     tile(
       "Last 30 days",
-      fmt(monthTotal),
-      Object.keys(stats).length < 30
+      canCount ? fmt(monthTotal) : "Unavailable",
+      canCount && Object.keys(stats).length < 30
         ? `Counting since ${Object.keys(stats).sort()[0] ?? "today"}`
         : null,
     ),
@@ -418,8 +415,20 @@ async function render() {
     pages.length ? barList(pages) : empty("Nothing blocked yet this week."),
   );
 
+  if (!canCount) {
+    for (const id of ["perDay", "byType", "topHosts", "topPages"])
+      $(id).replaceChildren(
+        empty(
+          "Network activity is unavailable in this install, not zero. Use the toolbar for this tab’s request count.",
+        ),
+      );
+  }
+
   // Recent blocks, newest first
-  const recent = blockedUrlLogs.slice(-12).reverse();
+  const recent = blockedUrlLogs
+    .filter((entry) => canCount || entry.type === "heavy")
+    .slice(-12)
+    .reverse();
   $("recent").replaceChildren(
     recent.length
       ? el(
@@ -469,7 +478,11 @@ async function render() {
             }),
           ),
         )
-      : empty("Nothing blocked yet."),
+      : empty(
+          canCount
+            ? "Nothing blocked yet."
+            : "No heavy-content removals observed. Network logs are unavailable.",
+        ),
   );
 
   // What gets blocked
@@ -508,7 +521,15 @@ async function render() {
             off ? "Off everywhere" : on ? "On" : "Off",
           ),
         ),
-        el("td", { className: "num" }, count === null ? "—" : fmt(count)),
+        el(
+          "td",
+          { className: "num" },
+          count === null
+            ? "—"
+            : !canCount && kind.type !== "heavy"
+              ? "Unavailable"
+              : fmt(count),
+        ),
       );
     }),
   );

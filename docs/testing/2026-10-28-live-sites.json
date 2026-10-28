@@ -1,0 +1,204 @@
+[
+  {
+    "category": "news",
+    "sample": 1,
+    "url": "https://www.pcworld.com/",
+    "enabled": false,
+    "checkedAt": "2026-10-28T06:02:48.915Z",
+    "status": 200,
+    "observed": {
+      "title": "PCWorld",
+      "text": "CONSUMER AI\nHOME ROBOTICS\nPERFORMANCE\nPRIVACY\nPRODUCTIVITY\nSMART ANSWERS\nMAGAZINE\nSearch\nMenu\nHOT TOPICS\nBest laptops\nBest VPNs\nBest antivirus\nLaptop deals\nDesktop PC deals\nMini PC deals\nNEWSLETTERS\nBack\nClose\nSearch\nCONSUMER AI\nHOME ROBOTICS\nPERFORMANCE\nPRIVACY\nPRODUCTIVITY\nBY PRODUCT CATEGORY\nBY STORY TYPE\nBLOGS\nEVENTS\nNEWSLETTERS\nDIGITAL MAGAZINE\nSMART ANSWERS\nCLIENT CONTENT\nSamsung turned my trade-in into an $1,100 nightmare\nLaptop makers, I'm begging you to put USB-C ports on both sides\nRoo",
+      "visibleImages": 8,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 7,
+    "blockedRequests": 0
+  },
+  {
+    "category": "news",
+    "sample": 1,
+    "url": "https://www.pcworld.com/",
+    "enabled": true,
+    "checkedAt": "2026-10-28T06:03:03.567Z",
+    "status": 200,
+    "observed": {
+      "title": "PCWorld",
+      "text": "CONSUMER AI\nHOME ROBOTICS\nPERFORMANCE\nPRIVACY\nPRODUCTIVITY\nSMART ANSWERS\nMAGAZINE\nSearch\nMenu\nHOT TOPICS\nBest laptops\nBest VPNs\nBest antivirus\nLaptop deals\nDesktop PC deals\nMini PC deals\nNEWSLETTERS\nBack\nClose\nSearch\nCONSUMER AI\nHOME ROBOTICS\nPERFORMANCE\nPRIVACY\nPRODUCTIVITY\nBY PRODUCT CATEGORY\nBY STORY TYPE\nBLOGS\nEVENTS\nNEWSLETTERS\nDIGITAL MAGAZINE\nSMART ANSWERS\nCLIENT CONTENT\nSamsung turned my trade-in into an $1,100 nightmare\nLaptop makers, I'm begging you to put USB-C ports on both sides\nRoo",
+      "visibleImages": 8,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 8,
+    "blockedRequests": 0,
+    "extensionLog": []
+  },
+  {
+    "category": "shopping",
+    "sample": 1,
+    "url": "https://www.bestbuy.com/",
+    "enabled": false,
+    "checkedAt": "2026-10-28T06:03:16.377Z",
+    "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://www.bestbuy.com/\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "category": "shopping",
+    "sample": 1,
+    "url": "https://www.bestbuy.com/",
+    "enabled": true,
+    "checkedAt": "2026-10-28T06:03:46.652Z",
+    "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://www.bestbuy.com/\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "category": "sports",
+    "sample": 1,
+    "url": "https://www.espn.com/",
+    "enabled": false,
+    "checkedAt": "2026-10-28T06:04:17.082Z",
+    "status": 200,
+    "observed": {
+      "title": "ESPN - Serving Sports Fans. Anytime. Anywhere.",
+      "text": "ESPN\nNFL\nNCAAF\nMLB\nNBA\nSoccer\nNHL\nWNBA\nMore Sports\n Where to Watch\nFantasy\nWatch\nALL OF ESPN\nALL IN ONE PLACE\nALL OF ESPN.\nALL IN ONE PLACE.\nSign Up Now\n📍Watch on ESPN\nSubscribe Now\nNHL Power Play\nNCAA Football (Week 9)\nWWE NXT\nNFL Primetime\nSportsCenter For You\nQuick Links\nMLB Playoff Bracket\nWNBA Playoff Bracket\nFantasy Football\nWatch Golf on ESPN\nWhere To Watch\nESPN Radio: Listen Live\nToday's Top Odds\nCustomize ESPN\nCreate Account\nLog In\nFantasy\nFootball\nBaseball\nHockey\nMen's Basketball\nWome",
+      "visibleImages": 102,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 5,
+    "blockedRequests": 0
+  },
+  {
+    "category": "sports",
+    "sample": 1,
+    "url": "https://www.espn.com/",
+    "enabled": true,
+    "checkedAt": "2026-10-28T06:04:29.761Z",
+    "status": 200,
+    "observed": {
+      "title": "ESPN - Serving Sports Fans. Anytime. Anywhere.",
+      "text": "ESPN\nNFL\nNCAAF\nMLB\nNBA\nSoccer\nNHL\nWNBA\nMore Sports\n Where to Watch\nFantasy\nALL OF ESPN\nALL IN ONE PLACE\nALL OF ESPN.\nALL IN ONE PLACE.\nSign Up Now\n📍Watch on ESPN\nSubscribe Now\nNHL Power Play\nNCAA Football (Week 9)\nWWE NXT\nNFL Primetime\nSportsCenter For You\nQuick Links\nMLB Playoff Bracket\nWNBA Playoff Bracket\nFantasy Football\nWatch Golf on ESPN\nWhere To Watch\nESPN Radio: Listen Live\nToday's Top Odds\nCustomize ESPN\nCreate Account\nLog In\nFantasy\nFootball\nBaseball\nHockey\nMen's Basketball\nWomen's Ba",
+      "visibleImages": 98,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 5,
+    "blockedRequests": 0,
+    "extensionLog": []
+  },
+  {
+    "category": "streaming",
+    "sample": 1,
+    "url": "https://vimeo.com/watch",
+    "enabled": false,
+    "checkedAt": "2026-10-28T06:04:42.652Z",
+    "status": 403,
+    "observed": {
+      "title": "Just a moment...",
+      "text": "Verify to continue\n\nTo continue, please confirm that you're a human (and not a spambot).\n\nRay ID: a517be90ad537ab3",
+      "visibleImages": 0,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 1,
+    "blockedRequests": 0
+  },
+  {
+    "category": "streaming",
+    "sample": 1,
+    "url": "https://vimeo.com/watch",
+    "enabled": true,
+    "checkedAt": "2026-10-28T06:04:52.448Z",
+    "status": 403,
+    "observed": {
+      "title": "Just a moment...",
+      "text": "Verify to continue\n\nTo continue, please confirm that you're a human (and not a spambot).\n\nRay ID: a517becf38815f80",
+      "visibleImages": 0,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 1,
+    "blockedRequests": 0,
+    "extensionLog": []
+  },
+  {
+    "category": "streaming-player",
+    "sample": 1,
+    "url": "https://player.vimeo.com/video/76979871",
+    "enabled": false,
+    "checkedAt": "2026-10-28T06:05:02.465Z",
+    "status": 200,
+    "observed": {
+      "title": "The New Vimeo Player (You Know, For Videos) on Vimeo",
+      "text": "Playing in picture-in-picture\nEmbed\nPlay\n00:00\n01:02\nCC/subtitles\nSettings\nSpeed\nTranscript\nPicture-in-Picture\nFullscreen",
+      "visibleImages": 1,
+      "adSlots": [],
+      "videos": [
+        {
+          "paused": true,
+          "muted": false,
+          "readyState": 0,
+          "hasSource": true
+        }
+      ],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Clicked the player's Play button: [{\"paused\":false,\"time\":1.003355,\"readyState\":4}]",
+    "failedRequests": 6,
+    "blockedRequests": 0
+  },
+  {
+    "category": "streaming-player",
+    "sample": 1,
+    "url": "https://player.vimeo.com/video/76979871",
+    "enabled": true,
+    "checkedAt": "2026-10-28T06:05:15.874Z",
+    "status": 200,
+    "observed": {
+      "title": "The New Vimeo Player (You Know, For Videos) on Vimeo",
+      "text": "Playing in picture-in-picture\nEmbed\nPlay\n00:00\n01:02\nCC/subtitles\nSettings\nSpeed\nTranscript\nPicture-in-Picture\nFullscreen",
+      "visibleImages": 1,
+      "adSlots": [],
+      "videos": [
+        {
+          "paused": true,
+          "muted": false,
+          "readyState": 0,
+          "hasSource": true
+        }
+      ],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Clicked the player's Play button: [{\"paused\":false,\"time\":1.007253,\"readyState\":4}]",
+    "failedRequests": 6,
+    "blockedRequests": 0,
+    "extensionLog": []
+  }
+]

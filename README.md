@@ -12,6 +12,19 @@ alone. You can also block any URL yourself, or click an ad on the page to
 block where it came from. Your list and switches follow your Chrome sign-in
 to every computer.
 
+## Unreleased improvements
+
+The working tree adds serialized rule saving, explicit Domain / Exact URL /
+Advanced pattern modes with a matching preview, internationalized domains,
+accurate inherited-pause status, and a local ten-minute pause. Popup actions
+and settings controls come before global defaults and activity charts.
+Blocking and hiding offer immediate Undo; stopped autoplay videos can be
+restored. Settings can resume global blocking. Store installs distinguish
+unavailable network statistics from zero activity.
+
+See [testing and current live-site limits](docs/Testing.md) and
+[the unreleased changelog](CHANGELOG.md#unreleased). This is not a Web Store release.
+
 ## Latest update: 1.6.0
 
 Heavy ads now need ad evidence before removal, and a **Restore this content**
@@ -98,9 +111,9 @@ on every bad ad by hand.
 
 ### What gets blocked
 
-The popup shows the three default-on protections under **Block by default**.
-Expand **Offers, prompts and broader limits** for the six default-off
-choices. The settings page and DevTools **Default protections** expose the
+The popup shows the current site’s effective protection state and **Controls
+for (site)**. Expand **Defaults for all sites** for global settings, then
+**Offers, prompts and broader limits** for the six default-off choices. The settings page and DevTools **Default protections** expose the
 same choices.
 
 | Switch | How it works |
@@ -123,10 +136,12 @@ More on each:
   small stand-in. Every ad request gets IMA's normal "no ad" reply, and
   the player goes straight to the video.
 - **Muted autoplay videos:** if an ad player keeps restarting itself, its
-  video gets unloaded after the third try, so it can't turn into a
+  video gets unloaded after repeated retries, so it can't turn into a
   tug-of-war that slows the page down. When that ad is in its own frame,
   the frame's box is hidden too. A paused ad floating in a corner of the
-  window is hidden as well. A muted video paused on the page itself keeps
+  window is hidden as well, with **Play this video** at its former position.
+  Unloaded videos and collapsed autoplay frames have restore controls.
+  A muted video paused on the page itself keeps
   its box, so you can still click it to play.
 - **Heavy ads:** the limits stay at 4 MB and 5 seconds of long tasks per
   30 seconds. The parent frame requires a known ad hostname or an explicit
@@ -217,6 +232,15 @@ The bar at the top of the popup has three choices.
   back on with **Unpause** on the settings page.
 - Off everywhere follows your Chrome sign-in like the paused sites do.
 
+A **Pause for 10 minutes** button temporarily pauses an active site in this
+browser. Its deadline survives restarts. Blocking resumes without reloading
+open pages; use Restore or reload for content already removed. Timed pauses
+appear in Settings but are not synced or exported.
+
+A pause inherited from a parent domain is named in the popup. Choosing **On**
+removes that parent pause too, resuming its subdomains. **Resume blocking** in
+Settings clears the global pause while preserving individual site pauses.
+
 ### Blocked-today counter
 
 - The number on the toolbar icon is how many requests were blocked today,
@@ -225,18 +249,25 @@ The bar at the top of the popup has three choices.
   goes back to plain. The popup shows the count any time.
 - It clears at midnight, your local time.
 - The daily count only works when the extension is loaded unpacked. A Web
-  Store install shows each tab's own count instead.
+  Store install continuously shows each tab's own count instead. Settings marks
+  network totals and charts **Unavailable**, and DevTools shows observed
+  heavy-content removals rather than an empty network log.
 
 ### Blocking URLs by hand
 
 1. Click the URL Blocker icon in your toolbar.
-2. Type the URL under **Block a URL**, like `example.com` or
-   `ads.example.com/banner`. A bare domain like `example.com` also blocks
-   its subdomains, but not look-alikes such as `notexample.com`.
-3. Click **Block**. It starts blocking right away.
-4. The popup shows how many URLs you've blocked. Click
-   **Blocked URLs and paused sites** to see, search and remove them on the
-   settings page.
+2. Choose **Domain**, **Exact URL**, or **Advanced pattern**.
+   Domain blocks the hostname and its subdomains. Exact URL matches its scheme,
+   hostname, case-sensitive path and query; fragments are ignored. Advanced
+   pattern accepts Chrome URL-filter syntax such as `||example.com^*/ads/*`.
+3. Enter the address and read the preview to check its scope. Internationalized
+   hostnames are converted to their network form automatically.
+4. Click **Block**. Confirmation appears after the rule is applied, with **Undo**.
+5. **Blocked URLs and paused sites** opens the searchable list in Settings.
+
+Existing domain/path entries match that host and exact path on HTTP or HTTPS;
+they no longer match another hostname or a URL embedded in a query string.
+Older explicit filter patterns are retained. Backups preserve each rule’s mode.
 
 ### Using the element picker
 
@@ -283,8 +314,9 @@ Open it either way:
 - Right-click the toolbar icon and choose **Options**.
 - Click **Blocked URLs and paused sites** in the popup.
 
-It fills the window: an overview and charts on top, the settings in two
-columns underneath.
+Protections and saved rules appear first. Expand **Activity and diagnostics**
+below them for totals, charts and recent activity. **Resume blocking** appears
+in the header when blocking is off everywhere.
 
 | Section | What you can do |
 | --- | --- |
@@ -292,7 +324,7 @@ columns underneath.
 | Charts | Blocks per day for 14 days by type, what was blocked this week, the most blocked domains and the sites with the most blocks. Hover a bar for its numbers. **Show as a table** under Blocks per day lists every day |
 | What gets blocked | Every kind of blocking: what it stops, how many rules, whether it's on and how many it caught this week |
 | Recent blocks | The last 12 blocks: when, what type, the domain and the site you were on |
-| Block | The same six default switches as the popup |
+| Block | The same nine global defaults as the popup |
 | Hidden elements and site overrides | Unhide elements and reset per-site choices |
 | Blocked URLs | Add a URL, search your list, remove entries |
 | Paused sites | See every paused site and **Unpause** any of them |
@@ -411,8 +443,9 @@ This extension:
 - The DevTools log and the blocked-today count need an unpacked install.
 - Chrome warns at install that the extension can "read and change all your
   data" on every site. The picker needs that access to work on any page.
-- A video unloaded for restarting itself can't be played later, even by
-  clicking it.
+- Restoring autoplay content exempts that video for the current page lifetime.
+  A source URL that has expired or a player using a revoked media stream may
+  still need a page reload.
 - An ad frame blocked outright never loads, so it can't hide its own box
   and may leave an empty space.
 - Live compatibility checks now cover PCWorld, Best Buy, ESPN and Vimeo,
@@ -479,7 +512,7 @@ pnpm install
 pnpm test
 ```
 
-- 85 end-to-end tests load the extension into Chromium and run it
+- 126 end-to-end tests load the extension into Chromium and run it
   against local test pages, plus the actual toolbar and DevTools surfaces.
   A run takes about a minute. Live checks run separately: `pnpm run test:live`.
   See [Testing and compatibility](docs/Testing.md) for scope and results.

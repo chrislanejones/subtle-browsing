@@ -268,13 +268,13 @@
 
   function createChoiceList(choices, dialog) {
     const list = createElement("ul");
-    for (const { label, value } of choices) {
+    for (const { label, value, mode } of choices) {
       const button = createElement("button", "url");
       button.type = "button";
       button.append(...label);
       button.addEventListener("click", () => {
         dialog.close();
-        blockUrl(value);
+        blockUrl(value, mode);
       });
 
       const item = createElement("li");
@@ -297,6 +297,7 @@
     const domainChoices = domains.map((host) => ({
       label: [createElement("b", "", host)],
       value: host,
+      mode: "domain",
     }));
 
     // Show the domain in bold
@@ -309,6 +310,7 @@
           pathname + search + hash,
         ],
         value: url,
+        mode: "exact",
       };
     });
 
@@ -336,9 +338,14 @@
         });
         if (response?.error) throw new Error(response.error);
         dialog.close();
-        showNotification(
-          "Hidden on this site. Undo from Hidden elements in settings or DevTools.",
-        );
+        showNotification("Hidden on this site.", async () => {
+          const result = await chrome.runtime.sendMessage({
+            action: "mutate",
+            operation: "unhide",
+            data: { site: location.hostname.replace(/^www\./, ""), selector },
+          });
+          if (result?.error) throw new Error(result.error);
+        });
       } catch (error) {
         showNotification(error.message);
         hideButton.disabled = false;
@@ -402,24 +409,53 @@
     return selector;
   }
 
-  async function blockUrl(url) {
+  async function blockUrl(url, mode) {
     try {
-      const { added, error } = await chrome.runtime.sendMessage({
+      const { added, value, error } = await chrome.runtime.sendMessage({
         action: "blockUrl",
         url,
+        mode,
       });
       if (error) showNotification(error);
-      else
-        showNotification(added ? `Blocked: ${url}` : "That's already blocked.");
+      else if (added)
+        showNotification(`Blocked: ${url}`, async () => {
+          const result = await chrome.runtime.sendMessage({
+            action: "mutate",
+            operation: "removeUrl",
+            data: { url: value },
+          });
+          if (result?.error) throw new Error(result.error);
+        });
+      else showNotification("That's already blocked.");
     } catch {
-      showNotification("Failed to block URL");
+      showNotification("Failed to block URL. Try again.");
     }
   }
 
-  function showNotification(message) {
+  function showNotification(message, undo) {
     const notification = createElement("div", "toast", message);
+    notification.setAttribute("role", "status");
+    if (undo) {
+      const button = createElement("button", "cancel", "Undo");
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          await undo();
+          hide(notification);
+          showNotification("Undone. Reload if content was already removed.");
+        } catch (error) {
+          notification.prepend(`${error.message} `);
+          button.disabled = false;
+        }
+      });
+      notification.append(" ", button);
+      const dismiss = createElement("button", "cancel", "Dismiss");
+      dismiss.addEventListener("click", () => hide(notification));
+      notification.append(" ", dismiss);
+    }
     show(notification);
-    setTimeout(() => hide(notification), 3000);
+    // Undo stays available until dismissed, including for keyboard users.
+    if (!undo) setTimeout(() => hide(notification), 5000);
   }
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

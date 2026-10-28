@@ -18,13 +18,23 @@ export const DEFAULT_SETTINGS = {
 };
 
 // Errors that are the point of a test (a blocked request) rather than a bug
-const EXPECTED_CONSOLE_ERRORS = [/ERR_BLOCKED_BY_CLIENT/, /Failed to load resource/];
+const EXPECTED_CONSOLE_ERRORS = [
+  /ERR_BLOCKED_BY_CLIENT/,
+  /Failed to load resource/,
+];
 
-export async function launchExtension(profileDir, extensionDir = EXTENSION_DIR, options = {}) {
+export async function launchExtension(
+  profileDir,
+  extensionDir = EXTENSION_DIR,
+  options = {},
+) {
   const context = await chromium.launchPersistentContext(profileDir, {
     headless: true,
     channel: "chromium",
-    args: [`--disable-extensions-except=${extensionDir}`, `--load-extension=${extensionDir}`],
+    args: [
+      `--disable-extensions-except=${extensionDir}`,
+      `--load-extension=${extensionDir}`,
+    ],
     ...options,
   });
   let [sw] = context.serviceWorkers();
@@ -43,11 +53,18 @@ export async function waitForInstall(sw, settings = DEFAULT_SETTINGS) {
 
 export function registeredScripts(sw) {
   return sw.evaluate(async () =>
-    (await chrome.scripting.getRegisteredContentScripts()).map((s) => s.id).sort()
+    (await chrome.scripting.getRegisteredContentScripts())
+      .map((s) => s.id)
+      .sort(),
   );
 }
 
-export function expectedScripts({ autoplayGuard, heavyAds, refreshThrottle, adRedirectGuard }) {
+export function expectedScripts({
+  autoplayGuard,
+  heavyAds,
+  refreshThrottle,
+  adRedirectGuard,
+}) {
   return [
     adRedirectGuard && "ad-redirect-guard",
     autoplayGuard && "autoplay-guard",
@@ -59,8 +76,18 @@ export function expectedScripts({ autoplayGuard, heavyAds, refreshThrottle, adRe
   ].filter(Boolean);
 }
 
-export function expectedRulesets({ videoAdRules, annoyanceRules, notificationRules, adChurnRules }) {
-  return [adChurnRules && "ad_churn", annoyanceRules && "annoyances",(notificationRules ?? annoyanceRules) && "notifications", videoAdRules && "video_ads"].filter(Boolean);
+export function expectedRulesets({
+  videoAdRules,
+  annoyanceRules,
+  notificationRules,
+  adChurnRules,
+}) {
+  return [
+    adChurnRules && "ad_churn",
+    annoyanceRules && "annoyances",
+    (notificationRules ?? annoyanceRules) && "notifications",
+    videoAdRules && "video_ads",
+  ].filter(Boolean);
 }
 
 // The badge count only shows in the first minutes of each hour. This pins
@@ -78,15 +105,8 @@ export function setBadgeWindow(sw, open) {
         });
         chrome.alarms.create("badge-window", { when: Date.now() + 50 });
       }),
-    open ? 0 : 30
+    open ? 0 : 30,
   );
-}
-
-// The worker turns these block list entries into these URL filters
-export function expectedFilters(entries) {
-  return entries
-    .map((entry) => (/^[\w.-]+$/.test(entry) ? `||${entry}^` : entry))
-    .filter((filter) => /^[\x20-\x7e]+$/.test(filter));
 }
 
 function makeHelpers(context, sw, id) {
@@ -96,41 +116,61 @@ function makeHelpers(context, sw, id) {
     id,
     url: (path) => `chrome-extension://${id}/${path}`,
 
-    getSync: (key) => sw.evaluate((k) => chrome.storage.sync.get(k), key ?? null),
-    getLocal: (key) => sw.evaluate((k) => chrome.storage.local.get(k), key ?? null),
+    getSync: (key) =>
+      sw.evaluate((k) => chrome.storage.sync.get(k), key ?? null),
+    getLocal: (key) =>
+      sw.evaluate((k) => chrome.storage.local.get(k), key ?? null),
     setSync: (items) => sw.evaluate((i) => chrome.storage.sync.set(i), items),
     setLocal: (items) => sw.evaluate((i) => chrome.storage.local.set(i), items),
 
-    dynamicRules: () => sw.evaluate(() => chrome.declarativeNetRequest.getDynamicRules()),
+    dynamicRules: () =>
+      sw.evaluate(() => chrome.declarativeNetRequest.getDynamicRules()),
     enabledRulesets: () =>
-      sw.evaluate(async () => (await chrome.declarativeNetRequest.getEnabledRulesets()).sort()),
+      sw.evaluate(async () =>
+        (await chrome.declarativeNetRequest.getEnabledRulesets()).sort(),
+      ),
     registeredScripts: () => registeredScripts(sw),
     badgeWindow: (open) => setBadgeWindow(sw, open),
     logUrls: () =>
       sw.evaluate(async () =>
-        ((await chrome.storage.local.get("blockedUrlLogs")).blockedUrlLogs ?? []).map((l) => l.url)
+        (
+          (await chrome.storage.local.get("blockedUrlLogs")).blockedUrlLogs ??
+          []
+        ).map((l) => l.url),
       ),
 
     // Writes the block list the way the UI does and waits for the rules
     async setBlockedUrls(entries) {
       await helpers.setSync({ blockedUrls: entries });
       await expect
-        .poll(async () => (await helpers.dynamicRules()).filter((r) => r.action.type === "block").map((r) => r.condition.urlFilter))
-        .toEqual(expectedFilters(entries));
+        .poll(
+          async () =>
+            (await helpers.dynamicRules()).filter(
+              (r) => r.action.type === "block",
+            ).length,
+        )
+        .toBe(entries.length);
     },
 
     // Writes the switches the way the UI does and waits for them to apply
     async setSettings(changes) {
       const settings = { ...DEFAULT_SETTINGS, ...changes };
       await helpers.setSync({ settings });
-      await expect.poll(() => helpers.registeredScripts()).toEqual(expectedScripts(settings));
-      await expect.poll(() => helpers.enabledRulesets()).toEqual(expectedRulesets(settings));
+      await expect
+        .poll(() => helpers.registeredScripts())
+        .toEqual(expectedScripts(settings));
+      await expect
+        .poll(() => helpers.enabledRulesets())
+        .toEqual(expectedRulesets(settings));
       return settings;
     },
 
     async tabIdOf(page) {
       const url = page.url();
-      return sw.evaluate(async (u) => (await chrome.tabs.query({})).find((t) => t.url === u)?.id, url);
+      return sw.evaluate(
+        async (u) => (await chrome.tabs.query({})).find((t) => t.url === u)?.id,
+        url,
+      );
     },
 
     // An extension page to send runtime messages from, as the popup would.
@@ -155,7 +195,9 @@ function makeHelpers(context, sw, id) {
 export function watchErrors(context) {
   const errors = [];
   context.on("weberror", (webError) => {
-    errors.push(`${webError.page()?.url() ?? "?"}: ${webError.error().message}`);
+    errors.push(
+      `${webError.page()?.url() ?? "?"}: ${webError.error().message}`,
+    );
   });
   context.on("console", (message) => {
     if (message.type() !== "error") return;
@@ -184,8 +226,12 @@ export const test = base.extend({
     await waitForInstall(sw);
     // Uncaught worker errors only reach the test as console errors
     await sw.evaluate(() => {
-      self.addEventListener("error", (e) => console.error(`Uncaught in worker: ${e.message}`));
-      self.addEventListener("unhandledrejection", (e) => console.error(`Unhandled rejection in worker: ${e.reason}`));
+      self.addEventListener("error", (e) =>
+        console.error(`Uncaught in worker: ${e.message}`),
+      );
+      self.addEventListener("unhandledrejection", (e) =>
+        console.error(`Unhandled rejection in worker: ${e.reason}`),
+      );
     });
     await use(makeHelpers(context, sw, new URL(sw.url()).host));
   },

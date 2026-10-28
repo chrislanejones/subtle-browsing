@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8" /><title>Article compatibility</title>
+<h1>An article with ordinary advertising</h1>
+<div data-ad-slot="ordinary-banner">
+  <iframe
+    src="__THIRD__/banner-frame.html"
+    title="Advertisement"
+    width="340"
+    height="70"
+  ></iframe>
+</div>
+<video
+  id="intentional"
+  src="/clip.webm"
+  muted
+  loop
+  controls
+  width="320"
+></video>
+<button id="play">Play article video</button>
+<script>
+  document.querySelector("#play").onclick = () =>
+    document.querySelector("video").play();
+</script>

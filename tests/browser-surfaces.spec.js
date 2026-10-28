@@ -175,3 +175,52 @@ test("actual DevTools panel controls the inspected site", async ({}, testInfo) =
     await context.close();
   }
 });
+
+test("actual toolbar shows an inherited pause and resumes it with On", async ({
+  ext,
+  page,
+  context,
+}) => {
+  await ext.setSync({ pausedSites: ["example.com"] });
+  await page.route("https://news.example.com/**", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<!doctype html><title>Inherited pause</title><p>Article</p>",
+    }),
+  );
+  await page.goto("https://news.example.com/");
+  await page.bringToFront();
+  await ext.sw.evaluate(() => chrome.action.openPopup());
+  const session = await context.newCDPSession(page);
+  let target;
+  await expect
+    .poll(async () => {
+      target = (await session.send("Target.getTargets")).targetInfos.find(
+        (t) => t.url === ext.url("popup.html"),
+      );
+      return !!target;
+    })
+    .toBe(true);
+  const send = await attachTarget(session, target.targetId);
+  const evaluate = async (expression) =>
+    (
+      await send("Runtime.evaluate", {
+        expression,
+        returnByValue: true,
+        awaitPromise: true,
+      })
+    ).result.value;
+  await expect
+    .poll(() => evaluate('document.querySelector("#powerDesc").textContent'))
+    .toContain("Paused by example.com");
+  expect(
+    await evaluate('document.querySelector("input[value=site]").checked'),
+  ).toBe(true);
+  await evaluate('document.querySelector("input[value=on]").click()');
+  await expect
+    .poll(async () => (await ext.getSync("pausedSites")).pausedSites)
+    .toEqual([]);
+  await expect
+    .poll(() => evaluate('document.querySelector("#powerDesc").textContent'))
+    .toContain("Blocking on news.example.com");
+});

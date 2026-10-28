@@ -31,6 +31,10 @@
     render();
   });
   chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.temporaryPauses) {
+      render();
+      return;
+    }
     if (area !== "sync") return;
     if (changes.hiddenElements) rules = changes.hiddenElements.newValue ?? [];
     if (

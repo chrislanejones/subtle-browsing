@@ -9,6 +9,29 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
 ## Unreleased
 
+### Reliability and recovery (10-28-2026)
+- Serialize URL, setting, site, hidden-element and backup mutations through the
+  worker so simultaneous extension windows preserve each other's changes.
+- Add Domain, Exact URL and Advanced pattern modes with validation and a scope
+  preview. Support internationalized domains and keep legacy backups readable.
+  Exact/legacy URL rules no longer match look-alike hosts or embedded URLs.
+- Show inherited pause scope and effective site protections. Confirm power
+  changes and display failures beside the controls. Preserve unchanged network
+  rules, and bypass cached blocked resources when reloading after changes.
+- Put picker and saved rules first in the popup; global defaults and activity
+  charts use disclosure. Settings has an immediate global Resume action.
+- Add persistent Undo for new blocks and picker hiding. Restore unloaded
+  autoplay videos and collapsed frames; floating recovery stays in view.
+- Add a ten-minute site pause with a local persisted deadline and alarm. Resume
+  at expiry without reloading pages, and reconcile deadlines after restart.
+- Mark unavailable Web Store network statistics explicitly, use Chrome's native
+  per-tab badge continuously, and keep content-removal diagnostics available.
+- Add concurrency, backup, failure, expiry/restart, real-toolbar inherited pause,
+  restore, rendered-banner, playback, multi-tab and redirect coverage. The live
+  checker records decoded banner images across frames and supports repeated
+  paired samples via `LIVE_REPEATS`.
+
+
 ### Added
 - **Video ad companies** now blocks Celtra (`celtra.com`). A Mercedes video ad
   played in CNN's header ad slot: Google's ad tag loaded the creative from
@@ -47,7 +70,7 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
   tab. Press it again to turn it back on. The popup and settings page show
   it, and it can be changed at `chrome://extensions/shortcuts`.
 - **A settings page you can read at a glance.** It fills the window now. The
-  top has totals for today, 7 days and 30 days, then four charts: blocks per
+  activity section has totals for today, 7 days and 30 days, then four charts: blocks per
   day by type, what was blocked this week, the most blocked domains and the
   sites with the most blocks. Under those, a **What gets blocked** table lists
   every kind of blocking, how many rules it has, whether it's on and what it
@@ -55,9 +78,9 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
   and stay on this computer for 30 days.
 
 ### Changed
-- The toolbar count only shows for the first 7 minutes of each hour. The
-  rest of the hour it's just the icon. The popup still shows the count any
-  time.
+- The unpacked-install daily toolbar count shows for the first 7 minutes of
+  each hour; the popup shows it any time. Store installs use the continuous
+  native per-tab count.
 
 ## 1.6.0 — 10-26-2026
 
