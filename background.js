@@ -34,6 +34,17 @@ const RESOURCE_TYPES = [
   "other",
 ];
 const MAX_LOG_ENTRIES = 100;
+// Daily counts for the settings page charts: by type, by blocked domain and
+// by the site it was blocked on
+const STATS_DAYS = 30;
+const STATS_HOSTS_PER_DAY = 200;
+const STATS_TYPES = {
+  video_ads: "video_ads",
+  annoyances: "annoyances",
+  notifications: "notifications",
+  ad_churn: "ad_churn",
+  _dynamic: "personal",
+};
 const LOG_FLUSH_DELAY_MS = 1000;
 const CONTEXT_MENU_ID = "block-ad-element";
 const VIDEO_AD_RULESET_ID = "video_ads";
@@ -284,7 +295,10 @@ chrome.declarativeNetRequest.onRuleMatchedDebug?.addListener(
       return;
     if (rule.rulesetId === "_session" && sessionAllowIds.has(rule.ruleId))
       return;
-    logBlockedUrl(request.url);
+    logBlockedUrl(request.url, {
+      type: STATS_TYPES[rule.rulesetId] ?? "other",
+      page: request.initiator,
+    });
   },
 );
 
@@ -365,8 +379,14 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // batched into one storage write instead of one write per blocked request
 let unsavedLogs = [];
 let flushTimer;
-function logBlockedUrl(url) {
-  unsavedLogs.push({ timestamp: new Date().toISOString(), url });
+function logBlockedUrl(url, { type = "other", page, host = url } = {}) {
+  unsavedLogs.push({
+    timestamp: new Date().toISOString(),
+    url,
+    type,
+    host: hostOf(host),
+    page: hostOf(page),
+  });
   flushTimer ??= setTimeout(() => queue(flushLogs), LOG_FLUSH_DELAY_MS);
 }
 
@@ -381,8 +401,41 @@ async function flushLogs() {
   await chrome.storage.local.set({
     blockedUrlLogs: [...blockedUrlLogs, ...entries].slice(-MAX_LOG_ENTRIES),
     blockedToday: { date: today(), count },
+    blockStats: addToStats(
+      (await chrome.storage.local.get("blockStats")).blockStats,
+      entries,
+    ),
   });
   await showBadge();
+}
+
+function hostOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "") || null;
+  } catch {
+    return null;
+  }
+}
+
+// { "YYYY-MM-DD": { types: {}, hosts: {}, pages: {} } }, last STATS_DAYS days
+function addToStats(stats = {}, entries) {
+  const day = (stats[today()] ??= { types: {}, hosts: {}, pages: {} });
+  const add = (counts, key) => key && (counts[key] = (counts[key] ?? 0) + 1);
+  for (const entry of entries) {
+    add(day.types, entry.type);
+    add(day.hosts, entry.host);
+    add(day.pages, entry.page);
+  }
+  for (const key of ["hosts", "pages"]) {
+    const top = Object.entries(day[key]).sort(([, a], [, b]) => b - a);
+    if (top.length > STATS_HOSTS_PER_DAY)
+      day[key] = Object.fromEntries(top.slice(0, STATS_HOSTS_PER_DAY));
+  }
+  const oldest = new Date();
+  oldest.setDate(oldest.getDate() - (STATS_DAYS - 1));
+  const cutoff = oldest.toLocaleDateString("en-CA");
+  for (const date of Object.keys(stats)) if (date < cutoff) delete stats[date];
+  return stats;
 }
 
 // Heavy ads: adds up what each third-party frame downloads, counting nested
@@ -647,7 +700,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
 
     case "heavyAdRemoved":
-      logBlockedUrl(`Heavy ad (${message.reason}): ${message.url}`);
+      logBlockedUrl(`Heavy ad (${message.reason}): ${message.url}`, {
+        type: "heavy",
+        host: message.url,
+        page: sender.tab?.url,
+      });
       return;
 
     case "setPower":

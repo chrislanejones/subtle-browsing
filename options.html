@@ -6,12 +6,368 @@
     <link rel="stylesheet" href="ui.css" />
     <link rel="stylesheet" href="controls.css" />
     <style>
+      /* Chart colors, in the fixed order of TYPES in overview.js. Validated
+         with the dataviz palette checker on both surfaces. */
+      :root {
+        --type-video_ads: #2a78d6;
+        --type-personal: #eb6834;
+        --type-ad_churn: #1baf7a;
+        --type-annoyances: #eda100;
+        --type-notifications: #e87ba4;
+        --type-heavy: #008300;
+        --type-other: oklch(62% 0.01 250);
+        --type-single: #2a78d6;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --type-video_ads: #3987e5;
+          --type-personal: #d95926;
+          --type-ad_churn: #199e70;
+          --type-annoyances: #c98500;
+          --type-notifications: #d55181;
+          --type-heavy: #008300;
+          --type-other: oklch(58% 0.01 250);
+          --type-single: #3987e5;
+        }
+      }
+
       body {
-        max-width: 640px;
+        max-width: 1440px;
         margin: 0 auto;
-        padding: 32px 20px 48px;
-        gap: 24px;
+        padding: 28px 32px 48px;
+        gap: 28px;
         font-size: 14px;
+      }
+      @media (max-width: 640px) {
+        body {
+          padding: 20px 16px 40px;
+        }
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      .top {
+        flex-wrap: wrap;
+      }
+      .power-state {
+        margin-left: var(--space-md);
+        padding: 2px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--color-line);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-ink-2);
+      }
+      .power-state[data-off="true"] {
+        color: var(--color-warn);
+        border-color: currentColor;
+      }
+
+      /* Overview */
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: var(--space-md);
+      }
+      .tile {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 14px 16px;
+      }
+      .tile-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-ink-2);
+      }
+      .tile-value {
+        font-size: 28px;
+        line-height: 34px;
+        font-weight: 650;
+        font-variant-numeric: tabular-nums;
+      }
+      .tile-note {
+        font-size: 12px;
+        color: var(--color-ink-2);
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+        gap: var(--space-md);
+        align-items: start;
+      }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-sm);
+        padding: 16px;
+        min-width: 0;
+      }
+      .panel h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .panel .note {
+        margin-top: -4px;
+      }
+      .empty {
+        padding: 24px 0;
+        text-align: center;
+      }
+      .key {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        vertical-align: -1px;
+      }
+      .key.none {
+        background: none;
+        border: 1px solid var(--color-line);
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 14px;
+        margin: 0 0 4px;
+        padding: 0;
+        list-style: none;
+        font-size: 12px;
+        color: var(--color-ink-2);
+      }
+      .legend li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* Blocks per day */
+      .columns {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        gap: 6px;
+        height: 200px;
+        padding: 18px 0 0;
+        border-bottom: 1px solid var(--color-line);
+        margin-bottom: 22px;
+      }
+      .y-max {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        border-top: 1px dashed var(--color-line);
+        padding-top: 1px;
+        font-size: 11px;
+        color: var(--color-ink-2);
+        font-variant-numeric: tabular-nums;
+        pointer-events: none;
+      }
+      .col-bar {
+        position: relative;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        border-radius: 4px 4px 0 0;
+        outline-offset: 2px;
+      }
+      .col-bar:hover,
+      .col-bar:focus-visible {
+        background: var(--color-hover);
+      }
+      .col-bar:focus-visible {
+        outline: 2px solid var(--color-focus);
+      }
+      .stack {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 2px;
+        max-width: 36px;
+        width: 100%;
+        margin: 0 auto;
+        border-radius: 4px 4px 0 0;
+        overflow: hidden;
+      }
+      .seg {
+        flex-basis: 0;
+        min-height: 2px;
+      }
+      .col-label {
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        padding-top: 4px;
+        font-size: 11px;
+        color: var(--color-ink-2);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      @media (max-width: 640px) {
+        .col-label {
+          display: none;
+        }
+        .col-bar:nth-child(4n + 2) .col-label {
+          display: block;
+        }
+      }
+
+      /* Horizontal bars */
+      .bars {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .bars li {
+        display: grid;
+        grid-template-columns: minmax(90px, 38%) 1fr auto;
+        align-items: center;
+        gap: var(--space-sm);
+        min-height: 26px;
+        padding: 0 4px;
+        border-radius: var(--radius-sm);
+      }
+      .bars li:hover,
+      .bars li:focus-visible {
+        background: var(--color-hover);
+      }
+      .bars li:focus-visible {
+        outline: 2px solid var(--color-focus);
+      }
+      .bar-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+      }
+      .bar-track {
+        height: 12px;
+      }
+      .bar-fill {
+        display: block;
+        height: 100%;
+        min-width: 2px;
+        border-radius: 0 4px 4px 0;
+      }
+      .bar-value {
+        min-width: 3ch;
+        text-align: right;
+        font-size: 13px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Tooltip */
+      .viz-tooltip {
+        position: absolute;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-width: 260px;
+        padding: 8px 10px;
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        box-shadow: 0 4px 16px oklch(0% 0 0 / 0.15);
+        font-size: 12px;
+        pointer-events: none;
+      }
+      .tip-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--color-ink-2);
+      }
+      .tip-row b {
+        color: var(--color-ink);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Tables */
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th,
+      td {
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: top;
+        border-top: 1px solid var(--color-line);
+      }
+      thead th {
+        border-top: none;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-ink-2);
+      }
+      tbody th {
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      td.num,
+      th.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      td.url {
+        max-width: 260px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .recent td:first-child {
+        text-align: left;
+        color: var(--color-ink-2);
+      }
+      .state {
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .state.on {
+        color: var(--color-accent);
+      }
+      .state.off {
+        color: var(--color-ink-2);
+      }
+      .table-view summary {
+        cursor: pointer;
+        font-size: 12px;
+        color: var(--color-ink-2);
+      }
+      .table-view table {
+        margin-top: var(--space-sm);
+      }
+
+      /* Settings below the overview */
+      .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+        gap: 28px var(--space-lg);
+        align-items: start;
+      }
+      .settings-col {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        min-width: 0;
       }
       h1 {
         font-size: 18px;
@@ -87,163 +443,242 @@
         <img src="images/icon48.png" alt="" width="24" height="24" />
         <h1>URL Blocker settings</h1>
       </div>
-      <span id="version" class="version"></span>
+      <span>
+        <span id="version" class="version"></span>
+        <span id="powerState" class="power-state"></span>
+      </span>
     </header>
 
-    <fieldset class="group">
-      <legend class="section-label">Block</legend>
-      <div class="card">
-        <label class="row">
-          <span class="row-text">
-            <span class="row-title">Video ad companies</span>
-            <span class="row-desc"
-              >Connatix, Primis, Teads and similar, plus Google's video ad
-              engine</span
-            >
-          </span>
-          <input type="checkbox" id="videoAdRulesToggle" class="switch" />
-        </label>
-        <label class="row">
-          <span class="row-text">
-            <span class="row-title">Muted autoplay videos</span>
-            <span class="row-desc">Paused; videos you start still play</span>
-          </span>
-          <input type="checkbox" id="autoplayGuardToggle" class="switch" />
-        </label>
-        <label class="row">
-          <span class="row-text">
-            <span class="row-title">Heavy ads</span>
-            <span class="row-desc">Over 4 MB, or hogging the CPU</span>
-          </span>
-          <input type="checkbox" id="heavyAdsToggle" class="switch" />
-        </label>
-        <label class="row">
-          <span class="row-text">
-            <span class="row-title">Newsletter offers</span>
-            <span class="row-desc"
-              >Newsletter sign-ups and promotional overlays</span
-            >
-          </span>
-          <input type="checkbox" id="annoyanceRulesToggle" class="switch" />
-        </label>
-        <label class="row"
-          ><span class="row-text"
-            ><span class="row-title">Notification requests</span
-            ><span class="row-desc">Website push-prompt tools</span></span
-          ><input type="checkbox" id="notificationRulesToggle" class="switch"
-        /></label>
-        <label class="row"
-          ><span class="row-text"
-            ><span class="row-title">Ad refresh and sync frames</span
-            ><span class="row-desc"
-              >Browsi ad refresh and hidden cookie-sync frames</span
-            ></span
-          ><input type="checkbox" id="adChurnRulesToggle" class="switch"
-        /></label>
-        <label class="row"
-          ><span class="row-text"
-            ><span class="row-title">Slow ad refresh</span
-            ><span class="row-desc"
-              >Each ad slot refreshes at most every 2 minutes</span
-            ></span
-          ><input type="checkbox" id="refreshThrottleToggle" class="switch"
-        /></label>
-        <label class="row"
-          ><span class="row-text"
-            ><span class="row-title">Stop ad redirects</span
-            ><span class="row-desc"
-              >Ads can't send the whole tab to another site without a click</span
-            ></span
-          ><input type="checkbox" id="adRedirectGuardToggle" class="switch"
-        /></label>
-        <label class="row"
-          ><span class="row-text"
-            ><span class="row-title">All heavy third-party embeds</span
-            ><span class="row-desc"
-              >Broader Heavy ads mode; may stop legitimate content</span
-            ></span
-          ><input type="checkbox" id="aggressiveHeavyAdsToggle" class="switch"
-        /></label>
-      </div>
-    </fieldset>
-
-    <section aria-labelledby="blockedHeading">
-      <div class="section-head">
-        <h2 id="blockedHeading" class="section-label">Blocked URLs</h2>
-        <span id="blockedCount" class="count"></span>
-      </div>
-      <div class="tools">
-        <input
-          type="text"
-          id="urlInput"
-          placeholder="Add a URL or domain, e.g. example.com"
-          aria-label="URL to block"
-        />
-        <button id="addButton" class="btn btn-primary">Block</button>
-      </div>
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Search your list"
-        aria-label="Search blocked URLs"
-      />
-      <p id="blockedStatus" class="status" role="status"></p>
-      <div id="urlList" class="card list"></div>
-    </section>
-
-    <section aria-labelledby="pausedHeading">
-      <div class="section-head">
-        <h2 id="pausedHeading" class="section-label">Paused sites</h2>
-        <span id="pausedCount" class="count"></span>
-      </div>
-      <p class="note">
-        Nothing is blocked on these sites. Pause a site from the popup while
-        you're on it.
+    <section aria-labelledby="overviewHeading">
+      <h2 id="overviewHeading" class="section-label">Overview</h2>
+      <div id="tiles" class="tiles"></div>
+      <p id="countNote" class="note" hidden>
+        Chrome only reports each block to unpacked installs, so the counts and
+        charts stay empty here. The toolbar icon still shows each tab's count.
       </p>
-      <div id="pausedList" class="card list"></div>
     </section>
 
-    <section>
-      <h2 class="section-label">Hidden elements and site overrides</h2>
-      <p class="note">
-        Unhide restores matching elements immediately. Reset site restores
-        inherited defaults; reload existing pages afterward.
-      </p>
-      <div id="savedRules"></div>
-    </section>
+    <div class="grid-2">
+      <section class="card panel" aria-labelledby="perDayHeading">
+        <h3 id="perDayHeading">Blocks per day</h3>
+        <p class="note">Last 14 days, by type</p>
+        <div id="perDay"></div>
+      </section>
+      <section class="card panel" aria-labelledby="byTypeHeading">
+        <h3 id="byTypeHeading">What was blocked</h3>
+        <p class="note">Last 7 days, by type</p>
+        <div id="byType"></div>
+      </section>
+      <section class="card panel" aria-labelledby="topHostsHeading">
+        <h3 id="topHostsHeading">Most blocked domains</h3>
+        <p class="note">Last 7 days, top 10 ad and tracking domains</p>
+        <div id="topHosts"></div>
+      </section>
+      <section class="card panel" aria-labelledby="topPagesHeading">
+        <h3 id="topPagesHeading">Sites with the most blocks</h3>
+        <p class="note">Last 7 days, the sites you were on</p>
+        <div id="topPages"></div>
+      </section>
+    </div>
 
-    <section aria-labelledby="shortcutHeading">
-      <h2 id="shortcutHeading" class="section-label">Keyboard shortcuts</h2>
-      <div class="card row shortcut-row">
-        <span class="row-text">
-          <span class="row-title">Select an ad to block</span>
-          <span id="shortcutDesc" class="row-desc"></span>
-          <span class="row-title">Turn blocking off or on for this site</span>
-          <span id="toggleShortcutDesc" class="row-desc"></span>
-        </span>
-        <button id="shortcutButton" class="btn btn-plain">Change</button>
+    <section aria-labelledby="kindsHeading">
+      <h2 id="kindsHeading" class="section-label">What gets blocked</h2>
+      <div class="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Type</th>
+              <th scope="col">What it stops</th>
+              <th scope="col">How</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="num">Last 7 days</th>
+            </tr>
+          </thead>
+          <tbody id="kinds"></tbody>
+        </table>
       </div>
     </section>
 
-    <section aria-labelledby="backupHeading">
-      <h2 id="backupHeading" class="section-label">Backup</h2>
-      <p class="note">
-        Your list, paused sites and switches already sync to every Chrome you're
-        signed into. A backup file is for moving them somewhere sync doesn't
-        reach. Importing adds to what's here; nothing is removed.
-      </p>
-      <div class="tools">
-        <button id="exportButton" class="btn btn-plain">Export backup</button>
-        <button id="importButton" class="btn btn-plain">Import backup</button>
-        <input
-          type="file"
-          id="importFile"
-          accept="application/json,.json"
-          hidden
-        />
-      </div>
-      <p id="backupStatus" class="status" role="status"></p>
+    <section aria-labelledby="recentHeading">
+      <h2 id="recentHeading" class="section-label">Recent blocks</h2>
+      <div id="recent" class="card table-wrap"></div>
     </section>
+
+    <div class="settings-grid">
+      <div class="settings-col">
+        <fieldset class="group">
+          <legend class="section-label">Block</legend>
+          <div class="card">
+            <label class="row">
+              <span class="row-text">
+                <span class="row-title">Video ad companies</span>
+                <span class="row-desc"
+                  >Connatix, Primis, Teads and similar, plus Google's video ad
+                  engine</span
+                >
+              </span>
+              <input type="checkbox" id="videoAdRulesToggle" class="switch" />
+            </label>
+            <label class="row">
+              <span class="row-text">
+                <span class="row-title">Muted autoplay videos</span>
+                <span class="row-desc"
+                  >Paused; videos you start still play</span
+                >
+              </span>
+              <input type="checkbox" id="autoplayGuardToggle" class="switch" />
+            </label>
+            <label class="row">
+              <span class="row-text">
+                <span class="row-title">Heavy ads</span>
+                <span class="row-desc">Over 4 MB, or hogging the CPU</span>
+              </span>
+              <input type="checkbox" id="heavyAdsToggle" class="switch" />
+            </label>
+            <label class="row">
+              <span class="row-text">
+                <span class="row-title">Newsletter offers</span>
+                <span class="row-desc"
+                  >Newsletter sign-ups and promotional overlays</span
+                >
+              </span>
+              <input type="checkbox" id="annoyanceRulesToggle" class="switch" />
+            </label>
+            <label class="row"
+              ><span class="row-text"
+                ><span class="row-title">Notification requests</span
+                ><span class="row-desc">Website push-prompt tools</span></span
+              ><input
+                type="checkbox"
+                id="notificationRulesToggle"
+                class="switch"
+            /></label>
+            <label class="row"
+              ><span class="row-text"
+                ><span class="row-title">Ad refresh and sync frames</span
+                ><span class="row-desc"
+                  >Browsi ad refresh and hidden cookie-sync frames</span
+                ></span
+              ><input type="checkbox" id="adChurnRulesToggle" class="switch"
+            /></label>
+            <label class="row"
+              ><span class="row-text"
+                ><span class="row-title">Slow ad refresh</span
+                ><span class="row-desc"
+                  >Each ad slot refreshes at most every 2 minutes</span
+                ></span
+              ><input type="checkbox" id="refreshThrottleToggle" class="switch"
+            /></label>
+            <label class="row"
+              ><span class="row-text"
+                ><span class="row-title">Stop ad redirects</span
+                ><span class="row-desc"
+                  >Ads can't send the whole tab to another site without a
+                  click</span
+                ></span
+              ><input type="checkbox" id="adRedirectGuardToggle" class="switch"
+            /></label>
+            <label class="row"
+              ><span class="row-text"
+                ><span class="row-title">All heavy third-party embeds</span
+                ><span class="row-desc"
+                  >Broader Heavy ads mode; may stop legitimate content</span
+                ></span
+              ><input
+                type="checkbox"
+                id="aggressiveHeavyAdsToggle"
+                class="switch"
+            /></label>
+          </div>
+        </fieldset>
+
+        <section aria-labelledby="shortcutHeading">
+          <h2 id="shortcutHeading" class="section-label">Keyboard shortcuts</h2>
+          <div class="card row shortcut-row">
+            <span class="row-text">
+              <span class="row-title">Select an ad to block</span>
+              <span id="shortcutDesc" class="row-desc"></span>
+              <span class="row-title"
+                >Turn blocking off or on for this site</span
+              >
+              <span id="toggleShortcutDesc" class="row-desc"></span>
+            </span>
+            <button id="shortcutButton" class="btn btn-plain">Change</button>
+          </div>
+        </section>
+
+        <section aria-labelledby="backupHeading">
+          <h2 id="backupHeading" class="section-label">Backup</h2>
+          <p class="note">
+            Your list, paused sites and switches already sync to every Chrome
+            you're signed into. A backup file is for moving them somewhere sync
+            doesn't reach. Importing adds to what's here; nothing is removed.
+          </p>
+          <div class="tools">
+            <button id="exportButton" class="btn btn-plain">
+              Export backup
+            </button>
+            <button id="importButton" class="btn btn-plain">
+              Import backup
+            </button>
+            <input
+              type="file"
+              id="importFile"
+              accept="application/json,.json"
+              hidden
+            />
+          </div>
+          <p id="backupStatus" class="status" role="status"></p>
+        </section>
+      </div>
+      <div class="settings-col">
+        <section aria-labelledby="blockedHeading">
+          <div class="section-head">
+            <h2 id="blockedHeading" class="section-label">Blocked URLs</h2>
+            <span id="blockedCount" class="count"></span>
+          </div>
+          <div class="tools">
+            <input
+              type="text"
+              id="urlInput"
+              placeholder="Add a URL or domain, e.g. example.com"
+              aria-label="URL to block"
+            />
+            <button id="addButton" class="btn btn-primary">Block</button>
+          </div>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search your list"
+            aria-label="Search blocked URLs"
+          />
+          <p id="blockedStatus" class="status" role="status"></p>
+          <div id="urlList" class="card list"></div>
+        </section>
+
+        <section aria-labelledby="pausedHeading">
+          <div class="section-head">
+            <h2 id="pausedHeading" class="section-label">Paused sites</h2>
+            <span id="pausedCount" class="count"></span>
+          </div>
+          <p class="note">
+            Nothing is blocked on these sites. Turn a site off with
+            <b>Off on this site</b> in the popup, or Alt+Shift+O, while you're
+            on it.
+          </p>
+          <div id="pausedList" class="card list"></div>
+        </section>
+
+        <section>
+          <h2 class="section-label">Hidden elements and site overrides</h2>
+          <p class="note">
+            Unhide restores matching elements immediately. Reset site restores
+            inherited defaults; reload existing pages afterward.
+          </p>
+          <div id="savedRules"></div>
+        </section>
+      </div>
+    </div>
 
     <script type="module" src="options.js"></script>
   </body>

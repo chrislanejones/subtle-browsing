@@ -3,6 +3,8 @@
 - **GitHub repo description:** still "Yes, I am doing a Chrome Extention" with no topics. Suggested: `gh repo edit chrislanejones/subtle-browsing --description "Chrome extension that blocks video ads, muted autoplay, pop-ups and heavy ads, and leaves normal banner ads alone." --add-topic chrome-extension --add-topic manifest-v3 --add-topic ad-blocker`
 - **Sync caps the block list at about 300 entries:** `chrome.storage.sync` allows 8 KB per item. Past that, adding shows an error. Splitting the list across several keys would lift it.
 - **Off everywhere isn't on the settings page:** the popup and the toolbar's **off** show it, but the settings page's paused-sites list doesn't. A line there with a **Turn back on** button would make it easier to spot.
+- **Settings page tables on a narrow window:** below about 640px wide, the What gets blocked and Recent blocks tables scroll sideways. Fine for a settings tab, but a stacked layout would read better.
+- **Flaky under load:** "site autoplay exception keeps personal URL blocks active" (improvements.spec.js) failed once with the load average at 12.7 and passed on two reruns. Same family as the picker long-task test.
 - **Off everywhere reloads only the current tab:** other open tabs keep their old state until they load again. Reloading every tab could lose what people typed into forms, so it's left alone.
 - **Paused in-page videos keep their box:** boxes collapse for unloaded ad frames and floating players, but a muted video paused on the page itself stays, so it can still be clicked to play.
 - **IMA stand-in covers ima3.js only:** Google's DAI SDK (`ima3_dai.js`, used for live-stream ad insertion) isn't redirected.

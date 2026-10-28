@@ -42,6 +42,13 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 - **Alt+Shift+O** turns blocking off on the site you're on and reloads the
   tab. Press it again to turn it back on. The popup and settings page show
   it, and it can be changed at `chrome://extensions/shortcuts`.
+- **A settings page you can read at a glance.** It fills the window now. The
+  top has totals for today, 7 days and 30 days, then four charts: blocks per
+  day by type, what was blocked this week, the most blocked domains and the
+  sites with the most blocks. Under those, a **What gets blocked** table lists
+  every kind of blocking, how many rules it has, whether it's on and what it
+  caught this week, then the last 12 blocks. Counts start from this version
+  and stay on this computer for 30 days.
 
 ### Changed
 - The toolbar count only shows for the first 7 minutes of each hour. The

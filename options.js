@@ -1,4 +1,5 @@
 import { mountSiteControls, mountSavedRules } from "./controls.js";
+import { mountOverview } from "./overview.js";
 import {
   addBlockedUrl,
   getBlockedUrls,
@@ -27,6 +28,7 @@ const blockedStatus = $("blockedStatus");
 const backupStatus = $("backupStatus");
 
 $("version").textContent = `Version ${chrome.runtime.getManifest().version}`;
+await mountOverview();
 
 // Blocking switches, kept in step with the popup
 const toggles = {

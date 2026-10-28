@@ -78,7 +78,7 @@ on every bad ad by hand.
 | Element picker | Click an ad to see the domains and URLs inside it, then block one | — |
 | Keyboard shortcuts | Alt+Shift+K starts the picker. Alt+Shift+O turns the site you're on off, and again to turn it back on | — |
 | Right-click menu | **Block ad element** starts the picker | — |
-| Settings page | Full block list with search, paused sites, the shortcut, backups | — |
+| Settings page | Charts of what was blocked, a table of every kind of blocking, the full block list with search, paused sites, the shortcuts, backups | — |
 | Settings sync | Your list, paused sites and switches follow your Chrome sign-in | — |
 | DevTools panel | Your block list, a log of blocked requests, and the picker | — |
 
@@ -283,8 +283,15 @@ Open it either way:
 - Right-click the toolbar icon and choose **Options**.
 - Click **Blocked URLs and paused sites** in the popup.
 
+It fills the window: an overview and charts on top, the settings in two
+columns underneath.
+
 | Section | What you can do |
 | --- | --- |
+| Overview | Blocked today, the last 7 and 30 days, and how many URLs, paused sites and hidden elements you have |
+| Charts | Blocks per day for 14 days by type, what was blocked this week, the most blocked domains and the sites with the most blocks. Hover a bar for its numbers. **Show as a table** under Blocks per day lists every day |
+| What gets blocked | Every kind of blocking: what it stops, how many rules, whether it's on and how many it caught this week |
+| Recent blocks | The last 12 blocks: when, what type, the domain and the site you were on |
 | Block | The same six default switches as the popup |
 | Hidden elements and site overrides | Unhide elements and reset per-site choices |
 | Blocked URLs | Add a URL, search your list, remove entries |
@@ -309,7 +316,7 @@ Open it either way:
 | What | Where it's kept |
 | --- | --- |
 | Block list, paused sites, Off everywhere, switches, site overrides, hidden elements | Synced: follows your Chrome sign-in to every computer |
-| Request log, blocked-today count | This computer only |
+| Request log, blocked-today count, daily counts for the charts (30 days) | This computer only |
 
 - Chrome does the syncing, through your Google account. The extension
   doesn't run a server or send anything anywhere itself.
@@ -387,9 +394,9 @@ This extension:
 
 | Permission | What it's for |
 | --- | --- |
-| `storage` | Your block list, switches, paused sites, site overrides, hidden elements, the log and today's count |
+| `storage` | Your block list, switches, paused sites, site overrides, hidden elements, the log, today's count and 30 days of daily counts |
 | `declarativeNetRequest` | The blocking rules, the pause rule and the IMA swap |
-| `declarativeNetRequestFeedback` | Seeing which requests were blocked, for the log and today's count (unpacked installs only) |
+| `declarativeNetRequestFeedback` | Seeing which requests were blocked, for the log, today's count and the charts (unpacked installs only) |
 | `scripting` | Loading the picker, the autoplay stopper and the heavy ad check into pages |
 | `webRequest` | Adding up how much each ad downloads. It only watches; it doesn't block |
 | `contextMenus` | The right-click **Block ad element** menu |
