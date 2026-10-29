@@ -16,5 +16,22 @@
   {"id": 15, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||convertflow.co^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
   {"id": 16, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||picreel.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
   {"id": 17, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||popupsmart.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
-  {"id": 18, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||static.klaviyo.com/onsite/js/", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}}
+  {"id": 18, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||static.klaviyo.com/onsite/js/", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
+  {"id": 19, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||doomsarchaic.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "other"]}},
+  {"id": 20, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||indowedammu.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "other"]}},
+  {"id": 21, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||secutorlunts.cfd^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "ping", "other"]}},
+  {"id": 22, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||oceanpoet.com^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "other"]}},
+  {"id": 23, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||opera.com/partner", "resourceTypes": ["main_frame", "sub_frame"]}},
+  {"id": 24, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||proadblocker.pro^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "other"]}},
+  {"id": 25, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||individualism.boats^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "ping", "other"]}},
+  {"id": 26, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||accurseionizes.qpon^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "ping", "other"]}},
+  {"id": 27, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||enzymesairthed.qpon^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "ping", "other"]}},
+  {"id": 28, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||discussioncomperesteel.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 29, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||portalfluently.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 30, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||mamshirt.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 31, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||flushpersist.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 32, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||kettledroopingcontinuation.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 33, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||grop.net^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 34, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||lstgddss.com^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "ping", "other"]}},
+  {"id": 35, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||chaturbate.com/*campaign=", "resourceTypes": ["main_frame", "sub_frame"]}}
 ]
