@@ -80,10 +80,60 @@
       for (const video of waiting) restoreVideo(video);
   });
 
+  // Any click or key press gives the page user activation for a few seconds,
+  // so reading with PageDown would let a player that autoplays as it scrolls
+  // into view through (Investopedia's JW Player does this). A play only counts
+  // as the user's when the gesture was on the player itself, or was a click
+  // just before it (a play button outside the video).
+  const CLICK_WINDOW_MS = 1000;
+  const PLAYER_DEPTH = 4;
+  let lastGesture = null;
+  for (const type of ["pointerdown", "click", "keydown"])
+    document.addEventListener(
+      type,
+      (event) => {
+        lastGesture = {
+          target: event.target,
+          time: performance.now(),
+          click: event.type === "click",
+        };
+      },
+      true,
+    );
+
+  // The video or one of its close ancestors, stopping before page-layout boxes
+  function onPlayer(target, video) {
+    if (!(target instanceof Node)) return false;
+    const { width, height } = video.getBoundingClientRect();
+    const maxArea = Math.max(
+      (window.innerWidth * window.innerHeight) / 2,
+      2 * width * height,
+    );
+    let element = video;
+    for (
+      let depth = 0;
+      element && element !== document.body && depth <= PLAYER_DEPTH;
+      depth++
+    ) {
+      const box = element.getBoundingClientRect();
+      if (depth > 0 && box.width * box.height > maxArea) return false;
+      if (element.contains(target)) return true;
+      element = element.parentElement;
+    }
+    return false;
+  }
+
+  function startedByUser(video) {
+    if (!navigator.userActivation.isActive || !lastGesture) return false;
+    if (lastGesture.click && performance.now() - lastGesture.time < CLICK_WINDOW_MS)
+      return true;
+    return onPlayer(lastGesture.target, video);
+  }
+
   function shouldPause(video) {
     if (restored.has(video) || !subtlePolicy.enabled("autoplayGuard"))
       return false;
-    if (navigator.userActivation.isActive) return false; // Started by a click or key press
+    if (startedByUser(video)) return false;
     return video.muted || video.volume === 0;
   }
 

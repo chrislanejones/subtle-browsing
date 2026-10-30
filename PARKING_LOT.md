@@ -34,3 +34,8 @@
 - **Sync patterns still miss:** `33across.com/match?`, `ssp.cadent.com/um?`, `cm.adform.net/cookie?`, `ap.lijit.com/beacon/…`, `static.cdn.monetixads.com/cookie.html`, `cs.seedtag.com/cs.html`. Bare `/match`, `/um`, `/cm` and `/cookie` are too common in ordinary URLs to add as patterns; add them by name if they show up as heavy.
 - **Slow ad refresh marker is hidden on some sites:** SHE Media's `blogherads` wraps `refresh()` on top of ours, so `refresh.subtleThrottled` reads false even though the throttle still works. Don't use the marker to check whether it's active.
 - **`imprchmp.taboola.com/st` stays out of the sync list:** it carries creative and impression IDs, so it counts paid impressions rather than syncing IDs.
+
+## Follow-ups from the Investopedia autoplay fix (10-30-2026)
+
+- **Leftover "Play this video" button on JW floating players:** when the guard pauses a JW Player that has already floated into the corner, it hides the floating box and pins a fixed "Play this video" button where it was. On Investopedia that button stays over the right-rail ads while you scroll. Consider dropping the button for floating players that JW can re-dock, or placing it back in the article.
+- **Clicks in a child frame:** a click inside an iframe gives the top page user activation but no recorded gesture, so a muted top-page video started by a control inside an iframe is now paused. No known site does this; watch for it.

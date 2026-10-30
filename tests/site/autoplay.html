@@ -3,12 +3,17 @@
 <video id="userMuted" src="/clip.webm" muted loop width="160"></video>
 <video id="userSound" src="/clip.webm" loop width="160"></video>
 <button id="playMuted" onclick="document.getElementById('userMuted').play()">play muted</button>
+<div id="player" tabindex="0"><video id="keyMuted" src="/clip.webm" muted loop width="160"></video></div>
 <button id="playSound" onclick="document.getElementById('userSound').play()">play sound</button>
 <iframe id="frame" src="__THIRD__/autoplay-frame.html" width="200" height="120"></iframe>
 <script>
   // Counts play attempts, so "paused" can't pass just because nothing tried to play
-  window.plays = { mutedAuto: 0, userMuted: 0, userSound: 0 };
+  window.plays = { mutedAuto: 0, userMuted: 0, userSound: 0, keyMuted: 0 };
   for (const id of Object.keys(plays)) document.getElementById(id).addEventListener('play', () => plays[id]++);
+  // A player with keyboard controls, like JW Player's Space to play
+  document.getElementById('player').addEventListener('keydown', (event) => {
+    if (event.key === ' ') { event.preventDefault(); document.getElementById('keyMuted').play(); }
+  });
   // An ad player retrying play() later, still without a click
   setTimeout(() => document.getElementById('mutedAuto').play().catch(() => {}), 1000);
 </script>

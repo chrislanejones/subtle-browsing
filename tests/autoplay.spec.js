@@ -43,6 +43,24 @@ test.describe("autoplay stopper", () => {
     });
   });
 
+  test("a key press elsewhere doesn't count as starting a video", async ({ ext, page }) => {
+    await page.goto(`${FIRST}/autoplay.html`);
+    // Reading with PageDown gives the page user activation, and a player that
+    // autoplays as it scrolls into view calls play() a moment later
+    await page.keyboard.press("PageDown");
+    await quietEval(page, () => document.getElementById("userMuted").play().catch(() => {}));
+    await expect.poll(async () => (await videoState(page)).userMuted).toEqual({ playing: false, tried: true });
+  });
+
+  test("a key press on the player still starts its muted video", async ({ ext, page }) => {
+    await page.goto(`${FIRST}/autoplay.html`);
+    await page.focus("#player");
+    await page.keyboard.press("Space");
+    await expect.poll(async () => (await videoState(page)).keyMuted).toEqual({ playing: true, tried: true });
+    await page.waitForTimeout(500);
+    expect((await videoState(page)).keyMuted.playing).toBe(true);
+  });
+
   test("pauses muted autoplay in a cross-site iframe", async ({ ext, page }) => {
     await page.goto(`${FIRST}/autoplay.html`);
     const frame = page.frame({ url: `${THIRD}/autoplay-frame.html` });
