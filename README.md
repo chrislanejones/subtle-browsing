@@ -4,7 +4,7 @@
 
 # URL Blocker
 
-**Version 1.7.0** (10-28-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
+**Version 1.8.0** (10-30-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
 
 A Chrome extension that goes after the ads people actually hate (autoplay
 video, pop-ups, ads that spin up your fan) and leaves normal banner ads
@@ -12,19 +12,22 @@ alone. You can also block any URL yourself, or click an ad on the page to
 block where it came from. Your list and switches follow your Chrome sign-in
 to every computer.
 
-## Latest update: 1.7.0
+## Latest update: 1.8.0
 
-The popup is back in a sensible order: today's count, the switches, the
-settings link, the picker, Block a URL, and a Blocking card at the bottom with
-**On**, **Off on site**, **Off** and **10 min off**. The settings page opens on
-activity and charts, with the switches on the left and your list on the right.
+**Pinned ads** is a new switch, on by default. An ad that sticks to the top of
+the window while you scroll now stays at the top of the page and scrolls away
+like a normal banner. The ad still shows. It just doesn't follow you down the
+page.
 
-Blocking a URL now asks how to match it: the whole domain, one exact address,
-or an advanced pattern, with a preview of what it will catch. New blocks and
-picker hides have Undo, stopped autoplay videos can be restored, and settings
-saved from two windows at once no longer overwrite each other.
+The autoplay stopper got stricter about what counts as you starting a video.
+Before, any key press or click anywhere on the page counted, so a player that
+starts itself as you scroll (Investopedia's does) slipped through if you read
+with PageDown. Now it has to be a click or key press on the player, or a click
+on a play button right before the video starts.
 
-Detailed changes: [Changelog](CHANGELOG.md#170--10-28-2026).
+The icon is now a teal shield with a pause symbol on a white tile.
+
+Detailed changes: [Changelog](CHANGELOG.md#180--10-30-2026).
 Live news, shopping, sports and streaming checks, including limitations:
 [Testing and compatibility](docs/Testing.md).
 
@@ -471,6 +474,7 @@ This extension:
 
 | Version | Date | Highlights |
 | --- | --- | --- |
+| 1.8.0 | 10-30-2026 | Pinned ads scroll away, shield icon, autoplay no longer slips through when you scroll with the keyboard |
 | 1.7.0 | 10-28-2026 | Popup reordered with a Blocking card, URL match modes with a preview, Undo, ten-minute pause, settings opens on activity |
 | 1.6.0 | 10-26-2026 | Selective heavy-ad removal with Restore, broader embed mode, site controls, site-only hiding, separate prompt lists, live-site checks |
 | 1.5.1 | 10-26-2026 | Second-computer sync merge fix, picker shows ports, one entry per domain regardless of case, end-to-end test suite |

@@ -39,3 +39,4 @@
 
 - **Leftover "Play this video" button on JW floating players:** when the guard pauses a JW Player that has already floated into the corner, it hides the floating box and pins a fixed "Play this video" button where it was. On Investopedia that button stays over the right-rail ads while you scroll. Consider dropping the button for floating players that JW can re-dock, or placing it back in the article.
 - **Clicks in a child frame:** a click inside an iframe gives the top page user activation but no recorded gesture, so a muted top-page video started by a control inside an iframe is now paused. No known site does this; watch for it.
+- **Flaky test:** `tests/options.spec.js` "adds a URL with Enter or the button, normalized" fails about 1 run in 8 on main (first row reads `anyclip.com` instead of `vdo.ai`). Seen 10-30-2026 during the 1.8.0 release; a rerun passes. Likely the list re-renders before the new URL lands.

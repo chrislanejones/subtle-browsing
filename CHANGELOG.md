@@ -9,12 +9,29 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
 ## Unreleased
 
+## 1.8.0 — 10-30-2026
+
+Pinned ads scroll away, the shield icon, and autoplay video that no longer
+sneaks through when you scroll with the keyboard. Source tag: `v1.8.0`.
+
 ### Added
 - **Pinned ads**, a new switch that's on by default. An ad that sticks to the
   top of the window while you scroll now stays at the top of the page instead
   and scrolls away like a normal banner. On Fox News a Jetpack Digital takeover
   ad (Tunnel to Towers) covered the top 192 pixels of every article once you
   scrolled. It still shows; it just doesn't follow you down the page.
+
+- With **Newsletter offers** on, it also blocks the fake "Ad Blocker Pro"
+  pop-up and the redirect tabs seen on movy.sx and therarbg.com.
+
+### Fixed
+- **Autoplay video got through if you scrolled with the keyboard.** Any key
+  press or click tells Chrome you're using the page for a few seconds, and the
+  autoplay stopper took that to mean you'd started the video. Investopedia's
+  video player starts itself muted every time it scrolls into view, so reading
+  with PageDown or the arrow keys let it play. Now a video only counts as yours
+  if you clicked or pressed a key on the player, or clicked a play button right
+  before it started.
 
 ### Changed
 - **New icon.** The flower is gone. The icon is now a teal shield with a pause
