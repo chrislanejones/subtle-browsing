@@ -10,6 +10,12 @@ The testing policy is [ADR-020](adr/020-live-site-checks-are-separate-from-regre
 CPU limits and performance checks. Syntax checks passed for all 62 JavaScript
 files; `git diff --check` passed. The iframe sign-in stress check passed 20 runs.
 
+The extracted `dist/url-blocker-1.9.0.zip` passed **11 package checks**: nine
+fresh-install checks plus the 90-day history and all-four-large-lists checks.
+All 40 runtime files match source commit `f93079e` byte-for-byte. Archive
+integrity and embedded version passed. SHA-256:
+`c79c0b5c32f84e532f52ccb6d4dae67b628404eba869292b0ae24b8f8b7ab84c`.
+
 The release checks cover:
 
 - Popup attempts in same-site, cross-site, `srcdoc` and rewritten `about:blank`
