@@ -8,7 +8,7 @@ builds `dist/url-blocker-<version>.zip` from the last commit.
 
 | Field | Value |
 | --- | --- |
-| Upload | `dist/url-blocker-1.8.1.zip` |
+| Upload | `dist/url-blocker-1.9.0.zip` |
 | Short description | From `manifest.json`: "Stop intrusive video, newsletter prompts and heavy ads while keeping ordinary banners." |
 
 ## Store listing
@@ -66,7 +66,7 @@ Switches you can turn on:
 • Website push-notification prompts
 • Ad refresh and the hidden cookie-sync frames ad auctions open
 • Slow ad refresh: each Google ad slot refreshes at most every 2 minutes
-• Stop ad redirects: blocks unwanted redirects and top-page popunders triggered by article clicks or media controls
+• Stop ad redirects: blocks unwanted redirects and popunders in pages and child frames triggered by article clicks or media controls
 
 Your own blocks:
 • Block a URL by domain, by one exact address, or with an advanced pattern, with a preview of what it will catch
@@ -95,6 +95,7 @@ Free and open source (MIT): https://github.com/chrislanejones/subtle-browsing
 
 | Permission | Justification |
 | --- | --- |
+| `unlimitedStorage` | Keeps 90 days of blocking history in local IndexedDB without storage eviction or quota pressure. History never syncs or leaves the device. |
 | `storage` | Saves the user's block list, switches, paused sites, site overrides and hidden elements, plus a local log and daily counts that never leave the computer. |
 | `declarativeNetRequest` | The blocking itself: the built-in ad lists, the user's own URL blocks, the rule that turns blocking off for a paused site, and the swap of Google's video ad engine for a local stand-in. |
 | `declarativeNetRequestFeedback` | Reads which rule blocked a request, for the blocked-today count, the activity charts and the DevTools log. Chrome only sends this to unpacked installs, so store installs show these as unavailable. |

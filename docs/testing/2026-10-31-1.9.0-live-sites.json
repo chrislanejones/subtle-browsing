@@ -1,0 +1,59 @@
+[
+  {
+    "category": "streaming-player",
+    "sample": 1,
+    "url": "https://player.vimeo.com/video/76979871",
+    "enabled": false,
+    "checkedAt": "2026-10-31T14:51:47.901Z",
+    "status": 200,
+    "observed": {
+      "title": "The New Vimeo Player (You Know, For Videos) on Vimeo",
+      "text": "Playing in picture-in-picture\nEmbed\nPlay\n00:00\n01:02\nCC/subtitles\nSettings\nSpeed\nTranscript\nPicture-in-Picture\nFullscreen",
+      "visibleImages": 1,
+      "adSlots": [],
+      "videos": [
+        {
+          "paused": true,
+          "muted": false,
+          "readyState": 0,
+          "hasSource": true
+        }
+      ],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Clicked the player's Play button: [{\"paused\":false,\"time\":1.007402,\"readyState\":4}]",
+    "failedRequests": 2,
+    "blockedRequests": 0
+  },
+  {
+    "category": "streaming-player",
+    "sample": 1,
+    "url": "https://player.vimeo.com/video/76979871",
+    "enabled": true,
+    "checkedAt": "2026-10-31T14:52:00.221Z",
+    "status": 200,
+    "observed": {
+      "title": "The New Vimeo Player (You Know, For Videos) on Vimeo",
+      "text": "Playing in picture-in-picture\nEmbed\nPlay\n00:00\n01:02\nCC/subtitles\nSettings\nSpeed\nTranscript\nPicture-in-Picture\nFullscreen",
+      "visibleImages": 1,
+      "adSlots": [],
+      "videos": [
+        {
+          "paused": true,
+          "muted": false,
+          "readyState": 0,
+          "hasSource": true
+        }
+      ],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Clicked the player's Play button: [{\"paused\":false,\"time\":1.012054,\"readyState\":4}]",
+    "failedRequests": 2,
+    "blockedRequests": 0,
+    "extensionLog": []
+  }
+]

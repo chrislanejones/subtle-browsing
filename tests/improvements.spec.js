@@ -20,14 +20,10 @@ async function clickShadowButton(page, label) {
   }
   const node = find(root);
   expect(node, label).toBeTruthy();
-  const { object } = await session.send("DOM.resolveNode", {
-    backendNodeId: node.backendNodeId,
-  });
-  await session.send("Runtime.callFunctionOn", {
-    objectId: object.objectId,
-    functionDeclaration: "function(){this.click()}",
-    userGesture: true,
-  });
+  await session.send("DOM.scrollIntoViewIfNeeded", { backendNodeId: node.backendNodeId });
+  const { model } = await session.send("DOM.getBoxModel", { backendNodeId: node.backendNodeId });
+  const quad = model.content;
+  await page.mouse.click((quad[0] + quad[4]) / 2, (quad[1] + quad[5]) / 2);
   await session.detach();
 }
 

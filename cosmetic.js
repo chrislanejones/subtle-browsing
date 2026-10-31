@@ -11,7 +11,6 @@ div[id^="google_ads_iframe_"][id$="__container__"][style*="position: fixed"],
 :is(div, aside, section)[style*="position: fixed"]:has(> .ias_trackable, > .moat_trackable) {
   position: absolute !important;
 }`;
-  let rules = [];
   const attach = (sheet) => {
     if (!sheet.textContent) sheet.remove();
     else if (!sheet.isConnected && document.documentElement)
@@ -26,7 +25,7 @@ div[id^="google_ads_iframe_"][id$="__container__"][style*="position: fixed"],
     const off = !subtlePolicy.enabled("cosmetic");
     style.textContent = off
       ? ""
-      : rules
+      : subtlePolicy.hiddenElements
           .filter((r) => r.site === location.hostname.replace(/^www\./, ""))
           .filter((r) => {
             try {
@@ -40,25 +39,7 @@ div[id^="google_ads_iframe_"][id$="__container__"][style*="position: fixed"],
           .join("\n");
     attach(style);
   }
-  chrome.storage.sync.get("hiddenElements").then((data) => {
-    rules = data.hiddenElements ?? [];
-    render();
-  });
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "local" && changes.temporaryPauses) {
-      render();
-      return;
-    }
-    if (area !== "sync") return;
-    if (changes.hiddenElements) rules = changes.hiddenElements.newValue ?? [];
-    if (
-      changes.hiddenElements ||
-      changes.settings ||
-      changes.siteSettings ||
-      changes.pausedSites ||
-      changes.pausedEverywhere
-    )
-      render();
-  });
+  subtlePolicy.ready.then(render);
+  subtlePolicy.subscribe(render);
   document.addEventListener("DOMContentLoaded", render, { once: true });
 })();

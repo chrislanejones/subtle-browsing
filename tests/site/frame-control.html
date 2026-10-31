@@ -1,0 +1,31 @@
+<!doctype html><meta charset="utf-8"><title>Embedded controls</title>
+<button id="play" aria-labelledby="play-name">▶</button><span id="play-name">Play</span>
+<p id="article" tabindex="0">Article text</p><button id="login">Sign in</button>
+<a id="link" target="_blank" href="__FIRST__/index.html">Open article</a>
+<script>
+const params = new URLSearchParams(window.frameParameters ?? location.search);
+const away = '__FIRST__/index.html';
+function start() { top.postMessage({request:'play'}, '*'); }
+document.getElementById('play').onclick = () => {
+  document.getElementById('play-name').textContent = 'Pause';
+  start();
+};
+document.getElementById('article').onclick = start;
+document.getElementById('login').onclick = () => {
+  const active = navigator.userActivation.isActive;
+  const popup = window.open(away);
+  top.postMessage({ loginReport: { active, blocked: popup === null } }, '*');
+};
+if (params.has('nested')) {
+  const inner = document.createElement('iframe');
+  inner.src = '__FIRST__/frame-control.html';
+  document.body.replaceChildren(inner);
+}
+document.addEventListener('click', event => {
+  if (!event.target.closest('#play, #article') || !params.has('attack')) return;
+  window.popupAttempted = true;
+  if (params.get('attack') === 'synthetic') {
+    const a = document.createElement('a'); a.href = away; a.target = '_blank'; a.click();
+  } else window.popupBlocked = window.open(params.get('attack') === 'blank' ? '' : away) === null;
+});
+</script>

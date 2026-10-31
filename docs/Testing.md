@@ -1,8 +1,57 @@
 # Testing and compatibility
 
-Release: **1.8.1**, checked **10-31-2026**. This is the detailed verification
+Release: **1.9.0**, checked **10-31-2026**. This is the detailed verification
 companion to the [README](../README.md) and [Changelog](../CHANGELOG.md).
 The testing policy is [ADR-020](adr/020-live-site-checks-are-separate-from-regression-tests.md).
+
+## 1.9.0 verification, 10-31-2026
+
+`pnpm exec playwright test --workers 2`: **191 passed in 2.5 minutes**, including
+CPU limits and performance checks. Syntax checks passed for all 62 JavaScript
+files; `git diff --check` passed. The iframe sign-in stress check passed 20 runs.
+
+The release checks cover:
+
+- Popup attempts in same-site, cross-site, `srcdoc` and rewritten `about:blank`
+  frames; intentional sign-in windows and embedded navigation remain usable.
+- Trusted parent-player controls inside child/nested frames, keyboard Play,
+  unrelated clicks, synthetic clicks and forged messages. Restore checks use
+  real mouse input into the extension's closed-shadow controls.
+- Playback that begins before policy/guard readiness, and intentional clicks
+  made during that interval. Unrelated setting changes leave an already-started
+  video playing. This regression was reproduced and fixed by limiting the
+  startup scan to initial readiness. The live Vimeo player advances after Play.
+- All four synced lists beyond 8 KB, Unicode chunk sizing, backup export,
+  deletion and simultaneous edits. A 4,000-rule list edits near the total quota.
+  A rejected oversized replacement leaves prior chunks and settings intact.
+  Both chunk-first and descriptor-first cloud delivery are exercised.
+- Transaction rollback, interrupted migration cleanup, subsequent counts,
+  concurrent appends, 90-day retention boundaries and malformed dates.
+- An actual source-tagged 1.8.1 installation upgraded in the same directory and
+  profile using Reload, then restarted again. Extension ID, history and saved
+  lists survive; upgraded registrations include every frame. This test enables
+  Developer mode, as required by the documented unpacked installation route.
+- 360px and 640px tables with long hostnames and large counts, visible labels,
+  table semantics and no page overflow. Light/dark screenshots were inspected.
+- Early backup import during a deliberately delayed history load. Controls
+  attach their handlers before asynchronous reads, preventing a dropped action.
+
+One full run timed out observing a child popup through the parent page's popup
+notification. The test now observes the browser-context page event and also
+checks the actual `window.open` result and user activation. It passed 20 focused
+repeats. No runtime change was justified by that observation; retries remain off.
+
+[Live observations](testing/2026-10-31-1.9.0-live-sites.json): Vimeo's direct
+player returned HTTP 200 with and without the extension. In both fresh profiles,
+clicking Play advanced playback beyond one second. No recognizable banner slot
+was present, so banner preservation is inconclusive for this sample. Optional
+redirect protection and real rotating iframe hijacks remain fixture-tested;
+this run does not establish live coverage for every site.
+
+The listing screenshots were regenerated from the current UI and inspected.
+This is an unpacked/source release. Store publication still waits for the
+account owner's developer registration, and the user's existing Chrome copy
+needs the documented Reload step.
 
 ## 1.8.1 verification, 10-31-2026
 

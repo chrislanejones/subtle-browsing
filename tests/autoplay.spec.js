@@ -18,6 +18,46 @@ const videoState = (page) =>
 const frameVideo = (frame) =>
   quietEval(frame, () => ({ playing: !document.getElementById("v").paused, tried: window.plays > 0 }));
 
+test("a guard attaching after an autoplay event still pauses the running player", async ({ ext, page }) => {
+  await ext.setSettings({ autoplayGuard: false });
+  await page.goto(`${FIRST}/autoplay.html`);
+  await expect.poll(() => quietEval(page, () => !document.getElementById("mutedAuto").paused)).toBe(true);
+  await ext.setSettings({ autoplayGuard: true });
+  const tabId = await ext.tabIdOf(page);
+  await expect.poll(async () => (await ext.sw.evaluate((tabId) => chrome.scripting.executeScript({
+    target: { tabId }, func: () => subtlePolicy.enabled("autoplayGuard"),
+  }), tabId))[0].result).toBe(true);
+  await ext.sw.evaluate((tabId) => chrome.scripting.executeScript({ target: { tabId }, files: ["autoplay-guard.js"] }), tabId);
+  await expect.poll(() => quietEval(page, () => document.getElementById("mutedAuto").paused)).toBe(true);
+});
+
+test("a trusted Play click while policy readiness is delayed remains intentional", async ({ ext, page }) => {
+  await ext.setSettings({ autoplayGuard: false });
+  await page.goto(`${FIRST}/autoplay.html`);
+  await ext.setSettings({ autoplayGuard: true });
+  const tabId = await ext.tabIdOf(page);
+  await ext.sw.evaluate((tabId) => chrome.scripting.executeScript({ target: { tabId }, func: () => {
+    subtlePolicy.ready = new Promise((resolve) => { globalThis.releasePolicy = resolve; });
+  } }), tabId);
+  await ext.sw.evaluate((tabId) => chrome.scripting.executeScript({ target: { tabId }, files: ["autoplay-guard.js"] }), tabId);
+  await page.locator("#playMuted").click();
+  await ext.sw.evaluate((tabId) => chrome.scripting.executeScript({ target: { tabId }, func: () => globalThis.releasePolicy() }), tabId);
+  await expect.poll(() => quietEval(page, () => !document.getElementById("userMuted").paused && document.getElementById("userMuted").currentTime > 0.1)).toBe(true);
+});
+
+test("editing another setting does not pause a video the user is already watching", async ({ ext, page }) => {
+  await page.goto(`${FIRST}/autoplay.html`);
+  await page.locator("#playMuted").click();
+  await expect.poll(() => quietEval(page, () => !document.getElementById("userMuted").paused)).toBe(true);
+  await page.locator("#articleText").click();
+  await ext.setSettings({ pinnedAds: false });
+  const tabId = await ext.tabIdOf(page);
+  await expect.poll(async () => (await ext.sw.evaluate((tabId) => chrome.scripting.executeScript({
+    target: { tabId }, func: () => subtlePolicy.enabled("pinnedAds"),
+  }), tabId))[0].result).toBe(false);
+  expect(await quietEval(page, () => document.getElementById("userMuted").paused)).toBe(false);
+});
+
 test.describe("autoplay stopper", () => {
   test("pauses muted autoplay, also when the page retries play() later", async ({ ext, page }) => {
     await page.goto(`${FIRST}/autoplay.html`);

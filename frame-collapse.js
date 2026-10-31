@@ -34,7 +34,7 @@
       /\b(advertisement|advertising)\b/i.test(frame.title)
     );
   }
-  window.addEventListener("message", async (event) => {
+  subtlePolicy.listen(window, "message", async (event) => {
     const heavy = event.data?.type === "subtle:heavy";
     if (
       (!heavy && event.data !== "url-blocker:collapse-frame") ||
@@ -92,14 +92,19 @@
     button.style.cssText = "font:inherit;cursor:pointer;padding:4px 8px";
     button.addEventListener(
       "click",
-      () => {
+      async (event) => {
+        if (!event.isTrusted) return;
         restored.add(frame);
         if (heavy) {
           if (saved.srcdoc !== null) frame.setAttribute("srcdoc", saved.srcdoc);
           if (saved.src !== null) frame.setAttribute("src", saved.src);
           else frame.removeAttribute("src");
-        } else
-          frame.contentWindow.postMessage("url-blocker:restore-autoplay", "*");
+        } else {
+          try {
+            const { token } = await chrome.runtime.sendMessage({ action: "frameGesture", kind: "restore" });
+            if (token) frame.contentWindow.postMessage({ type: "subtle:frame-gesture", kind: "restore", token }, "*");
+          } catch {}
+        }
         if (saved.display)
           frame.style.setProperty("display", saved.display, saved.priority);
         else frame.style.removeProperty("display");

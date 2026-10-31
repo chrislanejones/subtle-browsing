@@ -1,3 +1,4 @@
+import { readSync, syncChanged, onSyncChanged } from "./sync-storage.js";
 import { mutate } from "./storage-client.js";
 import {
   FEATURES,
@@ -103,10 +104,7 @@ export async function mountSiteControls(container, tab) {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (
       (area === "sync" &&
-        (changes.settings ||
-          changes.siteSettings ||
-          changes.pausedSites ||
-          changes.pausedEverywhere)) ||
+        syncChanged(changes, ["settings", "siteSettings", "pausedSites", "pausedEverywhere"])) ||
       (area === "local" && changes.temporaryPauses)
     )
       render();
@@ -152,7 +150,7 @@ export async function mountSavedRules(container, site = null) {
   container.replaceChildren(list, status);
   async function render() {
     const { hiddenElements = [], siteSettings = {} } =
-      await chrome.storage.sync.get(["hiddenElements", "siteSettings"]);
+      await readSync(["hiddenElements", "siteSettings"]);
     const fragment = document.createDocumentFragment();
     for (const rule of hiddenElements.filter((r) => !site || r.site === site)) {
       const row = document.createElement("div");
@@ -206,9 +204,6 @@ export async function mountSavedRules(container, site = null) {
       fragment.append("No hidden elements or site overrides yet.");
     list.replaceChildren(fragment);
   }
+  onSyncChanged(["hiddenElements", "siteSettings"], render);
   await render();
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "sync" && (changes.hiddenElements || changes.siteSettings))
-      render();
-  });
 }

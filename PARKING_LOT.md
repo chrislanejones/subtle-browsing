@@ -1,8 +1,5 @@
 # Parking Lot
 
-- **Move blocks-per-day stats to IndexedDB (decided 10-28-2026):** today each day is a `stats-YYYY-MM-DD` key in `chrome.storage.local`, kept 30 days (`background.js` `addToDay` / `pruneStats`). Chris picked IndexedDB over SQLite: the service worker can use it directly, while SQLite would need an offscreen document plus a worker for its saved file, and about 1 MB of wasm. Next session: Vivek does the change (new table with one-time copy of the `stats-*` keys, add `unlimitedStorage`, date-range queries in `overview.js`), Dara writes the ADR first. Still open: how many days to keep (90, a year, or forever).
-- **Sync caps the block list at about 300 entries:** `chrome.storage.sync` allows 8 KB per item. Past that, adding shows an error. Splitting the list across several keys would lift it.
-- **Settings page tables on a narrow window:** below about 640px wide, the What gets blocked and Recent blocks tables scroll sideways. Fine for a settings tab, but a stacked layout would read better.
 - **Off everywhere reloads only the current tab:** other open tabs keep their old state until they load again. Reloading every tab could lose what people typed into forms, so it's left alone.
 - **Paused in-page videos keep their box:** boxes collapse for unloaded ad frames and floating players, but a muted video paused on the page itself stays, so it can still be clicked to play.
 - **IMA stand-in covers ima3.js only:** Google's DAI SDK (`ima3_dai.js`, used for live-stream ad insertion) isn't redirected.
@@ -22,7 +19,6 @@
 - **Ad evidence:** broaden the known ad-host/slot evidence from reproduced cases; unrecognized heavy frames require the explicit broader mode.
 - **Navigation timing:** site category exceptions are per-tab session rules refreshed asynchronously. Earliest requests after navigation can race the refresh; stress-test redirects and many overridden tabs before stronger guarantees.
 - **Cosmetic selectors:** structural selectors may need updating after site redesigns. They hide elements but do not prevent downloads or unlock scroll.
-- **New sync lists:** site overrides and hidden selectors each have their own per-item quota, like the original URL list. A future sharded format should migrate all three.
 
 ## Follow-ups from Ad refresh and sync frames / Slow ad refresh / Stop ad redirects
 
@@ -33,16 +29,12 @@
 - **Slow ad refresh marker is hidden on some sites:** SHE Media's `blogherads` wraps `refresh()` on top of ours, so `refresh.subtleThrottled` reads false even though the throttle still works. Don't use the marker to check whether it's active.
 - **`imprchmp.taboola.com/st` stays out of the sync list:** it carries creative and impression IDs, so it counts paid impressions rather than syncing IDs.
 
-## Follow-ups from the Investopedia autoplay fix (10-30-2026)
-
-- **Clicks in a child frame:** a click inside an iframe gives the top page user activation but no recorded gesture, so a top-page video started by a control inside an iframe is now paused. No known site does this; watch for it.
-
 ## Follow-ups from 1.8.1 (10-31-2026)
 
 - **Click hijacks:** the top-page guard now covers borrowed article/media clicks,
   window.open (including blank popunders), and synthetic link clicks. A frame's
-  own window.open, automatic form submissions, same-site bounce chains, and
-  targeted replacement of page-world hooks remain outside this protection.
+  own window.open is covered in 1.9.0. Automatic form submissions, same-site
+  bounce chains and targeted replacement of page-world hooks remain outside it.
   Generic navigation buttons retain a one-second exception for login/checkout.
 - **Store registration:** the connected account reaches the developer agreement
   and $5 registration screen. The user must complete registration before upload.
@@ -57,3 +49,17 @@
 - **Global pause test observation:** one full-suite run saw the formerly blocked image remain unavailable after Off everywhere. Twelve focused repeats passed. No production-code cause established; keep watching this reload/rule timing case.
 
 - **Heavy-download test observation:** one full-suite run left the clicked-frame download empty; twelve focused repeats passed. The final verification uses two concurrent browsers to reduce load. No production-code cause established.
+
+## Completed in 1.9.0 (10-31-2026)
+
+- **Child frames:** popup checks run in every frame. Verified labeled playback
+  controls support nearby parent players and nested frames. Rewritten blank
+  frames regain their listeners. Unlabeled or detached remote controls still
+  need a site exception; arbitrary iframe clicks do not grant playback.
+- **Storage scaling:** all four growing lists use verified chunks above the
+  small-list threshold. Total sync capacity and cross-computer last-writer
+  behavior remain Chrome limitations. Retired chunks are replaced atomically;
+  newly arriving cloud chunks are left alone until their descriptor arrives.
+- **IndexedDB:** daily counts migrate transactionally, retain the requested
+  90 days, and support range queries. Cleanup retries preserve newer counts.
+- **Narrow tables:** rows stack with visible labels at 640px and below.

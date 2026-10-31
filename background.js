@@ -1,3 +1,5 @@
+import { readSync, writeSync, onSyncChanged } from "./sync-storage.js";
+import { appendHistory, migrateHistory, readHistory } from "./history.js";
 import { applyMutation } from "./storage-mutations.js";
 import {
   ruleCondition,
@@ -36,9 +38,6 @@ const RESOURCE_TYPES = [
 const MAX_LOG_ENTRIES = 100;
 // Daily counts for the settings page charts: by type, by blocked domain and
 // by the site it was blocked on
-const STATS_DAYS = 30;
-const STATS_HOSTS_PER_DAY = 200;
-const STATS_PREFIX = "stats-";
 const STATS_TYPES = {
   video_ads: "video_ads",
   annoyances: "annoyances",
@@ -109,6 +108,13 @@ function queue(task) {
   return result;
 }
 
+queue(migrateHistory);
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && Object.entries(changes).some(([key, value]) =>
+      (key === "blockStats" || /^stats-\d{4}-\d{2}-\d{2}$/.test(key)) && value.newValue !== undefined))
+    queue(migrateHistory);
+});
+
 // 1.5.0 moved these from storage.local to storage.sync. On a second
 // computer sync may already hold the first one's data: lists are merged so
 // neither computer loses entries, and the synced switches win.
@@ -118,7 +124,7 @@ async function moveSettingsToSync() {
   const keys = Object.keys(local);
   if (keys.length === 0) return;
 
-  const synced = await chrome.storage.sync.get(keys);
+  const synced = await readSync(keys, { strict: true });
   const updates = {};
   for (const key of keys) {
     if (synced[key] === undefined) {
@@ -128,7 +134,7 @@ async function moveSettingsToSync() {
     }
   }
   // If this throws (sync full), local keeps the data for the next try
-  if (Object.keys(updates).length > 0) await chrome.storage.sync.set(updates);
+  if (Object.keys(updates).length > 0) await writeSync(updates);
   await chrome.storage.local.remove(keys);
 }
 
@@ -257,17 +263,15 @@ async function applySettings({
     world: "MAIN",
     allFrames: false,
   });
-  // Watches the top page's own navigations, so it lives in that world too
+  // Each frame owns its popup functions; top-page navigations are watched too.
   const guardOn = adRedirectGuard || overrides.some((s) => s.adRedirectGuard);
   await setFrameScript(AD_REDIRECT_GUARD_ID, "ad-redirect-guard.js", guardOn, {
     world: "MAIN",
-    allFrames: false,
   });
   await setFrameScript(
     PAGE_WORLD_POLICY_ID,
     "page-world-policy.js",
     throttleOn || guardOn,
-    { allFrames: false },
   );
   // Renamed to page-world-policy.js; drop the old registration
   await setFrameScript("refresh-policy", "page-world-policy.js", false);
@@ -296,7 +300,7 @@ async function setFrameScript(id, file, enabled, options = {}) {
       },
     ]);
   } else if (enabled) {
-    await chrome.scripting.updateContentScripts([{ id, js }]);
+    await chrome.scripting.updateContentScripts([{ id, js, allFrames: true, matchOriginAsFallback: true, runAt: "document_start", ...options }]);
   } else if (!enabled && registered.length > 0) {
     await chrome.scripting.unregisterContentScripts({ ids: [id] });
   }
@@ -407,34 +411,28 @@ function logBlockedUrl(url, { type = "other", page, host = url } = {}) {
   flushTimer ??= setTimeout(() => queue(flushLogs), LOG_FLUSH_DELAY_MS);
 }
 
+let retryBatch;
 async function flushLogs() {
   flushTimer = undefined;
-  const entries = unsavedLogs;
-  unsavedLogs = [];
-
-  // One read and one write per flush. Only today's counts are rewritten, so
-  // a busy page writes about 14 KB a second at most, not all 30 days.
-  const dayKey = STATS_PREFIX + today();
-  const stored = await chrome.storage.local.get([
-    "blockedUrlLogs",
-    "blockedToday",
-    dayKey,
-  ]);
-  const { blockedUrlLogs = [], blockedToday } = stored;
-  let day = stored[dayKey];
-  if (!day) {
-    // First block of the day
-    await pruneStats();
-    day = (await chrome.storage.local.get(dayKey))[dayKey];
+  const batch = retryBatch ?? { id: crypto.randomUUID(), entries: unsavedLogs.splice(0) };
+  if (!batch.entries.length) return;
+  try {
+    await appendHistory(batch.entries, batch.id);
+    const stored = await chrome.storage.local.get(["blockedUrlLogs", "blockedToday"]);
+    const count = (stored.blockedToday?.date === today() ? stored.blockedToday.count : 0) + batch.entries.filter((entry) => new Date(entry.timestamp).toLocaleDateString("en-CA") === today()).length;
+    await chrome.storage.local.set({
+      blockedUrlLogs: [...(stored.blockedUrlLogs ?? []), ...batch.entries].slice(-MAX_LOG_ENTRIES),
+      blockedToday: { date: today(), count },
+    });
+    retryBatch = null;
+    await showBadge(count).catch((error) => console.warn(error.message));
+  } catch (error) {
+    retryBatch = batch;
+    flushTimer ??= setTimeout(() => queue(flushLogs), LOG_FLUSH_DELAY_MS);
+    throw error;
   }
-  const count =
-    (blockedToday?.date === today() ? blockedToday.count : 0) + entries.length;
-  await chrome.storage.local.set({
-    blockedUrlLogs: [...blockedUrlLogs, ...entries].slice(-MAX_LOG_ENTRIES),
-    blockedToday: { date: today(), count },
-    [dayKey]: addToDay(day, entries),
-  });
-  await showBadge(count);
+  if (unsavedLogs.length)
+    flushTimer ??= setTimeout(() => queue(flushLogs), LOG_FLUSH_DELAY_MS);
 }
 
 function hostOf(url) {
@@ -443,40 +441,6 @@ function hostOf(url) {
   } catch {
     return null;
   }
-}
-
-// "stats-YYYY-MM-DD": { types: {}, hosts: {}, pages: {} }, one key per day
-function addToDay(day = { types: {}, hosts: {}, pages: {} }, entries) {
-  const add = (counts, key) => key && (counts[key] = (counts[key] ?? 0) + 1);
-  for (const entry of entries) {
-    add(day.types, entry.type);
-    add(day.hosts, entry.host);
-    add(day.pages, entry.page);
-  }
-  for (const key of ["hosts", "pages"]) {
-    const top = Object.entries(day[key]).sort(([, a], [, b]) => b - a);
-    if (top.length > STATS_HOSTS_PER_DAY)
-      day[key] = Object.fromEntries(top.slice(0, STATS_HOSTS_PER_DAY));
-  }
-  return day;
-}
-
-// Once a day: drops days past STATS_DAYS, and splits the single blockStats
-// key the first version of the charts used
-async function pruneStats() {
-  const all = await chrome.storage.local.get(null);
-  const oldest = new Date();
-  oldest.setDate(oldest.getDate() - (STATS_DAYS - 1));
-  const cutoff = STATS_PREFIX + oldest.toLocaleDateString("en-CA");
-  const moved = {};
-  for (const [date, day] of Object.entries(all.blockStats ?? {}))
-    if (!all[STATS_PREFIX + date]) moved[STATS_PREFIX + date] = day;
-  const old = Object.keys({ ...all, ...moved }).filter(
-    (key) => key.startsWith(STATS_PREFIX) && key < cutoff,
-  );
-  for (const key of old) delete moved[key];
-  if (Object.keys(moved).length) await chrome.storage.local.set(moved);
-  await chrome.storage.local.remove([...old, "blockStats"]);
 }
 
 // Heavy ads: adds up what each third-party frame downloads, counting nested
@@ -629,10 +593,7 @@ chrome.tabs.onUpdated.addListener((id, change) => {
   if (change.url || change.status === "loading") scheduleSiteRules();
 });
 chrome.tabs.onRemoved.addListener(scheduleSiteRules);
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "sync" && changes.siteSettings)
-    queue(async () => applySettings(await getSettings()));
-});
+onSyncChanged(["siteSettings"], () => queue(async () => applySettings(await getSettings())));
 queue(syncSiteRules);
 
 // The picker only loads into a page when it's needed, which keeps every other
@@ -683,7 +644,7 @@ async function setPower(mode, site, tabId) {
     throw new Error("Open a website to pause it.");
   if (mode === "temporary" && (await getPauseState(site)).mode !== "on")
     throw new Error("Resume blocking before starting a timed pause.");
-  const { pausedSites = [] } = await chrome.storage.sync.get("pausedSites");
+  const { pausedSites = [] } = await readSync("pausedSites", { strict: true });
   const { temporaryPauses = {} } =
     await chrome.storage.local.get("temporaryPauses");
   // Resuming explicitly removes the ancestor pause too. The popup names that
@@ -699,7 +660,7 @@ async function setPower(mode, site, tabId) {
         delete temporaryPauses[host];
   }
   if (mode === "temporary") temporaryPauses[site] = Date.now() + 10 * 60 * 1000;
-  await chrome.storage.sync.set({
+  await writeSync({
     pausedEverywhere: mode === "everywhere",
     pausedSites: pauses,
   });
@@ -737,8 +698,54 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   );
 });
 
+// Tickets come only from our isolated scripts after trusted controls. A page
+// message alone cannot grant playback. Tickets expire and are consumed once;
+// each verified ancestor gets a new ticket for nested frame controls.
+let pagePolicySnapshot;
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "sync") pagePolicySnapshot = undefined;
+});
+function getPagePolicy() {
+  return pagePolicySnapshot ??= queue(() => readSync(["settings", "siteSettings", "pausedSites", "pausedEverywhere", "hiddenElements"]))
+    .catch((error) => { pagePolicySnapshot = undefined; throw error; });
+}
+const frameGestures = new Map();
+function frameTicket(sender, kind, time = Date.now()) {
+  for (const [key, value] of frameGestures)
+    if (Date.now() - value.time > 1000) frameGestures.delete(key);
+  if (!sender.tab || !["play", "restore"].includes(kind) || frameGestures.size > 200) return null;
+  const token = crypto.randomUUID();
+  frameGestures.set(token, { tabId: sender.tab.id, documentId: sender.documentId,
+    origin: sender.origin, kind, time });
+  return token;
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
+    case "frameGesture":
+      sendResponse({ token: frameTicket(sender, message.kind) });
+      return;
+    case "verifyFrameGesture": {
+      const ticket = frameGestures.get(message.token);
+      const valid = ticket && ticket.tabId === sender.tab?.id &&
+        ticket.documentId !== sender.documentId && ticket.origin === message.origin &&
+        ticket.kind === message.kind && Date.now() - ticket.time < 1000;
+      if (valid) frameGestures.delete(message.token);
+      sendResponse({ valid: Boolean(valid), token: valid ? frameTicket(sender, ticket.kind, ticket.time) : null });
+      return;
+    }
+    case "getPagePolicy":
+      getPagePolicy()
+        .then((state) => sendResponse({ state }))
+        .catch((error) => sendResponse({ error: error.message }));
+      return true;
+
+    case "getHistory":
+      queue(() => readHistory(message.from, message.to))
+        .then((days) => sendResponse({ days }))
+        .catch((error) => sendResponse({ error: error.message }));
+      return true;
+
     case "mutate":
       queue(async () => {
         const result = await applyMutation(
@@ -781,13 +788,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         )
           throw new Error("Invalid element rule.");
         const { hiddenElements = [] } =
-          await chrome.storage.sync.get("hiddenElements");
+          await readSync("hiddenElements", { strict: true });
         if (
           !hiddenElements.some(
             (r) => r.site === site && r.selector === message.selector,
           )
         ) {
-          await chrome.storage.sync.set({
+          await writeSync({
             hiddenElements: [
               ...hiddenElements,
               { site, selector: message.selector },

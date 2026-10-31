@@ -1,6 +1,6 @@
+import { readSync } from "./sync-storage.js";
 // The top of the settings page: totals, charts of what was blocked, and a
-// table of every kind of blocking. The counts come from the stats-YYYY-MM-DD
-// keys background.js keeps for the last 30 days.
+// table of every kind of blocking. Daily counts live in local IndexedDB.
 import { getBlockedUrls } from "./blocklist.js";
 import {
   getPausedEverywhere,
@@ -222,7 +222,7 @@ function dataTable(caption, head, rows) {
             "tr",
             {},
             ...r.map((c, i) =>
-              el(i ? "td" : "th", i ? {} : { scope: "row" }, String(c)),
+              el(i ? "td" : "th", i ? { "data-label": head[i] } : { scope: "row" }, String(c)),
             ),
           ),
         ),
@@ -246,7 +246,7 @@ function perDayChart(stats, days) {
       month: "short",
       day: "numeric",
     });
-  const bars = days.map((day) => {
+  const bars = days.map((day, index) => {
     const types = stats[day]?.types ?? {};
     const total = dayTotal(stats, day);
     const column = el(
@@ -267,7 +267,7 @@ function perDayChart(stats, days) {
             }),
           ),
       ),
-      el("span", { className: "col-label" }, short(day)),
+      el("span", { className: "col-label" }, index % Math.ceil(days.length / 7) === 0 || index === days.length - 1 ? short(day) : ""),
     );
     hoverable(
       column,
@@ -333,26 +333,37 @@ function barList(entries, { keyOf, label = (k) => k, unit = "blocked" } = {}) {
 const empty = (text) => el("p", { className: "note empty" }, text);
 
 async function render() {
-  const [local, sync, settings, siteSettings, urls, paused, off] =
+  try {
+    await renderData();
+    $("historyStatus").hidden = true;
+  } catch (error) {
+    $("historyStatus").textContent = "Could not load saved activity. Reload this page to try again.";
+    $("historyStatus").hidden = false;
+    console.warn(error.message);
+  }
+}
+let rendering = 0;
+async function renderData() {
+  const generation = ++rendering;
+  const range = Number($("historyRange").value);
+  const [local, sync, settings, siteSettings, urls, paused, off, history] =
     await Promise.all([
       chrome.storage.local.get([
         "blockedToday",
         "blockedUrlLogs",
-        ...lastDays(30).map((day) => `stats-${day}`),
       ]),
-      chrome.storage.sync.get("hiddenElements"),
+      readSync("hiddenElements"),
       getSettings(),
       getSiteSettings(),
       getBlockedUrls(),
       getAllPausedSites(),
       getPausedEverywhere(),
+      chrome.runtime.sendMessage({ action: "getHistory", from: lastDays(Math.max(30, range))[0], to: localDate(new Date()) }),
     ]);
   const { blockedToday, blockedUrlLogs = [] } = local;
-  const stats = Object.fromEntries(
-    Object.entries(local)
-      .filter(([key]) => key.startsWith("stats-"))
-      .map(([key, day]) => [key.slice("stats-".length), day]),
-  );
+  if (generation !== rendering) return;
+  if (history.error) throw new Error(history.error);
+  const stats = history.days;
   const canCount = Boolean(chrome.declarativeNetRequest.onRuleMatchedDebug);
   const today = localDate(new Date());
   const week = lastDays(7);
@@ -388,11 +399,11 @@ async function render() {
 
   $("countNote").hidden = canCount;
 
-  const days = lastDays(14);
+  const days = lastDays(range);
   $("perDay").replaceChildren(
     days.some((d) => dayTotal(stats, d))
       ? perDayChart(stats, days)
-      : empty("Nothing blocked yet in the last 14 days."),
+      : empty(`Nothing blocked yet in the last ${range} days.`),
   );
 
   const byType = totals(stats, week, "types");
@@ -463,7 +474,7 @@ async function render() {
                 {},
                 el(
                   "td",
-                  { className: "num" },
+                  { className: "num", "data-label": "Time" },
                   new Date(entry.timestamp).toLocaleTimeString(undefined, {
                     hour: "numeric",
                     minute: "2-digit",
@@ -471,15 +482,15 @@ async function render() {
                 ),
                 el(
                   "td",
-                  {},
+                  { "data-label": "Type" },
                   el("i", {
                     className: "key",
                     style: { background: color(type.key) },
                   }),
                   ` ${type.label}`,
                 ),
-                el("td", { className: "url", title: entry.url }, host),
-                el("td", { className: "url" }, entry.page ?? "—"),
+                el("td", { className: "url", title: entry.url, "data-label": "Blocked" }, host),
+                el("td", { className: "url", "data-label": "On site" }, entry.page ?? "—"),
               );
             }),
           ),
@@ -493,6 +504,7 @@ async function render() {
 
   // What gets blocked
   const ruleCounts = await ruleCountsPromise;
+  if (generation !== rendering) return;
   $("kinds").replaceChildren(
     ...KINDS.map((kind) => {
       const on = kind.personal ? urls.length > 0 : settings[kind.setting];
@@ -516,11 +528,11 @@ async function render() {
             : el("i", { className: "key none" }),
           ` ${kind.name}`,
         ),
-        el("td", {}, kind.what),
-        el("td", {}, rules),
+        el("td", { "data-label": "What it stops" }, kind.what),
+        el("td", { "data-label": "How" }, rules),
         el(
           "td",
-          {},
+          { "data-label": "Status" },
           el(
             "span",
             { className: `state ${on ? "on" : "off"}` },
@@ -529,7 +541,7 @@ async function render() {
         ),
         el(
           "td",
-          { className: "num" },
+          { className: "num", "data-label": "Last 7 days" },
           count === null
             ? "—"
             : !canCount && kind.type !== "heavy"
@@ -560,6 +572,7 @@ const ruleCountsPromise = Promise.all(
 // every 5 seconds, and not at all while this tab is hidden.
 export async function mountOverview() {
   await render();
+  $("historyRange").addEventListener("change", () => render());
   let timer = null;
   let stale = false;
   const redraw = () => {

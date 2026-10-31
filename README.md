@@ -4,7 +4,7 @@
 
 # URL Blocker
 
-**Version 1.8.1** (10-31-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
+**Version 1.9.0** (10-31-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
 
 A Chrome extension that goes after the ads people actually hate (autoplay
 video, pop-ups, ads that spin up your fan) and leaves normal banner ads
@@ -12,26 +12,24 @@ alone. You can also block any URL yourself, or click an ad on the page to
 block where it came from. Your list and switches follow your Chrome sign-in
 to every computer.
 
-## Latest update: 1.8.1
+## Latest update: 1.9.0
 
-**Stop ad redirects** now catches more click hijacks: an ad borrowing a click
-on article text or a Play button to send you away or open a popunder. It also
-checks scripted links and blank popups. Turn this optional switch on globally
-or for the sites that need it. Normal links, forms and sign-in buttons remain
-usable; unusual scripted flows may need a site exception.
+**Stop ad redirects** also checks popups opened inside child frames, including
+same-site, cross-site, `srcdoc` and rewritten empty frames. Trusted Play controls
+inside an iframe can start their parent player; ordinary iframe clicks and
+forged messages cannot grant playback.
 
-**Autoplay videos** now stops unwanted playback with sound as well as muted
-video. Reading keys, unrelated clicks and scripted clicks no longer count as
-pressing Play. A site's floating player returns to its place in the article,
-paused, and can float again when you play it.
+**Larger saved lists** span multiple Chrome sync items, covering blocked URLs,
+paused sites, site overrides and hidden elements. Incomplete sync keeps the
+last complete rules available. Chrome's overall sync quota still applies.
 
-Adding a URL no longer clears the next address you type while the earlier save
-finishes. Release packaging also rejects uncommitted runtime changes and writes
-a SHA-256 checksum beside the zip.
+**90 days of local history** now live in IndexedDB, with safe migration of
+existing counts and a 14/30/90-day chart selector. Tables stack into labeled
+rows on narrow windows. Updating the existing unpacked folder keeps your
+extension ID, settings and history; use Chrome's reload arrow afterward.
 
-Detailed changes: [Changelog](CHANGELOG.md#181--10-31-2026).
-Live news, shopping, sports and streaming checks, including limitations:
-[Testing and compatibility](docs/Testing.md).
+Detailed changes: [Changelog](CHANGELOG.md#190--10-31-2026).
+Verification and practical limits: [Testing and compatibility](docs/Testing.md).
 
 ## Contents
 
@@ -100,14 +98,23 @@ on every bad ad by hand.
 
 For this WSL checkout, choose
 `\\wsl.localhost\Debian\home\clj\repo\subtle-browsing` once. After an update,
-click the extension's reload arrow at `chrome://extensions/`, then reload the
-webpages you want to check. Open Settings to confirm **Version 1.8.1**. Disable
+update the files in that same folder (for a clone, `git pull --ff-only`),
+then click the extension's reload arrow at `chrome://extensions/`, then reload the
+webpages you want to check. Open Settings to confirm **Version 1.9.0**. Disable
 an older duplicate installation so only one copy is active; export its backup
 first if you need to transfer rules to a different extension ID.
 
+You do **not** need to remove and reinstall it. Keeping the same folder and
+Chrome profile preserves this installation's data. Reload existing webpages
+so their content scripts update too. [Chrome's reload instructions](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#reload_the_extension).
+
+Web Store installations receive automatic updates after a new version is
+published; unpacked folders use the manual Reload step above.
+[Chrome's update lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/extensions-update-lifecycle).
+
 The unpacked route is the current daily-use route. The Web Store account still
 needs developer registration (agreement and registration fee) before upload.
-The prepared package is `dist/url-blocker-1.8.1.zip`; the listing kit is in
+The prepared package is `dist/url-blocker-1.9.0.zip`; the listing kit is in
 [docs/store/LISTING.md](docs/store/LISTING.md).
 
 ## How to use
@@ -129,7 +136,7 @@ same choices.
 | **Notification requests** | Uses [`rules/notifications.json`](rules/notifications.json): OneSignal, PushEngage, iZooto, Webpushr, Aimtell and PushCrew. |
 | **Ad refresh and sync frames** | Uses [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts, plus 26 hidden cookie-sync frames from ad auctions by name (OpenX, PubMatic, Rubicon, AppNexus, Criteo, TripleLift, Index Exchange, LiveIntent and others) and 3 patterns for sync frames from anyone else. |
 | **Slow ad refresh** | Wraps Google's ad tag (`googletag.pubads().refresh()`) in [`refresh-throttle.js`](refresh-throttle.js). Every slot's first load goes through; after that each slot refreshes at most once every 2 minutes, and not while the tab is hidden. |
-| **Stop ad redirects** | [`ad-redirect-guard.js`](ad-redirect-guard.js) checks top-page navigation and scripted popups against the control you used. Article clicks and Play buttons cannot authorize a jump to another site. Links, forms, reload and back/forward remain usable. |
+| **Stop ad redirects** | [`ad-redirect-guard.js`](ad-redirect-guard.js) checks top-page navigation and scripted popups in every frame against the control you used. Article clicks and Play buttons cannot authorize a jump to another site. Links, forms, reload and back/forward remain usable. |
 
 More on each:
 
@@ -186,7 +193,7 @@ More on each:
   fake McAfee warning page, twice in a row, without a click. The ad ran in
   one of Google's ad frames that shares the page's address, and Chrome only
   stops that trick for frames from other sites. This switch cancels a jump
-  to another site that no navigation control started, and blocks top-page
+  to another site that no navigation control started, and blocks page and iframe
   popunders triggered by article text or a media control. It's off by default
   because a site's own sign-in or checkout can move you to another site the same way;
   turn it off for that site if one does.
@@ -328,7 +335,7 @@ in the header when blocking is off everywhere.
 | Section | What you can do |
 | --- | --- |
 | Overview | Blocked today, the last 7 and 30 days, and how many URLs, paused sites and hidden elements you have |
-| Charts | Blocks per day for 14 days by type, what was blocked this week, the most blocked domains and the sites with the most blocks. Hover a bar for its numbers. **Show as a table** under Blocks per day lists every day |
+| Charts | Blocks per day for 14, 30 or 90 days by type, what was blocked this week, the most blocked domains and the sites with the most blocks. Hover a bar for its numbers. **Show as a table** under Blocks per day lists every day |
 | What gets blocked | Every kind of blocking: what it stops, how many rules, whether it's on and how many it caught this week |
 | Recent blocks | The last 12 blocks: when, what type, the domain and the site you were on |
 | Block | The same nine global defaults as the popup |
@@ -355,7 +362,7 @@ in the header when blocking is off everywhere.
 | What | Where it's kept |
 | --- | --- |
 | Block list, paused sites, Off everywhere, switches, site overrides, hidden elements | Synced: follows your Chrome sign-in to every computer |
-| Request log, blocked-today count, daily counts for the charts (30 days) | This computer only |
+| Request log, blocked-today count, daily counts for the charts (90 days in IndexedDB) | This computer only |
 
 - Chrome does the syncing, through your Google account. The extension
   doesn't run a server or send anything anywhere itself.
@@ -363,8 +370,17 @@ in the header when blocking is off everywhere.
   and switches into sync. If sync already has them from another computer,
   the block lists and paused sites are merged, and the synced switches
   win.
-- Sync allows about 300 blocked URLs (8 KB per item). Past that, adding
-  one shows a message that the list is full. Remove a few and try again.
+- Large blocked-URL, paused-site, override and hidden-element lists are split
+  across sync items, lifting the former 8 KB per-list limit. Chrome's overall
+  limit is about 100 KB. Retired chunks are replaced in the same atomic save,
+  so removing rules does not need room for another full copy. A full sync store
+  leaves the old data intact and shows an error. Back up and remove unneeded entries to free space.
+- While cloud sync delivers chunks, the last complete local copy remains in use.
+  Editing waits for the complete incoming list. Keep other computers on 1.9.0
+  or later before growing lists beyond the old limit.
+- Daily history keeps 90 local calendar days, including today. Existing
+  `stats-*` and `blockStats` records migrate automatically. History stays on
+  this computer and is separate from settings backups.
 
 **Backups** are for getting your settings somewhere sync doesn't reach.
 
@@ -373,9 +389,9 @@ in the header when blocking is off everywhere.
 - **Import backup** adds the file's URLs and paused sites to what you
   already have. Nothing gets removed. The switches take the file's
   settings. Site overrides merge by hostname and feature; hidden selectors
-  merge without duplicates. Older backups remain supported. Each new list
-  has its own sync item quota; a failed save is reported rather than silently
-  discarding existing rules.
+  merge without duplicates. Older backups remain supported, and exports contain
+  normal lists regardless of their internal storage format. A failed save is
+  reported without discarding existing rules.
 
 ## Ad lists
 
@@ -433,7 +449,8 @@ This extension:
 
 | Permission | What it's for |
 | --- | --- |
-| `storage` | Your block list, switches, paused sites, site overrides, hidden elements, the log, today's count and 30 days of daily counts |
+| `storage` | Your block list, switches, paused sites, site overrides, hidden elements, the log and today's count |
+| `unlimitedStorage` | Protects the 90-day local IndexedDB history from quota pressure and eviction; does not increase Chrome sync capacity |
 | `declarativeNetRequest` | The blocking rules, the pause rule and the IMA swap |
 | `declarativeNetRequestFeedback` | Seeing which requests were blocked, for the log, today's count and the charts (unpacked installs only) |
 | `scripting` | Loading the picker, the autoplay stopper and the heavy ad check into pages |
@@ -475,12 +492,16 @@ This extension:
   ad scripts that reload slots some other way aren't slowed.
   On pages without ads it leaves an empty `googletag` command queue behind,
   the same thing Google's own setup snippet creates.
-- Stop ad redirects protects the top page. Popups created through a frame's
-  own window, automatic form submissions, same-site redirect chains and
-  targeted attempts to replace the page-world guard can still bypass it.
+- Stop ad redirects protects top-page navigation and popups inside frames.
+  Automatic form submissions, same-site redirect chains and targeted attempts
+  to replace page-world hooks can still bypass it.
   Scripted sign-in buttons receive a brief exception; a malicious script can
   borrow that specific gesture. Delayed or unusual legitimate redirects may
   need a site exception. This is an ad nuisance filter, not a security boundary.
+- Child-frame Play controls must have a recognizable Play/Watch/Resume/Start
+  label, and belong to the parent player's nearby container or name it through
+  the iframe's `aria-controls`. Unlabeled or unrelated remote controls may need
+  an autoplay exception.
 - The IMA stand-in covers `ima3.js` only, not Google's live-stream ad
   engine (`ima3_dai.js`).
 - The block list holds about 300 URLs, the most Chrome sync allows.
@@ -491,6 +512,7 @@ This extension:
 
 | Version | Date | Highlights |
 | --- | --- | --- |
+| 1.9.0 | 10-31-2026 | Child-frame popup/playback coverage, larger synced lists, 90-day IndexedDB history, narrow-window tables |
 | 1.8.1 | 10-31-2026 | More click hijacks and popunders stopped, audible autoplay protection, article player docking, URL entry race fixed |
 | 1.8.0 | 10-30-2026 | Pinned ads scroll away, shield icon, autoplay no longer slips through when you scroll with the keyboard |
 | 1.7.0 | 10-28-2026 | Popup reordered with a Blocking card, URL match modes with a preview, Undo, ten-minute pause, settings opens on activity |

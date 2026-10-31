@@ -38,3 +38,5 @@ for a new one.
 | [023](023-stop-ad-redirects-cancels-unclicked-cross-site-navigations.md) | Stop ad redirects cancels cross-site navigations nobody clicked for | Draft | 2026-10-27 |
 | [024](024-sync-frames-are-also-matched-by-url-pattern-rules.md) | Sync frames are also matched by three URL-pattern rules | Draft | 2026-10-27 |
 | [025](025-pinned-ads-are-unpinned-with-css-not-hidden.md) | Pinned ads are un-pinned with CSS, not hidden or blocked | Draft | 2026-10-28 |
+| [026](026-history-and-large-synced-lists.md) | 90-day local history in IndexedDB and chunked sync lists | Draft (1.9.0) | 2026-10-31 |
+| [027](027-child-frame-gestures-and-popup-guards.md) | Child-frame gestures and popup guards | Draft (1.9.0) | 2026-10-31 |

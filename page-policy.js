@@ -23,9 +23,27 @@
     aggressiveHeavyAds: false,
     cosmetic: true,
   };
-  let state = {};
+  let state = { pausedEverywhere: true };
   let temporaryPauses = {};
+  const listeners = new Set();
+  const domListeners = [];
+  let root = document.documentElement;
+  // document.open() removes DOM listeners without creating a new extension
+  // world. Watch only root replacement, never the page's subtree or a timer.
+  new MutationObserver(() => {
+    if (root === document.documentElement) return;
+    root = document.documentElement;
+    for (const [target, type, callback, options] of domListeners)
+      target.addEventListener(type, callback, options);
+    for (const callback of listeners) callback();
+  }).observe(document, { childList: true });
   const policy = (globalThis.subtlePolicy = {
+    listen(target, type, callback, options) {
+      domListeners.push([target, type, callback, options]);
+      target.addEventListener(type, callback, options);
+    },
+    subscribe(callback) { listeners.add(callback); return () => listeners.delete(callback); },
+    get hiddenElements() { return state.hiddenElements ?? []; },
     site,
     enabled(key) {
       if (
@@ -49,28 +67,21 @@
       return custom[key] ?? state.settings?.[key] ?? defaults[key];
     },
   });
-  policy.ready = Promise.all([
-    chrome.storage.sync.get([
-      "settings",
-      "siteSettings",
-      "pausedSites",
-      "pausedEverywhere",
-    ]),
-    chrome.storage.local.get("temporaryPauses"),
-  ]).then(([value, local]) => {
-    state = value;
-    temporaryPauses = local.temporaryPauses ?? {};
-  });
+  let refreshes = Promise.resolve();
+  function refresh() {
+    refreshes = refreshes.then(async () => {
+      const [response, local] = await Promise.all([
+        chrome.runtime.sendMessage({ action: "getPagePolicy" }),
+        chrome.storage.local.get("temporaryPauses"),
+      ]);
+      if (response?.state) state = response.state;
+      temporaryPauses = local.temporaryPauses ?? {};
+      for (const callback of listeners) callback();
+    }).catch(() => {}); // Reloaded extensions invalidate old content scripts.
+    return refreshes;
+  }
+  policy.ready = refresh();
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "local" && changes.temporaryPauses)
-      temporaryPauses = changes.temporaryPauses.newValue ?? {};
-    if (area !== "sync") return;
-    for (const key of [
-      "settings",
-      "siteSettings",
-      "pausedSites",
-      "pausedEverywhere",
-    ])
-      if (changes[key]) state[key] = changes[key].newValue;
+    if (area === "sync" || (area === "local" && changes.temporaryPauses)) refresh();
   });
 })();

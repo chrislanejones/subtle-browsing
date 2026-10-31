@@ -1,3 +1,4 @@
+import { readSync, onSyncChanged } from "./sync-storage.js";
 import { mutate } from "./storage-client.js";
 const STORAGE_KEY = "blockedUrls";
 export const SYNC_FULL_MESSAGE =
@@ -123,7 +124,7 @@ export function rulePreview(input, mode) {
   return `${value} and its subdomains, on every site. Paths are not restricted.`;
 }
 export async function getBlockedUrls() {
-  return (await chrome.storage.sync.get(STORAGE_KEY))[STORAGE_KEY] ?? [];
+  return (await readSync(STORAGE_KEY))[STORAGE_KEY] ?? [];
 }
 export async function addBlockedUrl(url, mode = "auto") {
   return (await mutate("blockUrl", { url, mode })).added;
@@ -132,8 +133,5 @@ export async function removeBlockedUrl(url) {
   return mutate("removeUrl", { url });
 }
 export function onBlockedUrlsChanged(callback) {
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "sync" && changes[STORAGE_KEY])
-      callback(changes[STORAGE_KEY].newValue ?? []);
-  });
+  onSyncChanged([STORAGE_KEY], (data) => callback(data[STORAGE_KEY] ?? []));
 }

@@ -1,5 +1,5 @@
 // The settings page overview: totals, charts and the "What gets blocked"
-// table, fed by the stats-YYYY-MM-DD keys the worker keeps
+// table, fed by the local IndexedDB history the worker keeps
 
 import { test, expect } from "./helpers/extension.js";
 import { FIRST } from "./helpers/env.js";
@@ -19,7 +19,7 @@ test("a block is counted by type, blocked domain and the site it was on", async 
   await page.goto(`${FIRST}/pause.html`);
   await expect
     .poll(
-      async () => (await ext.getLocal(`stats-${today()}`))[`stats-${today()}`],
+      async () => (await ext.sendMessage({ action: "getHistory" })).days[today()],
     )
     .toEqual({
       types: { personal: 1 },
@@ -34,25 +34,22 @@ test("a block is counted by type, blocked domain and the site it was on", async 
   });
 });
 
-const statsKeys = async (ext) =>
-  Object.keys(await ext.getLocal())
-    .filter((k) => k.startsWith("stats-"))
-    .sort();
+const statsKeys = async (ext) => Object.keys((await ext.sendMessage({ action: "getHistory" })).days).sort();
 const day = (types) => ({ types, hosts: {}, pages: {} });
 
-test("the first block of a day drops days past 30", async ({ ext, page }) => {
+test("the first block of a day drops days past 90", async ({ ext, page }) => {
   await ext.setLocal({
-    [`stats-${daysAgo(29)}`]: day({ video_ads: 1 }),
-    [`stats-${daysAgo(30)}`]: day({ video_ads: 1 }),
+    [`stats-${daysAgo(89)}`]: day({ video_ads: 1 }),
+    [`stats-${daysAgo(90)}`]: day({ video_ads: 1 }),
   });
   await ext.setBlockedUrls(["localhost"]);
   await page.goto(`${FIRST}/pause.html`);
   await expect
     .poll(() => statsKeys(ext))
-    .toEqual([`stats-${daysAgo(29)}`, `stats-${today()}`]);
+    .toEqual([daysAgo(89), today()]);
 });
 
-test("the single blockStats key from the first charts version is split into days", async ({
+test("legacy blockStats migrates into IndexedDB without losing earlier counts", async ({
   ext,
   page,
 }) => {
@@ -60,19 +57,17 @@ test("the single blockStats key from the first charts version is split into days
     blockStats: {
       [daysAgo(1)]: day({ video_ads: 4 }),
       [today()]: day({ personal: 2 }),
-      [daysAgo(40)]: day({ video_ads: 9 }),
+      [daysAgo(100)]: day({ video_ads: 9 }),
     },
   });
   await ext.setBlockedUrls(["localhost"]);
   await page.goto(`${FIRST}/pause.html`);
   await expect
     .poll(() => statsKeys(ext))
-    .toEqual([`stats-${daysAgo(1)}`, `stats-${today()}`]);
+    .toEqual([daysAgo(1), today()]);
   expect(await ext.getLocal("blockStats")).toEqual({});
   // Today's earlier counts are kept and added to
-  expect(
-    (await ext.getLocal(`stats-${today()}`))[`stats-${today()}`].types,
-  ).toEqual({ personal: 3 });
+  await expect.poll(async () => (await ext.sendMessage({ action: "getHistory" })).days[today()].types).toEqual({ personal: 3 });
 });
 
 test.describe("overview", () => {

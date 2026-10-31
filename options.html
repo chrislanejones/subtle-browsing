@@ -356,6 +356,27 @@
         margin-top: var(--space-sm);
       }
 
+      .history-range { display: flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
+      .history-range select { font: inherit; color: inherit; background: var(--color-surface); padding: 5px; border: 1px solid var(--color-line); border-radius: var(--radius-sm); }
+      .section-head { flex-wrap: wrap; gap: 8px; }
+      @media (max-width: 640px) {
+        .table-wrap { overflow: visible; }
+        table, tbody { display: block; }
+        thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+        tbody tr { display: block; padding: 12px; border-top: 1px solid var(--color-line); }
+        tbody tr:first-child { border-top: none; }
+        tbody th { display: block; padding: 0 0 8px; border: none; white-space: normal; }
+        tbody td, tbody td.num, tbody td.url {
+          display: block; position: relative; padding: 4px 0 4px 104px; border: none;
+          text-align: left; white-space: normal; max-width: none; overflow: visible;
+          overflow-wrap: anywhere; min-height: 24px;
+        }
+        td[data-label]::before { content: attr(data-label); position: absolute; left: 0; width: 96px; font-weight: 500; color: var(--color-ink-2); }
+        .table-view tbody tr { padding-inline: 0; }
+        .col-label { font-size: 10px; }
+        .columns { gap: 2px; }
+      }
+
       /* Settings below the overview */
       .settings-grid {
         display: grid;
@@ -469,8 +490,12 @@
 
       <div class="grid-2">
         <section class="card panel" aria-labelledby="perDayHeading">
-          <h3 id="perDayHeading">Blocks per day</h3>
-          <p class="note">Last 14 days, by type</p>
+          <div class="section-head"><h3 id="perDayHeading">Blocks per day</h3>
+            <label class="history-range">Show <select id="historyRange" aria-label="History range">
+              <option value="14">14 days</option><option value="30">30 days</option><option value="90">90 days</option>
+            </select></label></div>
+          <p class="note">By type. History stays on this device for 90 days.</p>
+          <p id="historyStatus" class="note" role="status" hidden></p>
           <div id="perDay"></div>
         </section>
         <section class="card panel" aria-labelledby="byTypeHeading">

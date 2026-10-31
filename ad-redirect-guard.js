@@ -1,5 +1,5 @@
 // Stops unwanted cross-site redirects and click-triggered popunders.
-// Runs in the top page's own world. Google's ad frames are often same-origin
+// Runs in each frame's own world. Google's ad frames are often same-origin
 // (no src), so an ad's script can set top.location; Chrome only blocks that
 // for cross-origin frames. The Navigation API's navigate event lets the page
 // cancel it. A link click or form, the user's own address bar, reloads and
@@ -8,7 +8,21 @@
 (() => {
   if (!window.navigation) return;
   let on = false;
-  window.addEventListener("subtle-page-policy", (event) => {
+  const listeners = [];
+  const listen = (target, type, callback, options) => {
+    listeners.push([target, type, callback, options]);
+    target.addEventListener(type, callback, options);
+  };
+  let root = document.documentElement;
+  new MutationObserver(() => {
+    if (root === document.documentElement) return;
+    root = document.documentElement;
+    intent = null;
+    for (const [target, type, callback, options] of listeners)
+      target.addEventListener(type, callback, options);
+    window.dispatchEvent(new Event("subtle-page-policy-request"));
+  }).observe(document, { childList: true });
+  listen(window, "subtle-page-policy", (event) => {
     on = event.detail?.adRedirectGuard === true;
   });
 
@@ -32,7 +46,7 @@
     return false;
   }
   for (const type of ["pointerdown", "click", "keydown"])
-    window.addEventListener(type, (event) => {
+    listen(window, type, (event) => {
       if (!event.isTrusted) return;
       if ((type === "keydown" && !["Enter", " "].includes(event.key)) ||
           (type !== "keydown" && event.button !== 0)) {
@@ -67,8 +81,14 @@
     if (!on) return Reflect.apply(originalOpen, this, args);
     const target = String(args[1] ?? "_blank").toLowerCase();
     // These go through the navigate listener; don't consume the intent twice.
-    if (["_self", "_top", "_parent"].includes(target))
-      return Reflect.apply(originalOpen, this, args);
+    if (["_self", "_top", "_parent"].includes(target)) {
+      if (window === top || target === "_self") return Reflect.apply(originalOpen, this, args);
+      let destination;
+      try { destination = new URL(args[0] || "about:blank", document.baseURI); } catch { return null; }
+      if (intended(destination)) return Reflect.apply(originalOpen, this, args);
+      stopped("redirect", destination);
+      return null;
+    }
     let url;
     try { url = new URL(args[0] || "about:blank", document.baseURI); }
     catch { return Reflect.apply(originalOpen, this, args); }
@@ -85,7 +105,8 @@
     try { url = new URL(link.href, document.baseURI); } catch { return false; }
     const target = (link.target || document.querySelector("base[target]")?.target || "_self").toLowerCase();
     const popup = !["_self", "_top", "_parent"].includes(target);
-    if (!popup && local(url)) return false;
+    // Embedded sign-in/media frames can navigate themselves while loading.
+    if (!popup && (local(url) || (window !== top && target === "_self"))) return false;
     if (intended(url)) return false;
     stopped(popup ? "popup" : "redirect", url);
     return true;
@@ -101,14 +122,14 @@
       },
     });
   }
-  window.addEventListener("click", (event) => {
+  listen(window, "click", (event) => {
     if (!on || event.isTrusted) return;
     const link = event.composedPath().find((node) => node instanceof Element && node.matches("a[href], area[href]"));
     if (link && blockSyntheticLink(link)) event.preventDefault();
   }, true);
 
-  navigation.addEventListener("navigate", (event) => {
-    if (!on || !event.cancelable) return;
+  listen(navigation, "navigate", (event) => {
+    if (!on || window !== top || !event.cancelable) return;
     if (event.navigationType === "reload" || event.navigationType === "traverse")
       return;
     // Sign-in pages post forms to each other on their own

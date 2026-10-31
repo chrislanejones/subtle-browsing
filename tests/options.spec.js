@@ -13,6 +13,21 @@ const jsonFile = (name, value) => ({
   buffer: Buffer.from(typeof value === "string" ? value : JSON.stringify(value)),
 });
 
+test("an early backup import works while initial history is still loading", async ({ ext, page }) => {
+  await page.addInitScript(() => {
+    const send = chrome.runtime.sendMessage.bind(chrome.runtime);
+    chrome.runtime.sendMessage = async (...args) => {
+      const response = await send(...args);
+      if (args[0]?.action === "getHistory") await new Promise((resolve) => setTimeout(resolve, 1000));
+      return response;
+    };
+  });
+  await page.goto(ext.url("options.html"));
+  await page.locator("#importFile").setInputFiles(jsonFile("early.json", { blockedUrls: ["early.example"] }));
+  await expect(page.locator("#backupStatus")).toContainText("Imported 1 URLs");
+  await expect(rows(page, "urlList")).toHaveText(["early.example"]);
+});
+
 test.describe("settings page", () => {
   test.beforeEach(async ({ ext, page }) => {
     await ext.setSync({ blockedUrls: ["connatix.com", "teads.tv", "primis.tech"], pausedSites: ["example.org"] });

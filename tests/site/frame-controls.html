@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><title>Frame-owned controls</title>
+<style>#player { width:420px; } iframe { width:200px; height:160px; } video { width:200px; }</style>
+<div id="player"><video id="video" muted loop src="/clip.webm"></video><iframe id="controls" title="Player controls"></iframe></div>
+<article><video id="unrelated" muted loop src="/clip.webm"></video></article>
+<script>
+const params = new URLSearchParams(location.search);
+const control = document.getElementById('controls');
+const child = `/frame-control.html?${params}`;
+if (params.has('blank') || params.has('srcdoc')) fetch(child).then(r => r.text()).then(html => {
+  html = '<script>window.frameParameters=' + JSON.stringify('?' + params) + ';<\/script>' + html;
+  if (params.has('srcdoc')) control.srcdoc = html;
+  else { control.contentDocument.open(); control.contentDocument.write(html); control.contentDocument.close(); }
+});
+else control.src = (params.has('same') ? '__FIRST__' : '__THIRD__') + child;
+if (params.has('outside')) document.body.append(control);
+addEventListener('message', async event => {
+  if (event.data?.loginReport) window.loginReport = event.data.loginReport;
+  if (event.data?.request === 'play') {
+    window.attempted = true;
+    try { await document.getElementById(event.data.which || 'video').play(); } catch {}
+    window.finished = true;
+  }
+});
+</script>

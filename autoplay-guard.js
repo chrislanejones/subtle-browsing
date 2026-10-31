@@ -1,5 +1,4 @@
-(async () => {
-  await subtlePolicy.ready;
+(() => {
   // Pauses videos without a play gesture. An unrelated click can give an ad
   // permission to start with sound too. A video the user starts runs normally.
   // background.js registers this in every frame while the setting is on.
@@ -71,13 +70,6 @@
     container.before(placeholder);
     record.placeholder = placeholder;
   }
-  window.addEventListener("message", (event) => {
-    if (
-      event.source === parent &&
-      event.data === "url-blocker:restore-autoplay"
-    )
-      for (const video of waiting) restoreVideo(video);
-  });
 
   // Any click or key press gives the page user activation for a few seconds,
   // so reading with PageDown would let a player that autoplays as it scrolls
@@ -87,13 +79,50 @@
   const CLICK_WINDOW_MS = 1000;
   const PLAYER_DEPTH = 4;
   let lastGesture = null;
+  const stoppedAt = new WeakMap();
+  let lastRelay = null;
+  async function relayPlay() {
+    if (window === parent) return;
+    try {
+      const { token } = await chrome.runtime.sendMessage({ action: "frameGesture", kind: "play" });
+      if (token) parent.postMessage({ type: "subtle:frame-gesture", kind: "play", token }, "*");
+    } catch {}
+  }
+  subtlePolicy.listen(window, "message", async (event) => {
+    const data = event.data;
+    if (data?.type !== "subtle:frame-gesture" || typeof data.token !== "string") return;
+    const restoring = data.kind === "restore" && event.source === parent && parent !== window;
+    const frame = restoring ? null : [...document.querySelectorAll("iframe, frame")]
+      .find((node) => node.contentWindow === event.source);
+    if (!restoring && (!frame || data.kind !== "play")) return;
+    try {
+      const result = await chrome.runtime.sendMessage({ action: "verifyFrameGesture",
+        token: data.token, kind: data.kind, origin: event.origin });
+      if (!result?.valid) return;
+      if (restoring) {
+        for (const video of waiting) restoreVideo(video);
+        return;
+      }
+      lastGesture = { target: frame, fromFrame: true, time: performance.now(), controls: frame.getAttribute("aria-controls"), playControl: false };
+      // The page's play() may run before the isolated-world round trip. Resume
+      // only a just-paused video belonging to this frame's player container.
+      for (const video of document.querySelectorAll("video"))
+        if (performance.now() - (stoppedAt.get(video) ?? -Infinity) < CLICK_WINDOW_MS && startedByUser(video)) {
+          recentPauses.delete(video);
+          if (unloaded.has(video)) restoreVideo(video);
+          else video.play().catch(() => {});
+        }
+      if (window !== parent && result.token)
+        parent.postMessage({ ...data, token: result.token }, "*");
+    } catch {}
+  });
   function controlLabel(control) {
     const labelledBy = control.getAttribute("aria-labelledby")?.split(/\s+/)
       .map((id) => document.getElementById(id)?.textContent ?? "").join(" ").trim();
     return labelledBy || control.getAttribute("aria-label") || control.title || control.value || control.textContent;
   }
   for (const type of ["pointerdown", "click", "keydown"])
-    document.addEventListener(
+    subtlePolicy.listen(document,
       type,
       (event) => {
         if (!event.isTrusted) return;
@@ -116,6 +145,11 @@
           playControl: control ? /^(play|watch|resume|start)(\b|\s)/i.test(controlLabel(control).trim()) : false,
           time: performance.now(),
         };
+        if (lastGesture.playControl && !(type === "click" && lastRelay?.target === target &&
+            performance.now() - lastRelay.time < CLICK_WINDOW_MS)) {
+          lastRelay = { target, time: performance.now() };
+          relayPlay();
+        }
       },
       true,
     );
@@ -145,6 +179,7 @@
 
   function startedByUser(video) {
     if (!navigator.userActivation.isActive || !lastGesture) return false;
+    if (lastGesture.fromFrame && performance.now() - lastGesture.time >= CLICK_WINDOW_MS) return false;
     if (onPlayer(lastGesture.target, video)) return true;
     if (performance.now() - lastGesture.time >= CLICK_WINDOW_MS) return false;
     const { controls, playControl } = lastGesture;
@@ -230,36 +265,41 @@
     video.load();
   }
 
-  document.addEventListener(
-    "play",
-    (event) => {
-      const video = event.target;
-      if (!(video instanceof HTMLVideoElement)) return;
-      if (!shouldPause(video)) {
-        undock(video);
-        return;
-      }
+  function checkVideo(video) {
+    if (!(video instanceof HTMLVideoElement) || video.paused) return;
 
-      if (unloaded.has(video)) {
-        // The player loaded a new ad into the same element
-        if (video.currentSrc) unload(video);
-        return;
-      }
+    if (!shouldPause(video)) {
+      undock(video);
+      return;
+    }
 
-      const now = performance.now();
-      const pauses = (recentPauses.get(video) ?? []).filter(
-        (time) => now - time < RESTART_WINDOW_MS,
-      );
-      pauses.push(now);
-      recentPauses.set(video, pauses);
+    if (unloaded.has(video)) {
+      // The player loaded a new ad into the same element
+      if (video.currentSrc) unload(video);
+      return;
+    }
 
-      if (pauses.length > RESTART_LIMIT) {
-        unload(video);
-      } else {
-        video.pause();
-      }
-      if (pauses.length === 1) hideFloatingPlayer(video);
-    },
-    true, // Media events don't bubble, so listen in the capture phase
-  );
+    const now = performance.now();
+    stoppedAt.set(video, now);
+    const pauses = (recentPauses.get(video) ?? []).filter(
+      (time) => now - time < RESTART_WINDOW_MS,
+    );
+    pauses.push(now);
+    recentPauses.set(video, pauses);
+
+    if (pauses.length > RESTART_LIMIT) {
+      unload(video);
+    } else {
+      video.pause();
+    }
+    if (pauses.length === 1) hideFloatingPlayer(video);
+  }
+  subtlePolicy.listen(document, "play", (event) => checkVideo(event.target), true);
+  const checkExisting = () => {
+    for (const video of document.querySelectorAll("video")) checkVideo(video);
+  };
+  // Capture gestures immediately; a video may start before the asynchronous
+  // policy arrives. Scan once when ready; later settings updates must not
+  // reconsider a video the user has already started watching.
+  subtlePolicy.ready.then(checkExisting);
 })();

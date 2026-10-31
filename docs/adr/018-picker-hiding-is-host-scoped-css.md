@@ -29,3 +29,9 @@ Continuous DOM rescanning: needless page cost for selectors CSS already handles.
 A layout change moves a structural selector onto article content. Watch for
 reports of missing content that disappear after Unhide. Prefer stable IDs and
 keep every rule removable from both management surfaces.
+
+## 1.9.0 revision (10-31-2026)
+
+[ADR-026](026-history-and-large-synced-lists.md) replaces the single-item list
+representation when values grow. Small lists retain their existing format;
+all growing lists can span verified chunks within Chrome's total sync quota.

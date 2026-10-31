@@ -7,6 +7,45 @@ Version 1.6.0 is identified by the source tag `v1.6.0` on both remotes.
 
 Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
+## 1.9.0 — 10-31-2026
+
+Source tag: `v1.9.0`. Prepared for unpacked use and Web Store submission;
+not yet published on the Chrome Web Store.
+
+### Added
+- **Child-frame coverage:** popup interception runs in each frame. Trusted,
+  labeled Play controls can start a nearby parent player, including through
+  nested frames. Short-lived, single-use tickets from isolated scripts verify
+  the gesture. Unrelated clicks, synthetic clicks and forged messages remain
+  blocked. Restore controls use the same verification.
+- **Large synced lists:** blocked URLs, paused sites, site overrides and hidden
+  elements span hashed chunks when needed. Readers verify complete data,
+  retain a last-good local copy during partial sync, and reject edits until the
+  incoming list is complete. Total Chrome sync limits still apply; failed
+  writes preserve prior data. Existing backup formats remain supported.
+- **90-day IndexedDB history:** transaction-based migration from both legacy
+  formats, date-range queries, automatic retention and a 14/30/90-day selector.
+  `unlimitedStorage` protects local history; it does not enlarge sync quotas.
+- **Narrow-window tables:** labeled stacked rows, wrapping domains and preserved
+  table semantics at 640px and below, including chart data tables.
+
+### Fixed
+- Capture play gestures before policy finishes loading and check videos that
+  started before the guard attached.
+- Attach settings controls before asynchronous history and list reads, so an
+  early backup import is not swallowed during startup.
+- Reconnect guard listeners after `document.open()` rewrites a blank iframe.
+  The observer watches document-root replacement only, with no polling.
+- Update all registered content-script options during upgrades so previously
+  installed top-frame-only guards gain the new child-frame coverage.
+- A failed initial history migration is retried before new counts can obscure
+  legacy data; interrupted cleanup can retry without overwriting newer counts.
+
+### Updating
+Keep the existing unpacked folder, update its files, then click Reload at
+`chrome://extensions` and refresh webpages. No removal or reinstallation is
+needed. The same extension ID retains rules and local history.
+
 ## 1.8.1 — 10-31-2026
 
 Source tag: `v1.8.1`. Prepared for unpacked use and Web Store submission;

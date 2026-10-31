@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "URL Blocker",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "description": "Stop intrusive video, newsletter prompts and heavy ads while keeping ordinary banners.",
   "minimum_chrome_version": "121",
   "permissions": [
     "storage",
+    "unlimitedStorage",
     "declarativeNetRequest",
     "declarativeNetRequestFeedback",
     "scripting",

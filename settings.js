@@ -1,3 +1,4 @@
+import { readSync, onSyncChanged } from "./sync-storage.js";
 import { mutate } from "./storage-client.js";
 // On/off switches and paused sites, shared by the background, popup and
 // settings page. Stored in chrome.storage.sync like the block list.
@@ -43,7 +44,7 @@ export function siteKey(hostname) {
 
 export async function getPausedSites() {
   const { [PAUSED_SITES_KEY]: pausedSites = [] } =
-    await chrome.storage.sync.get(PAUSED_SITES_KEY);
+    await readSync(PAUSED_SITES_KEY);
   return pausedSites;
 }
 
@@ -69,7 +70,7 @@ export const matchesSite = (site, parent) =>
   site === parent || site.endsWith(`.${parent}`);
 export async function getPauseState(site) {
   const [sync, local] = await Promise.all([
-    chrome.storage.sync.get(["pausedEverywhere", "pausedSites"]),
+    readSync(["pausedEverywhere", "pausedSites"]),
     chrome.storage.local.get("temporaryPauses"),
   ]);
   const parents = (sync.pausedSites ?? [])
@@ -93,11 +94,7 @@ export async function getPauseState(site) {
 }
 
 export function onPausedSitesChanged(callback) {
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "sync" && changes[PAUSED_SITES_KEY]) {
-      callback(changes[PAUSED_SITES_KEY].newValue || []);
-    }
-  });
+  onSyncChanged([PAUSED_SITES_KEY], (data) => callback(data[PAUSED_SITES_KEY] ?? []));
 }
 
 // The popup's "Off everywhere": one flag that pauses every site at once
@@ -142,7 +139,7 @@ export const FEATURES = {
   aggressiveHeavyAds: "All heavy third-party embeds",
 };
 export async function getSiteSettings() {
-  return (await chrome.storage.sync.get("siteSettings")).siteSettings ?? {};
+  return (await readSync("siteSettings")).siteSettings ?? {};
 }
 export function validSite(site) {
   return (

@@ -1,3 +1,4 @@
+import { readSync } from "./sync-storage.js";
 import { mountRuleForm } from "./rule-form.js";
 import { mutate } from "./storage-client.js";
 import { mountSavedRules } from "./controls.js";
@@ -31,14 +32,12 @@ const blockedStatus = $("blockedStatus");
 const backupStatus = $("backupStatus");
 
 $("version").textContent = `Version ${chrome.runtime.getManifest().version}`;
-await mountOverview();
 async function renderPowerState() {
   const off = await getPausedEverywhere();
   $("powerState").textContent = off ? "Off everywhere" : "Blocking is on";
   $("powerState").dataset.off = off;
   $("resumeBlocking").hidden = !off;
 }
-await renderPowerState();
 onPausedEverywhereChanged(renderPowerState);
 $("resumeBlocking").addEventListener("click", async () => {
   $("resumeBlocking").disabled = true;
@@ -76,7 +75,6 @@ function renderToggles(settings) {
   for (const [key, checkbox] of Object.entries(toggles))
     checkbox.checked = settings[key];
 }
-renderToggles(await getSettings());
 onSettingsChanged(renderToggles);
 for (const [key, checkbox] of Object.entries(toggles)) {
   checkbox.addEventListener("change", async () => {
@@ -121,7 +119,7 @@ function emptyRow(text) {
 }
 
 // Blocked URLs, newest first, filtered by the search box
-let blockedUrls = await getBlockedUrls();
+let blockedUrls = [];
 function renderBlockedUrls() {
   const query = searchInput.value.trim().toLowerCase();
   const shown = blockedUrls
@@ -185,7 +183,6 @@ async function renderPausedSites() {
   if (!rows.childNodes.length) rows.append(emptyRow("No paused sites."));
   $("pausedList").replaceChildren(rows);
 }
-await renderPausedSites();
 onPausedSitesChanged(renderPausedSites);
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.temporaryPauses) renderPausedSites();
@@ -222,28 +219,33 @@ document.addEventListener("visibilitychange", () => {
 
 // Backup. The file name date is MM-DD-YYYY, since a person reads it.
 $("exportButton").addEventListener("click", async () => {
-  const backup = {
-    app: "subtle-browsing",
-    version: chrome.runtime.getManifest().version,
-    exportedAt: new Date().toISOString(),
-    blockedUrls: await getBlockedUrls(),
-    pausedSites: await getPausedSites(),
-    settings: await getSettings(),
-    siteSettings: await getSiteSettings(),
-    hiddenElements:
-      (await chrome.storage.sync.get("hiddenElements")).hiddenElements ?? [],
-  };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], {
-    type: "application/json",
-  });
-  const link = document.createElement("a");
-  const [year, month, day] = new Date().toLocaleDateString("en-CA").split("-");
-  link.href = URL.createObjectURL(blob);
-  link.download = `url-blocker-backup-${month}-${day}-${year}.json`;
-  link.click();
-  URL.revokeObjectURL(link.href);
-  backupStatus.className = "status ok";
-  backupStatus.textContent = "Backup saved to your downloads.";
+  try {
+    const backup = {
+      app: "subtle-browsing",
+      version: chrome.runtime.getManifest().version,
+      exportedAt: new Date().toISOString(),
+      blockedUrls: await getBlockedUrls(),
+      pausedSites: await getPausedSites(),
+      settings: await getSettings(),
+      siteSettings: await getSiteSettings(),
+      hiddenElements:
+        (await readSync("hiddenElements")).hiddenElements ?? [],
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
+      type: "application/json",
+    });
+    const link = document.createElement("a");
+    const [year, month, day] = new Date().toLocaleDateString("en-CA").split("-");
+    link.href = URL.createObjectURL(blob);
+    link.download = `url-blocker-backup-${month}-${day}-${year}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    backupStatus.className = "status ok";
+    backupStatus.textContent = "Backup saved to your downloads.";
+  } catch (error) {
+    backupStatus.className = "status";
+    backupStatus.textContent = error.message;
+  }
 });
 
 $("importButton").addEventListener("click", () => $("importFile").click());
@@ -347,4 +349,15 @@ $("importFile").addEventListener("change", async (event) => {
   }
 });
 
-await mountSavedRules(document.getElementById("savedRules"));
+// Install controls before awaiting storage or history. A slow initial read
+// must not swallow an early import, URL submission or switch change.
+const initialized = await Promise.allSettled([
+  mountOverview(),
+  renderPowerState(),
+  getSettings().then(renderToggles),
+  getBlockedUrls().then((urls) => { blockedUrls = urls; renderBlockedUrls(); }),
+  renderPausedSites(),
+  mountSavedRules(document.getElementById("savedRules")),
+]);
+for (const result of initialized)
+  if (result.status === "rejected") blockedStatus.textContent = result.reason.message;

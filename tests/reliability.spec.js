@@ -269,14 +269,10 @@ async function clickShadowButton(page, host, text) {
           .find(Boolean);
   const button = find(node);
   if (!button) throw new Error(`Missing ${text}`);
-  const { object } = await session.send("DOM.resolveNode", {
-    backendNodeId: button.backendNodeId,
-  });
-  await session.send("Runtime.callFunctionOn", {
-    objectId: object.objectId,
-    functionDeclaration: "function(){this.click()}",
-    userGesture: true,
-  });
+  await session.send("DOM.scrollIntoViewIfNeeded", { backendNodeId: button.backendNodeId });
+  const { model } = await session.send("DOM.getBoxModel", { backendNodeId: button.backendNodeId });
+  const quad = model.content;
+  await page.mouse.click((quad[0] + quad[4]) / 2, (quad[1] + quad[5]) / 2);
   await session.detach();
 }
 

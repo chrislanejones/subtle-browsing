@@ -13,9 +13,7 @@
         },
       }),
     );
+  subtlePolicy.listen(window, "subtle-page-policy-request", send);
   send();
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "sync" || (area === "local" && changes.temporaryPauses))
-      send(); // page-policy.js's listener already ran
-  });
+  subtlePolicy.subscribe(send);
 })();

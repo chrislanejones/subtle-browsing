@@ -1,3 +1,4 @@
+import { readSync, writeSync } from "./sync-storage.js";
 import {
   normalizeUrl,
   normalizeImportedRule,
@@ -8,7 +9,7 @@ import { FEATURES, normalizeSettings, validSite, siteKey } from "./settings.js";
 
 // Called only inside background.js's queue, including imports and picker edits.
 export async function applyMutation(operation, data) {
-  const current = await chrome.storage.sync.get(null);
+  const current = await readSync(null, { strict: true });
   let update;
   let result = {};
   switch (operation) {
@@ -155,7 +156,7 @@ export async function applyMutation(operation, data) {
       throw new Error("Unknown change.");
   }
   try {
-    await chrome.storage.sync.set(update);
+    await writeSync(update);
   } catch (error) {
     throw new Error(
       /quota.*bytes|bytes.*quota/i.test(error.message)

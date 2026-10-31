@@ -55,3 +55,9 @@ via `storage-client.js` and `storage-mutations.js`, including imports. This
 prevents simultaneous local windows from overwriting one another. Chrome Sync's
 cross-device conflict behavior and quotas remain unchanged. Temporary pauses
 use a local deadline and alarm instead of sync, and are excluded from backups.
+
+## 1.9.0 revision (10-31-2026)
+
+[ADR-026](026-history-and-large-synced-lists.md) replaces the single-item list
+representation when values grow. Small lists retain their existing format;
+all growing lists can span verified chunks within Chrome's total sync quota.
