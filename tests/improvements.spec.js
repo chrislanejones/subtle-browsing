@@ -49,6 +49,10 @@ test("heavy removal spares a legitimate embed, preserves banners and restores th
     await quietEval(page, () => document.getElementById("banner").naturalWidth),
   ).toBeGreaterThan(0);
   await clickShadowButton(page, "Restore this content");
+  // Restoration starts at about:blank in the parent's process. Wait for the
+  // third-party document before attaching its own DevTools session.
+  await expect.poll(() => page.frame({ name: "advert" })?.url())
+    .toBe(`${THIRD}/heavy-net.html`);
   await expect
     .poll(() =>
       quietEval(
@@ -82,6 +86,7 @@ test("site autoplay exception keeps personal URL blocks active", async ({
   await ext.setBlockedUrls(["localhost"]);
   await page.goto(`${FIRST}/pause.html`);
   const tabId = await ext.tabIdOf(page);
+  const reloaded = page.waitForEvent("load");
   expect(
     await ext.sendMessage({
       action: "setSiteSetting",
@@ -91,7 +96,7 @@ test("site autoplay exception keeps personal URL blocks active", async ({
       tabId,
     }),
   ).toEqual({ ok: true });
-  await page.waitForLoadState();
+  await reloaded;
   await expect
     .poll(() =>
       quietEval(page, () => ({

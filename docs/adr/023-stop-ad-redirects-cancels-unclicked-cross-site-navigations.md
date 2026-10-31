@@ -24,14 +24,43 @@ upgrade. 5 Playwright tests on a fixture with a no-src ad frame
 
 Live check: _pending (inspector result goes here)._
 
+## 1.8.1 revision (10-31-2026)
+
+The activation-window exception was too broad: scripts borrowed clicks on
+article text and Play buttons to redirect the tab or open a popunder. The
+updated top-page guard records trusted navigation controls. Links are bound
+to their captured destination; non-media buttons receive a one-second exception
+for scripted login/checkout. Reading keys and media controls do not grant a
+navigation exception. Native links, forms, reloads and traversals remain usable.
+
+The guard wraps `window.open` and synthetic anchor/area `click()` calls, including
+detached links and blank-window popunders. A capture listener also covers
+connected synthetic link events. Settings are checked on each call, so turning
+the switch off restores native behavior on existing pages. There is no polling.
+
+The [Navigation API explainer](https://github.com/WICG/navigation-api/blob/main/README.md#the-navigate-event)
+distinguishes native link/form activation from scripted navigation; button
+handlers setting location are not `userInitiated`. This is why a narrow button
+exception remains instead of relying only on that flag.
+
+Regression fixtures cover article and player click hijacks, reading keys,
+substituted link destinations, window.open/blank/synthetic-link popunders,
+intentional links/sign-in popups/forms, keyboard controls, live disabling,
+and the existing same-origin-frame redirect case. Rotating real ads still
+require separate live evidence; fixture results do not establish universal
+coverage.
+
 ## Consequences
 + Stops the scareware path at the first hop, whatever domain it rotates to.
 + Links, forms, the address bar, reloads, back/forward and same-site redirects
   pass.
 - A page script can spoof the policy event and turn the guard off for itself.
   That takes a targeted attack, not a generic ad.
-- A redirect fired during the activation window after the user's first click
-  or keypress anywhere on the page still passes.
+- The top-page wrappers do not cover a frame's own window.open, automatic
+  form submissions or same-site bounce chains. Scripts can still borrow the
+  explicit non-media button exception, replace these page-world wrappers or
+  bypass synthetic-link handling through lower-level APIs. This is a nuisance
+  filter, not a security boundary.
 - Navigations started from a cross-origin frame may not fire `navigate` in the
   top page at all; we rely on Chrome's intervention there.
 

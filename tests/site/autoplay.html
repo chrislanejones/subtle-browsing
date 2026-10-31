@@ -6,9 +6,13 @@
 <div id="player" tabindex="0"><video id="keyMuted" src="/clip.webm" muted loop width="160"></video></div>
 <button id="playSound" onclick="document.getElementById('userSound').play()">play sound</button>
 <iframe id="frame" src="__THIRD__/autoplay-frame.html" width="200" height="120"></iframe>
+<p id="articleText">Click here to keep reading the article.</p>
+<video id="remoteMuted" src="/clip.webm" muted loop width="160"></video>
+<span id="remoteLabel">Play</span>
+<button id="remotePlay" aria-labelledby="remoteLabel"><svg width="24" height="24"><rect width="24" height="24" /></svg></button>
 <script>
   // Counts play attempts, so "paused" can't pass just because nothing tried to play
-  window.plays = { mutedAuto: 0, userMuted: 0, userSound: 0, keyMuted: 0 };
+  window.plays = { mutedAuto: 0, userMuted: 0, userSound: 0, keyMuted: 0, remoteMuted: 0 };
   for (const id of Object.keys(plays)) document.getElementById(id).addEventListener('play', () => plays[id]++);
   // A player with keyboard controls, like JW Player's Space to play
   document.getElementById('player').addEventListener('keydown', (event) => {
@@ -16,5 +20,10 @@
   });
   // An ad player retrying play() later, still without a click
   setTimeout(() => document.getElementById('mutedAuto').play().catch(() => {}), 1000);
+  document.getElementById('remotePlay').onclick = (event) => {
+    event.currentTarget.textContent = 'Loading';
+    document.getElementById('remoteLabel').textContent = 'Pause';
+    setTimeout(() => document.getElementById('remoteMuted').play(), 300);
+  };
 </script>
 </body></html>

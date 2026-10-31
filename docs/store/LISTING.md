@@ -8,7 +8,7 @@ builds `dist/url-blocker-<version>.zip` from the last commit.
 
 | Field | Value |
 | --- | --- |
-| Upload | `dist/url-blocker-1.7.0.zip` |
+| Upload | `dist/url-blocker-1.8.1.zip` |
 | Short description | From `manifest.json`: "Stop intrusive video, newsletter prompts and heavy ads while keeping ordinary banners." |
 
 ## Store listing
@@ -26,6 +26,9 @@ builds `dist/url-blocker-<version>.zip` from the last commit.
 
 Rebuild the tiles with `node scripts/generate-promo-tiles.js`. They put the
 shield on the same white tile as the icon so it stands out on the dark card.
+
+Rebuild the screenshots with `node scripts/generate-store-screenshots.js`.
+They use a fresh profile with illustrative rules, not personal browser data.
 
 The screenshots leave out the blocked-today count and the charts. Chrome
 only reports blocked requests to unpacked installs, so store installs show
@@ -54,7 +57,8 @@ URL Blocker goes after the ads people actually hate and leaves normal banner ads
 
 What it stops, out of the box:
 • Video ads from the companies that serve them (Connatix, Primis, AnyClip, Teads, Celtra and others). Google's video ad engine gets a stand-in that says "no ads," so the page keeps working.
-• Muted videos that start playing before you click anything. Videos you start play normally.
+• Unwanted autoplay videos, muted or audible. Reading keys and unrelated clicks do not count as pressing Play. Videos you start play normally.
+• Pinned top-of-page ad banners scroll away as you read.
 • Heavy ads. An ad that downloads more than 4 MB or keeps your CPU busy gets unloaded, with a Restore button if you wanted it back.
 
 Switches you can turn on:
@@ -62,7 +66,7 @@ Switches you can turn on:
 • Website push-notification prompts
 • Ad refresh and the hidden cookie-sync frames ad auctions open
 • Slow ad refresh: each Google ad slot refreshes at most every 2 minutes
-• Stop ad redirects: an ad can't send the whole tab to another site without a click
+• Stop ad redirects: blocks unwanted redirects and top-page popunders triggered by article clicks or media controls
 
 Your own blocks:
 • Block a URL by domain, by one exact address, or with an advanced pattern, with a preview of what it will catch
@@ -82,7 +86,7 @@ Free and open source (MIT): https://github.com/chrislanejones/subtle-browsing
 
 | Field | Value |
 | --- | --- |
-| Single purpose | Blocks intrusive ads (video ads, muted autoplay, heavy ads, ad redirects) and URLs the user chooses, while leaving ordinary banner ads alone. |
+| Single purpose | Blocks intrusive ads (video ads, unwanted autoplay, heavy ads, ad redirects) and URLs the user chooses, while leaving ordinary banner ads alone. |
 | Remote code | No. Every script ships in the package, including the Google IMA stand-in. |
 | Data usage | Collects nothing. Tick the three certifications (no selling, no unrelated use, no creditworthiness use). |
 | Privacy policy URL | https://github.com/chrislanejones/subtle-browsing#privacy |

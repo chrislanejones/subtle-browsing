@@ -60,18 +60,28 @@ export function mountRuleForm(input, button, status, options = {}) {
     if (options.placeholders?.[select.value])
       input.placeholder = options.placeholders[select.value];
   };
-  select.addEventListener("change", renderPreview);
-  input.addEventListener("input", renderPreview);
+  let revision = 0;
+  const edited = () => {
+    revision++;
+    renderPreview();
+  };
+  select.addEventListener("change", edited);
+  input.addEventListener("input", edited);
   renderPreview();
   const add = async () => {
     if (button.disabled || !input.value.trim()) return;
     button.disabled = true;
+    const submittedRevision = revision;
     try {
       const value = normalizeUrl(input.value, select.value);
       const added = await addBlockedUrl(input.value, select.value);
       if (added) {
-        input.value = "";
-        renderPreview();
+        // Storage notifications can arrive before the save reply. Keep the
+        // next URL (and its match mode) if someone is already typing it.
+        if (revision === submittedRevision) {
+          input.value = "";
+          renderPreview();
+        }
         showUndo(status, `Blocked ${ruleLabel(value)}.`, () =>
           removeBlockedUrl(value),
         );

@@ -131,7 +131,7 @@ export function normalizeSettings(settings = {}) {
 }
 export const FEATURES = {
   videoAdRules: "Video ad companies",
-  autoplayGuard: "Muted autoplay videos",
+  autoplayGuard: "Autoplay videos",
   heavyAds: "Heavy ads",
   annoyanceRules: "Newsletter offers",
   notificationRules: "Notification requests",

@@ -68,8 +68,8 @@ const KINDS = [
   },
   {
     setting: "autoplayGuard",
-    name: "Muted autoplay videos",
-    what: "Paused until you click; videos you start still play",
+    name: "Autoplay videos",
+    what: "Paused, even with sound; videos you start still play",
     rule: "Page script",
   },
   {
@@ -81,7 +81,7 @@ const KINDS = [
   {
     setting: "adRedirectGuard",
     name: "Stop ad redirects",
-    what: "Ads can't send the tab to another site without a click",
+    what: "Unwanted redirects and click-triggered popups",
     rule: "Page script",
   },
   {

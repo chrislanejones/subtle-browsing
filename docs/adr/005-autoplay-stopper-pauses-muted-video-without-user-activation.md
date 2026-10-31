@@ -17,11 +17,36 @@ its sources and calls `load()`), which fires no pause event. The first
 pause also hides a `position: fixed` ancestor smaller than half the
 window. The switch unregisters the script from every page.
 
+## 1.8.1 revision (10-31-2026)
+
+Browser activation alone is insufficient: PageDown and unrelated clicks allow
+advertising players to start, including with sound. The guard now records only
+trusted pointer/click/play-key events. Playback needs a nearby player gesture
+or a labeled Play/Watch/Resume/Start control; `aria-controls` binds an external
+control to its player when present. Accessible names via `aria-labelledby` are
+captured at the gesture, before a player replaces its icon or label. Reading keys and synthetic clicks do not
+count. Article/layout ancestors are not treated as player controls. The switch
+is labeled **Autoplay videos** and applies to audible autoplay too.
+
+A small fixed player with an in-flow parent is returned to that parent using
+`position: static !important`, preserving the prior inline position and priority.
+Intentional playback restores the original positioning. A standalone floating
+ad with no in-flow home remains hidden with a restore control. Unloaded videos
+also have restore controls; restored videos are exempt for the page lifetime.
+Existing content scripts consult live settings, and disabling the switch stops
+enforcement without requiring a reload; it prevents future injection as before.
+
+Limits: closed shadow roots are not traversed. A control inside a child frame
+cannot authorize a top-page video. Unlabeled external custom play controls or
+very delayed playback may need a site exception. Labeled external play controls
+without `aria-controls` retain a short compatibility exception. These are
+heuristics for unwanted playback, not a security boundary.
+
 ## Consequences
 + Catches players no list knows about; videos you start play normally.
-+ Off means off: no script left in any page.
++ Off disables enforcement in existing pages and stops future injection.
 - A site's own muted autoplay video (a background loop) gets paused too.
-- An unloaded video stays unloaded, even if you click it later.
++ Unloaded videos can be restored through the extension’s recovery control.
 - In-article ad boxes that aren't `fixed` stay on the page, empty.
 
 ## Alternatives rejected

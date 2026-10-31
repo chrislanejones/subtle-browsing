@@ -4,7 +4,7 @@
 
 # URL Blocker
 
-**Version 1.8.0** (10-30-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
+**Version 1.8.1** (10-31-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
 
 A Chrome extension that goes after the ads people actually hate (autoplay
 video, pop-ups, ads that spin up your fan) and leaves normal banner ads
@@ -12,22 +12,24 @@ alone. You can also block any URL yourself, or click an ad on the page to
 block where it came from. Your list and switches follow your Chrome sign-in
 to every computer.
 
-## Latest update: 1.8.0
+## Latest update: 1.8.1
 
-**Pinned ads** is a new switch, on by default. An ad that sticks to the top of
-the window while you scroll now stays at the top of the page and scrolls away
-like a normal banner. The ad still shows. It just doesn't follow you down the
-page.
+**Stop ad redirects** now catches more click hijacks: an ad borrowing a click
+on article text or a Play button to send you away or open a popunder. It also
+checks scripted links and blank popups. Turn this optional switch on globally
+or for the sites that need it. Normal links, forms and sign-in buttons remain
+usable; unusual scripted flows may need a site exception.
 
-The autoplay stopper got stricter about what counts as you starting a video.
-Before, any key press or click anywhere on the page counted, so a player that
-starts itself as you scroll (Investopedia's does) slipped through if you read
-with PageDown. Now it has to be a click or key press on the player, or a click
-on a play button right before the video starts.
+**Autoplay videos** now stops unwanted playback with sound as well as muted
+video. Reading keys, unrelated clicks and scripted clicks no longer count as
+pressing Play. A site's floating player returns to its place in the article,
+paused, and can float again when you play it.
 
-The icon is now a teal shield with a pause symbol on a white tile.
+Adding a URL no longer clears the next address you type while the earlier save
+finishes. Release packaging also rejects uncommitted runtime changes and writes
+a SHA-256 checksum beside the zip.
 
-Detailed changes: [Changelog](CHANGELOG.md#180--10-30-2026).
+Detailed changes: [Changelog](CHANGELOG.md#181--10-31-2026).
 Live news, shopping, sports and streaming checks, including limitations:
 [Testing and compatibility](docs/Testing.md).
 
@@ -63,14 +65,14 @@ on every bad ad by hand.
 | Feature | What it does | On at install |
 | --- | --- | --- |
 | Video ad blocking | Blocks the companies that serve video ads (Connatix, Primis, AnyClip, Teads, Celtra and others), and swaps Google's video ad engine for a stand-in that says "no ads". Banner ads still show | Yes |
-| Autoplay stopper | Pauses muted videos that start before you click anything, and hides paused ads that float in a corner. Videos you start play normally | Yes |
+| Autoplay stopper | Pauses videos that start without a play gesture, including audible ads after unrelated clicks. A site's own video that floats into the corner goes back into the article, paused; a floating ad with no place on the page is hidden. Videos you start play normally | Yes |
 | Heavy ad removal | Stops identified third-party ads at 4 MB or 5 seconds of long tasks in 30 seconds; offers Restore | Yes |
 | Broader heavy-embed mode | Applies those limits to unrecognized third-party embeds too; may stop legitimate content | No |
 | Newsletter offers | Blocks newsletter and promotional overlay tools | No |
 | Notification requests | Blocks website push-prompt tools independently | No |
 | Ad refresh and sync frames | Blocks Browsi's ad refresh and the hidden cookie-sync frames that ad auctions open. [See the URLs](rules/ad-churn.json) | No |
 | Slow ad refresh | Lets each Google ad slot refresh at most once every 2 minutes, and not in a hidden tab | No |
-| Stop ad redirects | Stops an ad from sending the whole tab to another site without a click | No |
+| Stop ad redirects | Stops unwanted cross-site redirects and click-triggered popunders | No |
 | Pinned ads | An ad stuck to the top of the window while you scroll stays at the top of the page instead, and scrolls away like a banner. The site's own sticky header is left alone | Yes |
 | Site controls | Override individual protections for a site and its subdomains | Inherit defaults |
 | Hide on this site | Hide a picked element only on its hostname; undo in settings or DevTools | — |
@@ -96,6 +98,18 @@ on every bad ad by hand.
 4. Click **Load unpacked** and pick the repository folder.
 5. URL Blocker shows up in your toolbar.
 
+For this WSL checkout, choose
+`\\wsl.localhost\Debian\home\clj\repo\subtle-browsing` once. After an update,
+click the extension's reload arrow at `chrome://extensions/`, then reload the
+webpages you want to check. Open Settings to confirm **Version 1.8.1**. Disable
+an older duplicate installation so only one copy is active; export its backup
+first if you need to transfer rules to a different extension ID.
+
+The unpacked route is the current daily-use route. The Web Store account still
+needs developer registration (agreement and registration fee) before upload.
+The prepared package is `dist/url-blocker-1.8.1.zip`; the listing kit is in
+[docs/store/LISTING.md](docs/store/LISTING.md).
+
 ## How to use
 
 ### What gets blocked
@@ -108,14 +122,14 @@ same choices.
 | Switch | How it works |
 | --- | --- |
 | **Video ad companies** | Uses the list in [`rules/video-ads.json`](rules/video-ads.json). Blocks whole video-ad companies, plus only the video parts of bigger networks (Taboola's video player, Amazon's video ads), so their regular ads still show. Also swaps in the Google IMA stand-in. |
-| **Muted autoplay videos** | Stops any muted video that starts on its own. Video ads start muted because Chrome won't autoplay sound. Click play and the video runs. |
+| **Autoplay videos** | Pauses videos that start without a play gesture, muted or audible. Click Play or use the player’s playback keys to watch. |
 | **Heavy ads** | Stops an identified third-party ad frame at 4 MB of declared downloads or 5 seconds of long tasks in 30 seconds. |
 | **All heavy third-party embeds** | Broadens Heavy ads to unrecognized third-party frames. Heavy ads must also be on. |
 | **Newsletter offers** | Uses [`rules/annoyances.json`](rules/annoyances.json): OptinMonster, Privy, Justuno, Sumo, Klaviyo forms and similar. |
 | **Notification requests** | Uses [`rules/notifications.json`](rules/notifications.json): OneSignal, PushEngage, iZooto, Webpushr, Aimtell and PushCrew. |
 | **Ad refresh and sync frames** | Uses [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts, plus 26 hidden cookie-sync frames from ad auctions by name (OpenX, PubMatic, Rubicon, AppNexus, Criteo, TripleLift, Index Exchange, LiveIntent and others) and 3 patterns for sync frames from anyone else. |
 | **Slow ad refresh** | Wraps Google's ad tag (`googletag.pubads().refresh()`) in [`refresh-throttle.js`](refresh-throttle.js). Every slot's first load goes through; after that each slot refreshes at most once every 2 minutes, and not while the tab is hidden. |
-| **Stop ad redirects** | [`ad-redirect-guard.js`](ad-redirect-guard.js) watches the top page's navigations and cancels one that heads to another site without a click. Links, forms, the address bar, reload and back/forward all work as usual. |
+| **Stop ad redirects** | [`ad-redirect-guard.js`](ad-redirect-guard.js) checks top-page navigation and scripted popups against the control you used. Article clicks and Play buttons cannot authorize a jump to another site. Links, forms, reload and back/forward remain usable. |
 
 More on each:
 
@@ -124,14 +138,14 @@ More on each:
   leave the player waiting forever, so the extension swaps in its own
   small stand-in. Every ad request gets IMA's normal "no ad" reply, and
   the player goes straight to the video.
-- **Muted autoplay videos:** if an ad player keeps restarting itself, its
+- **Autoplay videos:** if an ad player keeps restarting itself, its
   video gets unloaded after repeated retries, so it can't turn into a
   tug-of-war that slows the page down. When that ad is in its own frame,
   the frame's box is hidden too. A paused ad floating in a corner of the
   window is hidden as well, with **Play this video** at its former position.
   Unloaded videos and collapsed autoplay frames have restore controls.
-  A muted video paused on the page itself keeps
-  its box, so you can still click it to play.
+  A video paused inside an article keeps its player. If it floated into a
+  corner, it returns to the article until you press Play.
 - **Heavy ads:** the limits stay at 4 MB and 5 seconds of long tasks per
   30 seconds. The parent frame requires a known ad hostname or an explicit
   ad-slot marker before removal. It blanks the frame to stop its scripts
@@ -172,8 +186,9 @@ More on each:
   fake McAfee warning page, twice in a row, without a click. The ad ran in
   one of Google's ad frames that shares the page's address, and Chrome only
   stops that trick for frames from other sites. This switch cancels a jump
-  to another site that no click started. It's off by default because a
-  site's own sign-in or checkout can move you to another site the same way;
+  to another site that no navigation control started, and blocks top-page
+  popunders triggered by article text or a media control. It's off by default
+  because a site's own sign-in or checkout can move you to another site the same way;
   turn it off for that site if one does.
 
 #### URLs each list catches
@@ -181,7 +196,7 @@ More on each:
 | Switch | List | Rules |
 | --- | --- | --- |
 | Video ad companies | [`rules/video-ads.json`](rules/video-ads.json) | 20 |
-| Newsletter offers | [`rules/annoyances.json`](rules/annoyances.json) | 18 |
+| Newsletter offers | [`rules/annoyances.json`](rules/annoyances.json) | 35 |
 | Notification requests | [`rules/notifications.json`](rules/notifications.json) | 6 |
 | Ad refresh and sync frames | [`rules/ad-churn.json`](rules/ad-churn.json) | 30 |
 
@@ -193,7 +208,7 @@ request blocked in a tab.
 
 Open **Controls for (site)** in the toolbar popup or the Chrome DevTools
 panel. Each protection has **Default**, **On**, and **Off**. For example,
-turn **Muted autoplay videos** off here and leave **Video ad companies**
+turn **Autoplay videos** off here and leave **Video ad companies**
 on. Your personal URL blocks stay active.
 
 - Changes reload the inspected/active tab after the rules are applied.
@@ -393,13 +408,13 @@ The full reasoning is in [ADR-004](docs/adr/004-built-in-rulesets-are-hand-made-
 | --- | --- |
 | Blocking | Runs inside Chrome's own network layer, so it costs nothing per page |
 | Video ad list | Built in, so Chrome reads it once at install instead of on every page |
-| Autoplay stopper | One small event listener per page. Turning it off stops enforcement on open pages and unregisters future injection unless a site enables it |
+| Autoplay stopper | Event listeners per frame, with no polling. Turning it off stops enforcement on open pages and unregisters future injection unless a site enables it |
 | Heavy ad removal | A long-task observer inside third-party frames, plus adding up download sizes in the background. Turning it off stops enforcement; site overrides can keep the guard enabled |
 | Element picker | Only loads into a tab when you use it, and takes its overlay off the page when you're done |
 | Box hiding and restore | One message listener per frame while autoplay or heavy-ad removal is enabled globally or on a site |
 | Site policy and element hiding | A shared settings cache and a small CSS injector per frame; no polling or mutation observer |
 | Slow ad refresh | One small script in each top page while the switch is on for that site. It only does work when the page uses Google's ad tag |
-| Stop ad redirects | One small script in each top page while the switch is on for that site. It only runs when the page navigates |
+| Stop ad redirects | Event listeners and small wrappers for navigation, window.open and scripted link clicks; no polling |
 | Google IMA stand-in | Only loads on pages that ask for Google's video ad engine, in place of the real one |
 
 ## Privacy
@@ -460,10 +475,12 @@ This extension:
   ad scripts that reload slots some other way aren't slowed.
   On pages without ads it leaves an empty `googletag` command queue behind,
   the same thing Google's own setup snippet creates.
-- Stop ad redirects lets a redirect through when you've just clicked
-  anywhere on the page, so an ad that waits for your first click still
-  works. Redirects started by frames from other sites are left to Chrome,
-  which already blocks them without a click.
+- Stop ad redirects protects the top page. Popups created through a frame's
+  own window, automatic form submissions, same-site redirect chains and
+  targeted attempts to replace the page-world guard can still bypass it.
+  Scripted sign-in buttons receive a brief exception; a malicious script can
+  borrow that specific gesture. Delayed or unusual legitimate redirects may
+  need a site exception. This is an ad nuisance filter, not a security boundary.
 - The IMA stand-in covers `ima3.js` only, not Google's live-stream ad
   engine (`ima3_dai.js`).
 - The block list holds about 300 URLs, the most Chrome sync allows.
@@ -474,6 +491,7 @@ This extension:
 
 | Version | Date | Highlights |
 | --- | --- | --- |
+| 1.8.1 | 10-31-2026 | More click hijacks and popunders stopped, audible autoplay protection, article player docking, URL entry race fixed |
 | 1.8.0 | 10-30-2026 | Pinned ads scroll away, shield icon, autoplay no longer slips through when you scroll with the keyboard |
 | 1.7.0 | 10-28-2026 | Popup reordered with a Blocking card, URL match modes with a preview, Undo, ten-minute pause, settings opens on activity |
 | 1.6.0 | 10-26-2026 | Selective heavy-ad removal with Restore, broader embed mode, site controls, site-only hiding, separate prompt lists, live-site checks |
@@ -506,7 +524,7 @@ pnpm install
 pnpm test
 ```
 
-- 126 end-to-end tests load the extension into Chromium and run it
+- The end-to-end tests load the extension into Chromium and run it
   against local test pages, plus the actual toolbar and DevTools surfaces.
   A run takes about a minute. Live checks run separately: `pnpm run test:live`.
   See [Testing and compatibility](docs/Testing.md) for scope and results.

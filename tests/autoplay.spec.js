@@ -52,6 +52,12 @@ test.describe("autoplay stopper", () => {
     await expect.poll(async () => (await videoState(page)).userMuted).toEqual({ playing: false, tried: true });
   });
 
+  test("an accessible Play control works when its icon and label change during startup", async ({ ext, page }) => {
+    await page.goto(`${FIRST}/autoplay.html`);
+    await page.locator("#remotePlay rect").click();
+    await expect.poll(async () => (await videoState(page)).remoteMuted).toEqual({ playing: true, tried: true });
+  });
+
   test("a key press on the player still starts its muted video", async ({ ext, page }) => {
     await page.goto(`${FIRST}/autoplay.html`);
     await page.focus("#player");
@@ -59,6 +65,34 @@ test.describe("autoplay stopper", () => {
     await expect.poll(async () => (await videoState(page)).keyMuted).toEqual({ playing: true, tried: true });
     await page.waitForTimeout(500);
     expect((await videoState(page)).keyMuted.playing).toBe(true);
+  });
+
+  test("clicking article text doesn't authorize muted or audible video ads", async ({ ext, page }) => {
+    await page.goto(`${FIRST}/autoplay.html`);
+    await page.click("#articleText");
+    await quietEval(page, () => {
+      document.getElementById("userMuted").play().catch(() => {});
+      document.getElementById("userSound").play().catch(() => {});
+    });
+    await expect.poll(() => videoState(page)).toMatchObject({
+      userMuted: { playing: false, tried: true },
+      userSound: { playing: false, tried: true },
+    });
+  });
+
+  test("scripted clicks can't turn a reading key into permission to play", async ({ ext, page }) => {
+    await page.goto(`${FIRST}/autoplay.html`);
+    await page.keyboard.press("PageDown");
+    await quietEval(page, () => document.getElementById("playMuted").click());
+    await expect.poll(async () => (await videoState(page)).userMuted).toEqual({ playing: false, tried: true });
+  });
+
+  test("PageDown on a focused player still isn't a play command", async ({ ext, page }) => {
+    await page.goto(`${FIRST}/autoplay.html`);
+    await page.focus("#player");
+    await page.keyboard.press("PageDown");
+    await quietEval(page, () => document.getElementById("keyMuted").play().catch(() => {}));
+    await expect.poll(async () => (await videoState(page)).keyMuted).toEqual({ playing: false, tried: true });
   });
 
   test("pauses muted autoplay in a cross-site iframe", async ({ ext, page }) => {
@@ -105,11 +139,31 @@ test.describe("autoplay stopper", () => {
         inlineVideo: { playing: false, tried: true },
         cornerVideo: { playing: false, tried: true },
         coverVideo: { playing: false, tried: true },
+        articleVideo: { playing: false, tried: true },
+        wrappedVideo: { playing: false, tried: true },
       });
     const display = (id) => quietEval(page, (i) => getComputedStyle(document.getElementById(i)).display, id);
     expect(await display("corner")).toBe("none");
+    expect(await display("wrappedCorner")).toBe("none");
     expect(await display("inline")).not.toBe("none");
     expect(await display("cover")).not.toBe("none");
+  });
+
+  test("a site's own floating player goes back into the article, paused, and floats again once played", async ({ ext, page }) => {
+    await page.goto(`${FIRST}/floating.html`);
+    await expect.poll(async () => (await videoState(page)).articleVideo).toEqual({ playing: false, tried: true });
+    const style = () =>
+      quietEval(page, () => {
+        const box = getComputedStyle(document.getElementById("docked"));
+        return { position: box.position, display: box.display };
+      });
+    expect(await style()).toEqual({ position: "static", display: "block" });
+    // No "Play this video" stand-in: the player itself is still there
+    expect(await quietEval(page, () => document.querySelector("#docked + subtle-paused-video, subtle-paused-video + #docked"))).toBeNull();
+    await page.click("#playArticle");
+    await expect.poll(async () => (await videoState(page)).articleVideo.playing).toBe(true);
+    // play() flips paused at once; the play event that frees the player comes a moment later
+    await expect.poll(async () => (await style()).position).toBe("fixed");
   });
 
   test("switched off, it unregisters and autoplay plays", async ({ ext, page }) => {

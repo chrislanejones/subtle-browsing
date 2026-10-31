@@ -1,10 +1,51 @@
 # Testing and compatibility
 
-Release: **1.6.0**, checked **10-26-2026**. This is the detailed verification
+Release: **1.8.1**, checked **10-31-2026**. This is the detailed verification
 companion to the [README](../README.md) and [Changelog](../CHANGELOG.md).
 The testing policy is [ADR-020](adr/020-live-site-checks-are-separate-from-regression-tests.md).
 
-## Unreleased verification, 10-28-2026
+## 1.8.1 verification, 10-31-2026
+
+`pnpm exec playwright test --workers 2`: **151 passed**, including the actual
+Chrome toolbar/DevTools surfaces, heavy-ad CPU limits and performance checks.
+`git diff --check` and syntax checks passed. The two URL-entry regressions passed
+**24 stress runs** (12 each). The package script was also checked to reject
+uncommitted runtime changes before producing a zip.
+
+Added coverage exercises click hijacks on article text and Play buttons,
+window.open popunders (including blank windows), detached synthetic links,
+substituted link destinations and reading-key redirects. Compatibility checks
+preserve normal links, forms, sign-in popups, keyboard activation and live
+turn-off. Autoplay checks cover audible ads after unrelated clicks, synthetic
+clicks, reading keys on a focused player, accessible Play labels whose icons
+change during startup, and paused article-player docking/restoration.
+
+The URL form race is fixed in production code. Two separate test races were
+also corrected: wait for an actual reload after changing a site exception, and
+wait for a restored frame's third-party document before attaching DevTools.
+Four-worker runs also exposed isolated global-pause/image and clicked-frame
+fetch failures; each passed 12 focused repeats. No production-code cause was
+established. Those observations remain in the parking lot; test retries stay off.
+
+Live checks used default protections and separate fresh baseline/protected
+profiles. [Raw observations](testing/2026-10-31-live-sites.json):
+
+| Target | Result | Interpretation |
+| --- | --- | --- |
+| Vimeo direct player | HTTP 200 in both profiles; clicked Play, playback advanced beyond one second in both | Intentional playback passes with the new autoplay guard. An initial failure revealed the accessible-label issue, which was fixed and checked again. |
+| Investopedia stock article | HTTP 403 bot-check page in both profiles | Inconclusive; the fixture verifies docking, but this run cannot establish the live article behavior. |
+
+Click-hijack protection is fixture-tested here; rotating real ads and iframe-owned
+popups are not claimed as covered. The live run did not enable optional Stop ad
+redirects. Store screenshots were regenerated from the current UI in a fresh
+profile with illustrative rules, then visually inspected at 1280×800.
+
+Chrome Web Store registration still requires the account owner's developer
+agreement and $5 registration payment. This is a source/unpacked release, not a
+Store publication. The selected daily-use install route is the WSL checkout
+linked in [Install](../README.md#install).
+
+## 1.7.0 verification, 10-28-2026
 
 `pnpm test`: **126 passed in 1.3 minutes**. `git diff --check` passed.
 
@@ -51,7 +92,7 @@ pnpm exec playwright install chromium
 pnpm test
 ```
 
-Release verification: **85 tests passed in 58.5 seconds** (`pnpm test`).
+Historical 1.6.0 verification: **85 tests passed in 58.5 seconds** (`pnpm test`).
 This includes actual toolbar and DevTools controls, CPU limits and performance checks.
 
 The suite uses Playwright 1.64.0 and its bundled Chromium, with fresh profiles

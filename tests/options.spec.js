@@ -61,6 +61,34 @@ test.describe("settings page", () => {
     await expect(rows(page, "urlList")).toHaveCount(3);
   });
 
+  test("a delayed save preserves the next URL and match mode", async ({ ext, page }) => {
+    await page.evaluate(() => {
+      const send = chrome.runtime.sendMessage.bind(chrome.runtime);
+      chrome.runtime.sendMessage = async (...args) => {
+        const result = await send(...args);
+        if (args[0].action === "mutate" && !window.heldSave) {
+          window.heldSave = true;
+          await new Promise((resolve) => { window.finishSave = resolve; });
+        }
+        return result;
+      };
+    });
+    await page.fill("#urlInput", "anyclip.com");
+    await page.press("#urlInput", "Enter");
+    await expect(rows(page, "urlList").first()).toHaveText("anyclip.com");
+    await expect(page.locator("#addButton")).toBeDisabled();
+    await page.selectOption("#ruleMode", "exact");
+    await page.fill("#urlInput", "https://vdo.ai/ad.mp4");
+    await expect.poll(() => page.evaluate(() => !!window.finishSave)).toBe(true);
+    await page.evaluate(() => window.finishSave());
+    await expect(page.locator("#addButton")).toBeEnabled();
+    await expect(page.locator("#urlInput")).toHaveValue("https://vdo.ai/ad.mp4");
+    await expect(page.locator("#ruleMode")).toHaveValue("exact");
+    await page.click("#addButton");
+    await expect(rows(page, "urlList").first()).toContainText("https://vdo.ai/ad.mp4");
+    expect((await ext.getSync("blockedUrls")).blockedUrls).toHaveLength(5);
+  });
+
   test("removes a URL and unpauses a site", async ({ ext, page }) => {
     await page.getByRole("button", { name: "Remove teads.tv" }).click();
     await expect(rows(page, "urlList")).toHaveText(["primis.tech", "connatix.com"]);

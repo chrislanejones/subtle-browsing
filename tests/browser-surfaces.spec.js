@@ -63,7 +63,7 @@ test("actual toolbar popup shows site controls and saves an autoplay exception",
     .toBe("Controls for 127.0.0.1");
   await evaluate('document.querySelector("#siteControls").open=true');
   await evaluate(
-    '(()=>{const s=document.querySelector(\'[aria-label="Muted autoplay videos on this site"]\');s.value="false";s.dispatchEvent(new Event("change",{bubbles:true}));})()',
+    '(()=>{const s=document.querySelector(\'[aria-label="Autoplay videos on this site"]\');s.value="false";s.dispatchEvent(new Event("change",{bubbles:true}));})()',
   );
   await expect
     .poll(() => ext.getSync("siteSettings"))
@@ -154,7 +154,7 @@ test("actual DevTools panel controls the inspected site", async ({}, testInfo) =
       .toBe("Controls for 127.0.0.1");
     await evaluate(
       panel,
-      `(()=>{document.querySelector('#siteControls').open=true;const s=document.querySelector('[aria-label="Muted autoplay videos on this site"]');s.value='false';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+      `(()=>{document.querySelector('#siteControls').open=true;const s=document.querySelector('[aria-label="Autoplay videos on this site"]');s.value='false';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
     );
     await expect
       .poll(() =>

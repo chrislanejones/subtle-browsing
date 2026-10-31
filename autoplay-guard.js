@@ -1,8 +1,7 @@
 (async () => {
   await subtlePolicy.ready;
-  // Pauses muted videos that start playing before the user has clicked or
-  // pressed a key. Video ads almost always start muted, because Chrome won't
-  // autoplay sound. A video the user starts runs normally.
+  // Pauses videos without a play gesture. An unrelated click can give an ad
+  // permission to start with sound too. A video the user starts runs normally.
   // background.js registers this in every frame while the setting is on.
 
   // Some ad players call play() again the moment they're paused. Pausing them
@@ -83,19 +82,39 @@
   // Any click or key press gives the page user activation for a few seconds,
   // so reading with PageDown would let a player that autoplays as it scrolls
   // into view through (Investopedia's JW Player does this). A play only counts
-  // as the user's when the gesture was on the player itself, or was a click
-  // just before it (a play button outside the video).
+  // as the user's when a trusted play gesture was on the player itself or a
+  // labeled play control. Synthetic clicks and reading keys don't count.
   const CLICK_WINDOW_MS = 1000;
   const PLAYER_DEPTH = 4;
   let lastGesture = null;
+  function controlLabel(control) {
+    const labelledBy = control.getAttribute("aria-labelledby")?.split(/\s+/)
+      .map((id) => document.getElementById(id)?.textContent ?? "").join(" ").trim();
+    return labelledBy || control.getAttribute("aria-label") || control.title || control.value || control.textContent;
+  }
   for (const type of ["pointerdown", "click", "keydown"])
     document.addEventListener(
       type,
       (event) => {
+        if (!event.isTrusted) return;
+        if (
+          (event.type === "keydown" &&
+            ![" ", "Enter", "k", "K", "MediaPlayPause"].includes(event.key)) ||
+          (event.type !== "keydown" && event.button !== 0)
+        ) {
+          lastGesture = null;
+          return;
+        }
+        const target = event.composedPath()[0];
+        const control = target instanceof Element
+          ? target.closest("button, [role='button'], input[type='button'], input[type='submit'], a")
+          : null;
         lastGesture = {
-          target: event.target,
+          target,
+          // Players can replace their icon and its label in the click handler.
+          controls: control?.getAttribute("aria-controls"),
+          playControl: control ? /^(play|watch|resume|start)(\b|\s)/i.test(controlLabel(control).trim()) : false,
           time: performance.now(),
-          click: event.type === "click",
         };
       },
       true,
@@ -115,6 +134,7 @@
       element && element !== document.body && depth <= PLAYER_DEPTH;
       depth++
     ) {
+      if (element.matches("article, main, section, aside, nav")) return false;
       const box = element.getBoundingClientRect();
       if (depth > 0 && box.width * box.height > maxArea) return false;
       if (element.contains(target)) return true;
@@ -125,22 +145,29 @@
 
   function startedByUser(video) {
     if (!navigator.userActivation.isActive || !lastGesture) return false;
-    if (lastGesture.click && performance.now() - lastGesture.time < CLICK_WINDOW_MS)
-      return true;
-    return onPlayer(lastGesture.target, video);
+    if (onPlayer(lastGesture.target, video)) return true;
+    if (performance.now() - lastGesture.time >= CLICK_WINDOW_MS) return false;
+    const { controls, playControl } = lastGesture;
+    if (controls)
+      return controls.split(/\s+/).some((id) => document.getElementById(id)?.contains(video));
+    return playControl;
   }
 
   function shouldPause(video) {
     if (restored.has(video) || !subtlePolicy.enabled("autoplayGuard"))
       return false;
     if (startedByUser(video)) return false;
-    return video.muted || video.volume === 0;
+    return true;
   }
 
-  // A paused ad floating over the page (a corner player) is hidden too, so it
-  // doesn't leave an empty box on screen. Only a fixed box smaller than half
-  // the window counts, so page layouts and full-screen viewers are left alone.
+  // A paused video floating over the page (a corner player) shouldn't leave a
+  // box on screen. A site's own player floats out of its spot in the article
+  // (Investopedia's does), so it goes back there, paused. A player attached
+  // straight to the page body has no spot, so it's hidden. Only a fixed box
+  // smaller than half the window counts, so page layouts and full-screen
+  // viewers are left alone.
   const MAX_FLOAT_DEPTH = 10;
+  const docked = new WeakMap();
   function hideFloatingPlayer(video) {
     const halfWindow = (window.innerWidth * window.innerHeight) / 2;
     let element = video;
@@ -151,7 +178,17 @@
     ) {
       if (getComputedStyle(element).position === "fixed") {
         const { width, height } = element.getBoundingClientRect();
-        if (width * height < halfWindow) {
+        if (width * height >= halfWindow) return;
+        // An empty wrapper around a floating ad has no height, so it isn't a home
+        const home = element.parentElement;
+        if (
+          home &&
+          home !== document.body &&
+          home !== document.documentElement &&
+          home.getBoundingClientRect().height > 0
+        ) {
+          dock(video, element);
+        } else {
           remember(video, element);
           element.style.setProperty("display", "none", "important");
         }
@@ -159,6 +196,25 @@
       }
       element = element.parentElement;
     }
+  }
+
+  function dock(video, element) {
+    docked.set(video, {
+      element,
+      value: element.style.getPropertyValue("position"),
+      priority: element.style.getPropertyPriority("position"),
+    });
+    element.style.setProperty("position", "static", "important");
+  }
+
+  // A player the user starts is free to float again
+  function undock(video) {
+    const record = docked.get(video);
+    if (!record) return;
+    docked.delete(video);
+    if (record.value)
+      record.element.style.setProperty("position", record.value, record.priority);
+    else record.element.style.removeProperty("position");
   }
 
   // Unloading doesn't fire a "pause" event, so players that restart on pause stop retrying
@@ -178,7 +234,11 @@
     "play",
     (event) => {
       const video = event.target;
-      if (!(video instanceof HTMLVideoElement) || !shouldPause(video)) return;
+      if (!(video instanceof HTMLVideoElement)) return;
+      if (!shouldPause(video)) {
+        undock(video);
+        return;
+      }
 
       if (unloaded.has(video)) {
         // The player loaded a new ad into the same element

@@ -7,7 +7,36 @@ Version 1.6.0 is identified by the source tag `v1.6.0` on both remotes.
 
 Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
-## Unreleased
+## 1.8.1 — 10-31-2026
+
+Source tag: `v1.8.1`. Prepared for unpacked use and Web Store submission;
+not yet published on the Chrome Web Store.
+
+### Fixed
+- **Click hijacks and popunders:** Stop ad redirects now checks the navigation
+  control rather than accepting any recent browser activation. It stops redirects
+  borrowed from article clicks, reading keys and media controls, plus top-page
+  `window.open` popunders (including blank windows) and scripted link clicks.
+  Ordinary links, forms, sign-in popups and Continue buttons remain usable.
+  The switch stays optional, with live per-site/global exceptions.
+- **More unwanted video playback:** unrelated clicks and synthetic clicks no
+  longer authorize videos, and PageDown on a focused player is still reading.
+  Audible autoplay after an unrelated click is paused too. The switch is now
+  labeled **Autoplay videos**.
+- **Fast URL entry:** a completed save no longer clears the next address or
+  match mode typed while the previous save was finishing. This fixes the parked
+  intermittent settings-page test failure at its source.
+- **Release packaging:** refuses uncommitted runtime changes, reads the version
+  from the same commit as the payload, and writes a SHA-256 checksum.
+
+### Changed
+- **A site's own floating video stays on the page, paused.** Investopedia's
+  video player floats into the corner as you scroll. The autoplay stopper used
+  to hide it like an ad and leave a "Play this video" button stuck over the
+  sidebar. Now it pauses the video and puts it back in its spot in the
+  article, where you can press play. Press play and it floats again like the
+  site intended. A floating ad attached straight to the page, with no spot to
+  go back to, is still hidden.
 
 ## 1.8.0 — 10-30-2026
 

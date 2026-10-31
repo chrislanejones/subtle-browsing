@@ -4,11 +4,20 @@
 <div id="corner" style="position:fixed;right:10px;bottom:10px;width:320px;height:180px;background:#000">
   <div class="inner"><video id="cornerVideo" src="/clip.webm" muted autoplay loop width="320"></video></div>
 </div>
+<article id="article"><p>Article text.</p>
+  <div id="docked" style="position:fixed;left:10px;bottom:10px;width:320px;height:180px;background:#000">
+    <video id="articleVideo" src="/clip.webm" muted autoplay loop width="320"></video>
+    <button id="playArticle" onclick="document.getElementById('articleVideo').play()">play</button>
+  </div>
+<p>More article text.</p></article>
+<div id="wrap"><div id="wrappedCorner" style="position:fixed;right:10px;top:10px;width:320px;height:180px;background:#000">
+  <video id="wrappedVideo" src="/clip.webm" muted autoplay loop width="320"></video>
+</div></div>
 <div id="cover" style="position:fixed;inset:0;z-index:-1">
   <video id="coverVideo" src="/clip.webm" muted autoplay loop style="width:100%;height:100%"></video>
 </div>
 <script>
-  window.plays = { inlineVideo: 0, cornerVideo: 0, coverVideo: 0 };
+  window.plays = { inlineVideo: 0, cornerVideo: 0, coverVideo: 0, articleVideo: 0, wrappedVideo: 0 };
   for (const id of Object.keys(plays)) document.getElementById(id).addEventListener('play', () => plays[id]++);
 </script>
 </body></html>

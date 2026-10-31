@@ -6,10 +6,38 @@
      Google's) sends the whole tab to that URL after half a second, with no
      click. -->
 <a id="link" href="#">Go</a>
+<p id="articleText" tabindex="0">Read the article here.</p>
+<div id="player"><video id="video" src="/clip.webm" muted controls width="200"></video>
+<button id="play">Play</button></div>
+<button id="continue">Continue to partner</button>
+<button id="login">Sign in with partner</button>
+<a id="newTab" target="_blank" rel="noopener" href="#">Open partner</a>
+<form id="form" method="get"><button>Submit to partner</button></form>
 <script>
   const params = new URLSearchParams(location.search);
   const to = params.get("to");
   document.getElementById("link").href = to;
+  document.getElementById("newTab").href = to;
+  document.getElementById("form").action = to;
+  document.getElementById("play").onclick = () => document.getElementById("video").play();
+  document.getElementById("continue").onclick = () => { location.href = to; };
+  document.getElementById("login").onclick = () => { window.open(to); };
+  const attack = params.get("attack");
+  if (attack) document.addEventListener("click", (event) => {
+    if (!event.target.closest("#articleText, #play, #link")) return;
+    window.attempted = true;
+    if (attack === "popup") window.popupBlocked = window.open(to) === null;
+    else if (attack === "blank-popup") window.popupBlocked = window.open() === null;
+    else if (attack === "synthetic") {
+      const link = document.createElement("a");
+      link.href = to;
+      link.target = "_blank";
+      link.click();
+    } else {
+      event.preventDefault();
+      location.href = to;
+    }
+  });
   if (params.has("ad")) {
     const frame = document.createElement("iframe");
     document.body.append(frame);

@@ -1,0 +1,102 @@
+[
+  {
+    "category": "streaming-player",
+    "sample": 1,
+    "url": "https://player.vimeo.com/video/76979871",
+    "enabled": false,
+    "checkedAt": "2026-10-31T06:02:37.375Z",
+    "status": 200,
+    "observed": {
+      "title": "The New Vimeo Player (You Know, For Videos) on Vimeo",
+      "text": "Playing in picture-in-picture\nEmbed\nPlay\n00:00\n01:02\nCC/subtitles\nSettings\nSpeed\nTranscript\nPicture-in-Picture\nFullscreen",
+      "visibleImages": 1,
+      "adSlots": [],
+      "videos": [
+        {
+          "paused": true,
+          "muted": false,
+          "readyState": 0,
+          "hasSource": true
+        }
+      ],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Clicked the player's Play button: [{\"paused\":false,\"time\":1.011634,\"readyState\":4}]",
+    "failedRequests": 2,
+    "blockedRequests": 0
+  },
+  {
+    "category": "streaming-player",
+    "sample": 1,
+    "url": "https://player.vimeo.com/video/76979871",
+    "enabled": true,
+    "checkedAt": "2026-10-31T06:02:49.820Z",
+    "status": 200,
+    "observed": {
+      "title": "The New Vimeo Player (You Know, For Videos) on Vimeo",
+      "text": "Playing in picture-in-picture\nEmbed\nPlay\n00:00\n01:02\nCC/subtitles\nSettings\nSpeed\nTranscript\nPicture-in-Picture\nFullscreen",
+      "visibleImages": 1,
+      "adSlots": [],
+      "videos": [
+        {
+          "paused": true,
+          "muted": false,
+          "readyState": 0,
+          "hasSource": true
+        }
+      ],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Clicked the player's Play button: [{\"paused\":false,\"time\":1.011604,\"readyState\":4}]",
+    "failedRequests": 2,
+    "blockedRequests": 0,
+    "extensionLog": []
+  },
+  {
+    "category": "investopedia",
+    "sample": 1,
+    "url": "https://www.investopedia.com/terms/s/stock.asp",
+    "enabled": false,
+    "checkedAt": "2026-10-31T05:59:47.002Z",
+    "status": 403,
+    "observed": {
+      "title": "Just a moment...",
+      "text": "",
+      "visibleImages": 0,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 1,
+    "blockedRequests": 0
+  },
+  {
+    "category": "investopedia",
+    "sample": 1,
+    "url": "https://www.investopedia.com/terms/s/stock.asp",
+    "enabled": true,
+    "checkedAt": "2026-10-31T05:59:56.722Z",
+    "status": 403,
+    "observed": {
+      "title": "Just a moment...",
+      "text": "",
+      "visibleImages": 0,
+      "adSlots": [],
+      "videos": [],
+      "restoredPlaceholders": 0
+    },
+    "bannerEvidence": [],
+    "bannerCheck": "Inconclusive: no recognized banner slot in this sample.",
+    "userVideoCheck": "Inconclusive: no suitable playable video in the top document.",
+    "failedRequests": 1,
+    "blockedRequests": 0,
+    "extensionLog": []
+  }
+]

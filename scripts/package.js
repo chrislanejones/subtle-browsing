@@ -4,10 +4,8 @@
 // and nothing from node_modules or test runs can slip in.
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync } from "node:fs";
-
-const { version } = JSON.parse(readFileSync("manifest.json", "utf8"));
-const output = `dist/url-blocker-${version}.zip`;
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 // Everything in the repo that Chrome doesn't need
 const DEV_ONLY = [
@@ -21,6 +19,17 @@ const DEV_ONLY = [
   "playwright.config.js",
   ".gitignore",
 ];
+const runtimePaths = ["--", ".", ...DEV_ONLY.map((path) => `:(exclude)${path}`)];
+try {
+  execFileSync("git", ["diff", "--quiet", "HEAD", ...runtimePaths]);
+} catch (error) {
+  if (error.status !== 1) throw error;
+  console.error("Commit runtime changes before packaging; git archive only includes HEAD.");
+  process.exit(1);
+}
+// Both the filename and payload use the same committed version.
+const { version } = JSON.parse(execFileSync("git", ["show", "HEAD:manifest.json"], { encoding: "utf8" }));
+const output = `dist/url-blocker-${version}.zip`;
 
 mkdirSync("dist", { recursive: true });
 execFileSync("git", [
@@ -28,10 +37,10 @@ execFileSync("git", [
   "--format=zip",
   `--output=${output}`,
   "HEAD",
-  "--",
-  ".",
-  ...DEV_ONLY.map((path) => `:(exclude)${path}`),
+  ...runtimePaths,
 ]);
+const hash = createHash("sha256").update(readFileSync(output)).digest("hex");
+writeFileSync(`${output}.sha256`, `${hash}  url-blocker-${version}.zip\n`);
 
 // ls-tree doesn't take :(exclude), so filter the same way by hand
 const isDevOnly = (file) =>
@@ -43,3 +52,4 @@ const files = execFileSync("git", ["ls-tree", "-r", "--name-only", "HEAD"], { en
   .split("\n")
   .filter((file) => !isDevOnly(file));
 console.log(`${output}: ${files.length} files\n  ${files.join("\n  ")}`);
+console.log(`SHA-256: ${hash}`);
