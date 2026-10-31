@@ -10,7 +10,10 @@ The testing policy is [ADR-020](adr/020-live-site-checks-are-separate-from-regre
 Chrome toolbar/DevTools surfaces, heavy-ad CPU limits and performance checks.
 `git diff --check` and syntax checks passed. The two URL-entry regressions passed
 **24 stress runs** (12 each). The package script was also checked to reject
-uncommitted runtime changes before producing a zip.
+uncommitted runtime changes before producing a zip. The extracted 1.8.1 zip
+passed all **9 fresh-install checks**. Its 38 runtime files matched the tested
+commit byte-for-byte; archive integrity, embedded version and SHA-256 matched.
+No tests, docs, scripts, dependencies or local artifacts are included.
 
 Added coverage exercises click hijacks on article text and Play buttons,
 window.open popunders (including blank windows), detached synthetic links,
