@@ -1,6 +1,7 @@
 import { readSync, writeSync, onSyncChanged } from "./sync-storage.js";
 import { appendHistory, migrateHistory, readHistory } from "./history.js";
 import { applyMutation } from "./storage-mutations.js";
+import { TORRENT_SITES } from "./torrent-sites.js";
 import {
   ruleCondition,
   getBlockedUrls,
@@ -43,6 +44,7 @@ const STATS_TYPES = {
   annoyances: "annoyances",
   notifications: "notifications",
   ad_churn: "ad_churn",
+  torrent_ads: "other",
   _dynamic: "personal",
 };
 const LOG_FLUSH_DELAY_MS = 1000;
@@ -221,6 +223,7 @@ async function applySettings({
   adChurnRules,
   refreshThrottle,
   adRedirectGuard,
+  torrentAds,
   heavyAds,
 }) {
   const overrides = Object.values(await getSiteSettings());
@@ -230,6 +233,7 @@ async function applySettings({
     [ANNOYANCES_RULESET_ID]: annoyanceRules,
     notifications: notificationRules,
     ad_churn: adChurnRules,
+    torrent_ads: torrentAds,
   };
   const ids = Object.keys(rulesets);
   await chrome.declarativeNetRequest.updateEnabledRulesets({
@@ -264,7 +268,10 @@ async function applySettings({
     allFrames: false,
   });
   // Each frame owns its popup functions; top-page navigations are watched too.
-  const guardOn = adRedirectGuard || overrides.some((s) => s.adRedirectGuard);
+  // Load in child frames too: an unrelated ad iframe can open the popunder.
+  // The isolated policy activates torrent protection only on listed top sites.
+  const guardOn = adRedirectGuard || torrentAds ||
+    overrides.some((s) => s.adRedirectGuard || s.torrentAds);
   await setFrameScript(AD_REDIRECT_GUARD_ID, "ad-redirect-guard.js", guardOn, {
     world: "MAIN",
   });
@@ -527,6 +534,7 @@ const categoryFiles = {
   annoyanceRules: "annoyances",
   notificationRules: "notifications",
   adChurnRules: "ad-churn",
+  torrentAds: "torrent-ads",
 };
 const builtinRules = Promise.all(
   Object.entries(categoryFiles).map(async ([key, name]) => [
@@ -707,6 +715,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 function getPagePolicy() {
   return pagePolicySnapshot ??= queue(() => readSync(["settings", "siteSettings", "pausedSites", "pausedEverywhere", "hiddenElements"]))
+    .then((state) => ({ ...state, torrentSites: TORRENT_SITES }))
     .catch((error) => { pagePolicySnapshot = undefined; throw error; });
 }
 const frameGestures = new Map();

@@ -5,6 +5,10 @@
 <script>
 const params = new URLSearchParams(location.search);
 const control = document.getElementById('controls');
+// Place the outside-player control before navigating it. Reparenting a loaded
+// iframe recreates its browsing context and can leave its first paint pending
+// when the test tries to click the already-present control.
+if (params.has('outside')) document.body.append(control);
 const child = `/frame-control.html?${params}`;
 if (params.has('blank') || params.has('srcdoc')) fetch(child).then(r => r.text()).then(html => {
   html = '<script>window.frameParameters=' + JSON.stringify('?' + params) + ';<\/script>' + html;
@@ -12,7 +16,6 @@ if (params.has('blank') || params.has('srcdoc')) fetch(child).then(r => r.text()
   else { control.contentDocument.open(); control.contentDocument.write(html); control.contentDocument.close(); }
 });
 else control.src = (params.has('same') ? '__FIRST__' : '__THIRD__') + child;
-if (params.has('outside')) document.body.append(control);
 addEventListener('message', async event => {
   if (event.data?.loginReport) window.loginReport = event.data.loginReport;
   if (event.data?.request === 'play') {

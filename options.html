@@ -574,7 +574,7 @@
               ><span class="row-text"
                 ><span class="row-title">Pinned ads</span
                 ><span class="row-desc"
-                  >Ads stuck to the top of the window scroll away instead</span
+                  >Supported sticky ads scroll with the page instead</span
                 ></span
               ><input type="checkbox" id="pinnedAdsToggle" class="switch"
             /></label>
@@ -633,6 +633,46 @@
             /></label>
           </div>
         </fieldset>
+
+        <section aria-labelledby="adultSitesHeading">
+          <h2 id="adultSitesHeading" class="section-label">Adult sites</h2>
+          <div class="card">
+            <label class="row">
+              <span class="row-text">
+                <span class="row-title">Block age gates for adult sites</span>
+                <span class="row-desc" id="adultAgeGatesDescription">Hides supported age-gate overlays. Cannot unlock content withheld by the site.</span>
+              </span>
+              <input type="checkbox" id="adultAgeGatesToggle" class="switch" aria-describedby="adultAgeGatesDescription" />
+            </label>
+          </div>
+          <p class="note">On by default for Chaturbate, Pornhub, XVideos, XNXX, xHamster, Stripchat, YouPorn and RedTube. Changes apply to open pages; pausing a site also pauses this feature.</p>
+        </section>
+
+        <section aria-labelledby="torrentAdsHeading">
+          <h2 id="torrentAdsHeading" class="section-label">Torrent sites</h2>
+          <div class="card">
+            <label class="row">
+              <span class="row-text">
+                <span class="row-title">Block intrusive torrent-site ads</span>
+                <span class="row-desc" id="torrentAdsDescription">Blocks unwanted popup tabs and ads that open other sites. Ordinary banners stay.</span>
+              </span>
+              <input type="checkbox" id="torrentAdsToggle" class="switch" aria-describedby="torrentAdsDescription" />
+            </label>
+          </div>
+          <p class="note">On by default for 40 supported sites, including The Pirate Bay, Torlock, TorrentFunk and BitSearch. Reload open tabs after changing this setting. Pausing a site also pauses this protection.</p>
+        </section>
+
+        <section aria-labelledby="incognitoHeading">
+          <h2 id="incognitoHeading" class="section-label">Incognito</h2>
+          <div class="card row">
+            <span class="row-text">
+              <span id="incognitoStatus" class="row-title" role="status">Checking Incognito access…</span>
+              <span class="row-desc">Open extension details and turn on Allow in Incognito, then reload your Incognito tabs.</span>
+            </span>
+            <button id="incognitoButton" class="btn btn-plain">Extension details</button>
+          </div>
+          <p class="note">Chrome requires you to enable this yourself. Settings and saved blocking activity are shared with regular windows.</p>
+        </section>
 
         <section aria-labelledby="shortcutHeading">
           <h2 id="shortcutHeading" class="section-label">Keyboard shortcuts</h2>

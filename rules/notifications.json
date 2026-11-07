@@ -4,5 +4,6 @@
   {"id": 21, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||izooto.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
   {"id": 22, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||webpushr.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
   {"id": 23, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||aimtell.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
-  {"id": 24, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||pushcrew.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}}
+  {"id": 24, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||pushcrew.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "stylesheet", "image", "other"]}},
+  {"id": 25, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||cdn.p-n.io/pushly-sdk.min.js^", "resourceTypes": ["script"]}}
 ]

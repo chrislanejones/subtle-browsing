@@ -4,6 +4,7 @@
   "version": "1.9.0",
   "description": "Stop intrusive video, newsletter prompts and heavy ads while keeping ordinary banners.",
   "minimum_chrome_version": "121",
+  "incognito": "spanning",
   "permissions": [
     "storage",
     "unlimitedStorage",
@@ -19,6 +20,11 @@
   ],
   "declarative_net_request": {
     "rule_resources": [
+      {
+        "id": "torrent_ads",
+        "enabled": true,
+        "path": "rules/torrent-ads.json"
+      },
       {
         "id": "video_ads",
         "enabled": true,

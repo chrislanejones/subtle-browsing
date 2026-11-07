@@ -115,6 +115,7 @@ test("blocking has immediate undo and invalid input never saves a rule", async (
   await page.fill("#urlInput", "one.example");
   await page.click("#addButton");
   await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.locator("#blockedStatus")).toContainText("Undone.");
   expect((await ext.getSync("blockedUrls")).blockedUrls).toEqual([]);
   await page.fill("#urlInput", "bad host");
   await page.click("#addButton");
@@ -270,6 +271,11 @@ async function clickShadowButton(page, host, text) {
   const button = find(node);
   if (!button) throw new Error(`Missing ${text}`);
   await session.send("DOM.scrollIntoViewIfNeeded", { backendNodeId: button.backendNodeId });
+  // CDP exposes a new shadow control before Chrome paints its input surface.
+  // Wait for paint without synthesizing the user activation under test.
+  await quietEval(page, () => new Promise((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(resolve)),
+  ));
   const { model } = await session.send("DOM.getBoxModel", { backendNodeId: button.backendNodeId });
   const quad = model.content;
   await page.mouse.click((quad[0] + quad[4]) / 2, (quad[1] + quad[5]) / 2);
@@ -287,6 +293,7 @@ test("autoplay restart removal offers restore and lets the video play", async ({
     "subtle-removed-content",
     "Restore this content",
   );
+  await expect(page.locator("subtle-removed-content")).toHaveCount(0);
   const frame = page.frame({ name: "restarter" });
   await expect
     .poll(() =>
@@ -299,7 +306,6 @@ test("autoplay restart removal offers restore and lets the video play", async ({
     )
     .toBe(true);
   await expect(page.locator('iframe[name="restarter"]')).toBeVisible();
-  await expect(page.locator("subtle-removed-content")).toHaveCount(0);
 });
 
 test("floating video recovery stays in the viewport on a long article", async ({

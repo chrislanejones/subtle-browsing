@@ -1,4 +1,5 @@
 import { collectBannerEvidence } from "./live-evidence.js";
+import { DEFAULTS } from "../settings.js";
 // Read-only, opt-in live smoke check. No sign-in, purchases or form submissions.
 // Results are observations, not assertions that every ad/video path works.
 import { chromium } from "@playwright/test";
@@ -15,6 +16,11 @@ const targets = process.env.LIVE_TARGETS
       ["streaming-player", "https://player.vimeo.com/video/76979871"],
     ];
 const repeats = Math.max(1, Math.min(5, Number(process.env.LIVE_REPEATS) || 1));
+const overrides = JSON.parse(process.env.LIVE_SETTINGS ?? "{}");
+if (!overrides || Array.isArray(overrides) || typeof overrides !== "object" ||
+    Object.entries(overrides).some(([key, value]) => !Object.hasOwn(DEFAULTS, key) || typeof value !== "boolean"))
+  throw new Error("LIVE_SETTINGS must be an object of known boolean protection settings.");
+const settings = { ...DEFAULTS, ...overrides };
 const output = resolve(process.argv[2] ?? "artifacts/live-sites");
 await mkdir(output, { recursive: true });
 const results = [];
@@ -60,6 +66,30 @@ for (let sample = 1; sample <= repeats; sample++) {
               break;
             await new Promise((r) => setTimeout(r, 100));
           }
+          if (Object.keys(overrides).length)
+            await worker.evaluate(settings => chrome.storage.sync.set({ settings }), settings);
+          const expectedRules = Object.entries({ video_ads: settings.videoAdRules,
+            annoyances: settings.annoyanceRules, notifications: settings.notificationRules,
+            ad_churn: settings.adChurnRules, torrent_ads: settings.torrentAds,
+          }).filter(([, on]) => on).map(([id]) => id).sort();
+          const expectedScripts = ["cosmetic",
+            settings.autoplayGuard && "autoplay-guard", settings.heavyAds && "heavy-ad-guard",
+            (settings.autoplayGuard || settings.heavyAds) && "frame-collapse",
+            settings.refreshThrottle && "refresh-throttle",
+            (settings.adRedirectGuard || settings.torrentAds) && "ad-redirect-guard",
+            (settings.refreshThrottle || settings.adRedirectGuard || settings.torrentAds) && "page-world-policy",
+          ].filter(Boolean).sort();
+          let ready = false;
+          for (let i = 0; i < 100; i++) {
+            ready = await worker.evaluate(async ({ rules, scripts }) =>
+              JSON.stringify((await chrome.declarativeNetRequest.getEnabledRulesets()).sort()) === JSON.stringify(rules) &&
+              JSON.stringify((await chrome.scripting.getRegisteredContentScripts()).map(s => s.id).sort()) === JSON.stringify(scripts),
+            { rules: expectedRules, scripts: expectedScripts });
+            if (ready) break;
+            await new Promise(r => setTimeout(r, 100));
+          }
+          if (!ready) throw new Error("Extension protections did not finish applying.");
+          result.settings = settings;
         }
         const page = await context.newPage();
         page.setDefaultTimeout(15000);
@@ -89,6 +119,19 @@ for (let sample = 1; sample <= repeats; sample++) {
           userGesture: false,
         });
         result.observed = JSON.parse(snapshot.result.value);
+        const newsLayout = await session.send("Runtime.evaluate", {
+          expression: `JSON.stringify({
+            url:location.origin+location.pathname,
+            headline:document.querySelector('h1')?.innerText?.slice(0,180),
+            articleCharacters:document.querySelector('article')?.innerText?.length ?? 0,
+            accessRestricted:/access denied|access restricted|just a moment|verify you are human|403 forbidden|security challenge/i.test(document.title+' '+document.body.innerText.slice(0,300)),
+            slots:[...document.querySelectorAll('[id^="MileTech_"].fixedAd,aside:has(> div:only-child > .adWrapper:only-child > [id^="MileTech_"].fixedAd),.universal-ad__ad,.universal-ad__close-button,.sticky-bottom:has(.ad-sticky-container),.st-adunit-ad')].map(e=>{
+              const s=getComputedStyle(e),r=e.getBoundingClientRect();
+              return {id:e.id,classes:String(e.className),position:s.position,top:Math.round(r.top),width:Math.round(r.width),height:Math.round(r.height)};
+            })
+          })`, returnByValue: true, userGesture: false,
+        });
+        result.newsLayout = JSON.parse(newsLayout.result.value);
         result.bannerEvidence = await collectBannerEvidence(page);
         result.bannerCheck = result.bannerEvidence.length
           ? "Decoded visible creative images observed in marked ad regions; compare screenshots and paired samples. Canvas/video creatives are not measured."
@@ -98,11 +141,19 @@ for (let sample = 1; sample <= repeats; sample++) {
         result.userVideoCheck =
           "Inconclusive: no suitable playable video in the top document.";
         if (result.observed.videos.length) {
-          const playButton = page
-            .getByRole("button", { name: "Play", exact: true })
-            .first();
-          if (await playButton.isVisible()) {
-            await playButton.click();
+          let clicked = false;
+          // Some players cover their inner Play control with a second "Play
+          // video" button. Consent overlays can cover both. Do not force clicks
+          // through those, and still preserve the other observations on failure.
+          for (const name of ["Play video", "Play"]) {
+            for (const button of await page.getByRole("button", { name, exact: true }).all()) {
+              if (!await button.isVisible()) continue;
+              try { await button.click({ timeout: 2000 }); clicked = true; break; }
+              catch { /* Obscured or detached; try the next visible control. */ }
+            }
+            if (clicked) break;
+          }
+          if (clicked) {
             try {
               await page.waitForFunction(
                 () =>
@@ -121,7 +172,7 @@ for (let sample = 1; sample <= repeats; sample++) {
             result.userVideoCheck = `Clicked the player's Play button: ${state.result.value}`;
           } else
             result.userVideoCheck =
-              "Inconclusive: video exists but no visible Play button was available.";
+              "Inconclusive: no accessible Play control; it may be absent or obscured by an overlay.";
         }
         result.failedRequests = failed.length;
         result.blockedRequests = failed.filter((r) =>

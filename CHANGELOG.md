@@ -7,6 +7,32 @@ Version 1.6.0 is identified by the source tag `v1.6.0` on both remotes.
 
 Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
+## Unreleased
+
+- Extend **Pinned ads** to the publisher layouts observed on News4JAX, First
+  Coast News and WESH. Their banners and close controls scroll with the page;
+  unrelated sticky navigation remains unchanged. Add the observed Pushly SDK
+  to optional **Notification requests** blocking.
+- Correct the privacy and Store-preparation wording to disclose local page/URL
+  processing, activity retention, Chrome sync and shared Incognito storage.
+  Record the adult integration's Store-review risk without claiming approval.
+- Add default-on **Block intrusive torrent-site ads**, controlled only in full
+  Settings. A 40-target browser audit supplied scoped popunder-loader rules;
+  the existing popup guard also runs on those sites and their child frames.
+  Ordinary banners and unrelated sites retain their behavior. The audit found
+  30 usable homepages and ten targets whose content could not be inspected.
+- Search/submit/reset controls no longer authorize an unrelated ad popup from
+  a document-wide click handler. Ordinary form submission and intentional
+  navigation links remain available.
+- Add **Block age gates for adult sites**, on by default and shown only in full
+  Settings. Host-scoped CSS handles the supplied Chaturbate gate plus recognized
+  overlay patterns for Pornhub, XVideos, XNXX, xHamster, Stripchat, YouPorn and
+  RedTube. Global/site pauses and the switch restore the original styles.
+  This only exposes already-loaded content; server-side verification remains.
+- Show Incognito access status and an **Extension details** shortcut in Settings,
+  with setup instructions and disclosure that settings and blocking history are
+  shared with regular windows. Declare Chrome's existing `spanning` mode explicitly.
+
 ## 1.9.0 — 10-31-2026
 
 Source tag: `v1.9.0`. Prepared for unpacked use and Web Store submission;

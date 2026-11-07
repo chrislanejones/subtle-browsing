@@ -88,13 +88,15 @@ test.describe("popup", () => {
         refreshThrottle: false,
         adRedirectGuard: false,
         pinnedAds: true,
+        adultAgeGates: true,
+        torrentAds: true,
         aggressiveHeavyAds: false,
       });
     // The worker applies them
     await expect
       .poll(() => ext.enabledRulesets())
-      .toEqual(["annoyances", "video_ads"]);
-    await expect.poll(() => ext.registeredScripts()).toEqual(["cosmetic"]);
+      .toEqual(["annoyances", "torrent_ads", "video_ads"]);
+    await expect.poll(() => ext.registeredScripts()).toEqual(["ad-redirect-guard", "cosmetic", "page-world-policy"]);
   });
 
   test("blocks a typed URL, normalized, and flags a repeat", async ({

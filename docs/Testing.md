@@ -4,6 +4,111 @@ Release: **1.9.0**, checked **10-31-2026**. This is the detailed verification
 companion to the [README](../README.md) and [Changelog](../CHANGELOG.md).
 The testing policy is [ADR-020](adr/020-live-site-checks-are-separate-from-regression-tests.md).
 
+## Unreleased verification, 11-07-2026
+
+`pnpm exec playwright test --workers 2`: **219 passed in 2.6 minutes**, including
+CPU and performance checks. All 66 JavaScript files passed syntax checks;
+`git diff --check` passed. The torrent rules and policy share the same 40-domain
+scope.
+
+The new age-gate checks use local, non-explicit fixtures, including the supplied
+Chaturbate markup with its temporary verification URL removed. They cover eight
+site brands, hostname boundaries, late-added overlays, native modal dialogs,
+scroll/click restoration, live switches and pauses, full-settings-only controls,
+and a real Incognito context after enabling access in a disposable Chrome
+profile. This is cosmetic overlay coverage; content withheld by a server is
+not unlocked or manufactured. Live regional age-verification variants have not
+been verified.
+
+The [40-target torrent audit](testing/2026-11-07-torrent-sites.json) reached 30
+usable homepages. Four targets showed bot checks, three required login, one
+returned only an app shell, and two failed to navigate. The targets came from
+public lists plus FOSS/public-domain controls, not an independently established
+popularity ranking. No downloads or sign-ins were performed.
+
+A trusted click in Torlock's search input reproduced a popunder to a VPN-warning
+page. TorrentFunk's inline handler and the observed popunder-loader scripts on
+The Pirate Bay, BitSearch, FileMood and TorrentDownloads informed the new rules.
+Fixtures reproduce the document-wide click handler, including search submission
+and third-party frames, and preserve intentional links, forms and ordinary
+banner resources. Rule matching is checked across all 40 configured domains
+and all 12 identified script hosts, with unrelated hosts and shared CDN paths
+as negative controls.
+
+Separate fresh baseline/protected browser profiles checked The Pirate Bay,
+Torlock, BitSearch and FileMood after implementation. All eight homepage loads
+returned HTTP 200. The extension recorded nine blocked popunder-loader requests
+across The Pirate Bay, BitSearch and FileMood, including their fallback loaders.
+Torlock's click-triggered popup was not activated in this automated smoke run;
+its protection is verified by the regression fixture. No recognizable banner
+slots were present, so live banner preservation remains inconclusive. Sanitized
+paired observations are included in the audit JSON; screenshots and raw results
+remain local under `artifacts/torrent-validation/`.
+
+These are source changes, not a new packaged or published release.
+
+### Local-news follow-up, 11-07-2026
+
+The first full run exposed an intermittent outside-player iframe test timeout.
+A retained trace showed a click dispatched while the frame's DOM existed but
+its surface was still blank; the page never attempted playback. The fixture now
+positions the iframe before navigation, and the test waits for two child-frame
+animation frames through CDP without granting user activation. It also asserts
+that playback was actually attempted before checking that it remained paused.
+The corrected case passed **32 repeated runs**. The same readiness wait now
+covers the rest of the iframe controls, with same-process frames using the
+page's CDP session. The complete iframe suite passed **72 checks across three
+repeats**; production autoplay code was unchanged and retries remain disabled.
+
+A second existing test read storage immediately after clicking Undo, before its
+asynchronous save completed. It now waits for the UI's Undone confirmation
+before asserting that storage is empty; production Undo behavior was unchanged.
+
+The closed-shadow-control click helper needed the same paint wait: a retained
+trace showed the Restore button still present after a click arrived before its
+surface was ready. Restore, floating-video recovery and picker Undo passed
+**24 repeated checks** after that change. One ad-refresh test timed out while
+starting its browser; its eight diagnostic reruns passed.
+
+[Sanitized observations](testing/2026-11-07-local-news.json) cover News4JAX,
+First Coast News, Action News Jax, The Florida Times-Union, The St. Augustine
+Record, WFLA, WESH and Orlando Sentinel, plus two article URLs. Separate fresh
+baseline/protected profiles checked default settings. Four homepages were also
+checked with notification requests, newsletter offers, ad-refresh/sync frames
+and slow ad refresh enabled.
+
+The audit led to precise layout rules for MileTech/Graham ad slots, TEGNA's
+universal banner and its close button, and Hearst's marked bottom ad rail.
+A News4JAX follow-up found a sticky ad-only ancestor around an already-unpinned
+ad; the ancestor now scrolls too. Mixed editorial sidebars and unrelated sticky
+controls remain unchanged. Four new regression tests cover actual scrolling,
+decoded banner images, late slots, live disabling/pauses and Pushly SDK blocking.
+
+Live results confirm the new ad positions on News4JAX, First Coast News and
+WESH. Default protection stopped the observed unwanted autoplay on News4JAX and
+First Coast News. Visible decoded banner creatives remained in protected samples
+on First Coast News, Action News Jax, the two Gannett newspapers and Orlando
+Sentinel. News4JAX's article also retained creative images. Auctions differ, so
+the counts are not a measurement of how many banners were removed or preserved.
+
+The two Gannett homepages returned access restrictions in the shared browser
+but loaded in fresh automated profiles. WFLA loaded in the shared browser, then
+returned HTTP 403 in both automated profiles; First Coast News's article also
+returned HTTP 403 in both. These blocked-page checks remain inconclusive.
+
+The first WESH playback attempt targeted an inner Play button covered by another
+control. The checker now tries accessible Play video controls and records an
+inconclusive result when an overlay prevents a click, while retaining the other
+observations. Its follow-up advanced video beyond one second in both profiles.
+User-started video also advanced on the protected Jacksonville and St. Augustine
+newspaper homepages. No consent gate was bypassed or force-clicked.
+
+Optional protection blocked the observed Pushly SDK on Orlando Sentinel, Browsi
+on First Coast News and multiple cookie-sync frames on those sites and News4JAX.
+Banner preservation with all four optional settings remains inconclusive in
+this live sample; fixture compatibility passed. Raw samples and screenshots
+remain local in `artifacts/news-audit/`.
+
 ## 1.9.0 verification, 10-31-2026
 
 `pnpm exec playwright test --workers 2`: **191 passed in 2.5 minutes**, including
@@ -187,14 +292,20 @@ Checks cover:
 pnpm run test:live
 # A specific player check, with the same baseline/protected procedure:
 LIVE_TARGETS='[["streaming-player","https://player.vimeo.com/video/76979871"]]' pnpm run test:live artifacts/live-player
+# Local news with optional prompt and refresh protections enabled:
+LIVE_SETTINGS='{"notificationRules":true,"annoyanceRules":true,"adChurnRules":true,"refreshThrottle":true}' LIVE_TARGETS='[["news","https://www.news4jax.com/"]]' pnpm run test:live artifacts/live-news-optional
 ```
 
 The script does not sign in, buy anything, submit forms or change consent
 preferences. It visits each URL in separate fresh baseline and protected
 profiles, waits for initial content, scrolls once and records visible images,
-recognized ad slots, videos, blocked requests and extension removal logs.
-When a top-document video has a visible Play button, it clicks that button
-and checks that playback progresses. Screenshots and JSON go in `artifacts/`
+recognized ad slots, videos, blocked requests and extension removal logs. News
+observations also include recognized sticky-ad positions and access restrictions.
+`LIVE_SETTINGS` accepts known boolean protection settings and applies them only
+to the fresh protected profile, after waiting for rules and scripts to be ready.
+When a top-document video has an accessible Play or Play video button, it clicks
+that button and checks that playback progresses. Obscured controls are recorded
+as inconclusive; clicks are not forced. Screenshots and JSON go in `artifacts/`
 (ignored by Git and excluded from packaging).
 
 A public page can return different ads in two sessions. An ad slot is not

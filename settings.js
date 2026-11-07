@@ -15,6 +15,8 @@ export const DEFAULTS = {
   refreshThrottle: false, // refresh-throttle.js
   adRedirectGuard: false, // ad-redirect-guard.js
   pinnedAds: true, // cosmetic.js
+  adultAgeGates: true, // cosmetic.js; control lives only in full settings
+  torrentAds: true, // torrent-site popunders; control lives only in full settings
   aggressiveHeavyAds: false,
   heavyAds: true, // heavy-ad-guard.js and the download count in background.js
 };
@@ -136,6 +138,8 @@ export const FEATURES = {
   refreshThrottle: "Slow ad refresh",
   adRedirectGuard: "Stop ad redirects",
   pinnedAds: "Pinned ads",
+  adultAgeGates: "Block age gates for adult sites",
+  torrentAds: "Block intrusive torrent-site ads",
   aggressiveHeavyAds: "All heavy third-party embeds",
 };
 export async function getSiteSettings() {

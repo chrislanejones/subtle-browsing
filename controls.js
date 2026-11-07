@@ -9,6 +9,12 @@ import {
   getPauseState,
 } from "./settings.js";
 
+// The adult/torrent switches belong only in the full settings page, including
+// when the popup or DevTools renders its shared per-site/default controls.
+const quickFeatures = Object.entries(FEATURES).filter(
+  ([key]) => !["adultAgeGates", "torrentAds"].includes(key),
+);
+
 // Shared across toolbar, settings and DevTools. Native selects make the
 // distinction between inherited defaults and explicit site choices visible.
 export async function mountSiteControls(container, tab) {
@@ -32,7 +38,7 @@ export async function mountSiteControls(container, tab) {
   const body = document.createElement("div");
   body.append(note);
   const selects = {};
-  for (const [key, title] of Object.entries(FEATURES)) {
+  for (const [key, title] of quickFeatures) {
     const label = document.createElement("label");
     label.className = "site-control";
     const text = document.createElement("span");
@@ -116,7 +122,7 @@ export async function mountGlobalControls(container) {
   title.textContent = "Default protections";
   container.append(title);
   const settings = await getSettings();
-  for (const [key, name] of Object.entries(FEATURES)) {
+  for (const [key, name] of quickFeatures) {
     const label = document.createElement("label");
     label.className = "site-control";
     const input = document.createElement("input");

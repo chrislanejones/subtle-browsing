@@ -9,7 +9,8 @@
       new CustomEvent("subtle-page-policy", {
         detail: {
           refreshThrottle: subtlePolicy.enabled("refreshThrottle"),
-          adRedirectGuard: subtlePolicy.enabled("adRedirectGuard"),
+          adRedirectGuard: subtlePolicy.enabled("adRedirectGuard") ||
+            (subtlePolicy.torrentSite && subtlePolicy.enabled("torrentAds")),
         },
       }),
     );

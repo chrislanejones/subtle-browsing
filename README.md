@@ -71,7 +71,9 @@ on every bad ad by hand.
 | Ad refresh and sync frames | Blocks Browsi's ad refresh and the hidden cookie-sync frames that ad auctions open. [See the URLs](rules/ad-churn.json) | No |
 | Slow ad refresh | Lets each Google ad slot refresh at most once every 2 minutes, and not in a hidden tab | No |
 | Stop ad redirects | Stops unwanted cross-site redirects and click-triggered popunders | No |
-| Pinned ads | An ad stuck to the top of the window while you scroll stays at the top of the page instead, and scrolls away like a banner. The site's own sticky header is left alone | Yes |
+| Pinned ads | Supported sticky ads scroll with the page, including news-site sidebars and bottom banners. The site's own sticky header is left alone | Yes |
+| Block age gates for adult sites | Hides recognized age-gate overlays on selected adult sites and releases their scroll lock. The switch appears only in full Settings | Yes |
+| Block intrusive torrent-site ads | Stops unrequested popups and identified popunder scripts on the 40 audited domains; ordinary banners remain. The switch appears only in full Settings | Yes |
 | Site controls | Override individual protections for a site and its subdomains | Inherit defaults |
 | Hide on this site | Hide a picked element only on its hostname; undo in settings or DevTools | — |
 | On / Off on site / Off / 10 min off | The Blocking card at the bottom of the popup. Turns everything off for one site in case it breaks, for every site at once, or for one site for 10 minutes | On |
@@ -117,6 +119,20 @@ needs developer registration (agreement and registration fee) before upload.
 The prepared package is `dist/url-blocker-1.9.0.zip`; the listing kit is in
 [docs/store/LISTING.md](docs/store/LISTING.md).
 
+### Incognito
+
+Open `chrome://extensions`, find **URL Blocker**, open **Details**, and turn on
+**Allow in Incognito**. Reload your Incognito tabs afterward. Full Settings has
+an **Incognito** section showing current access and an **Extension details**
+button that opens the right entry. Chrome requires this user action; the
+extension cannot enable access itself.
+[Chrome's access instructions](https://developer.chrome.com/docs/extensions/develop/concepts/declare-permissions#allow_access_to_file_urls_and_incognito_pages).
+
+The extension uses Chrome's shared (`spanning`) mode. Settings and saved
+blocking activity are shared with regular windows; Incognito does not give
+this extension a separate private log.
+[Chrome's Incognito modes](https://developer.chrome.com/docs/extensions/reference/manifest/incognito).
+
 ## How to use
 
 ### What gets blocked
@@ -124,7 +140,8 @@ The prepared package is `dist/url-blocker-1.9.0.zip`; the listing kit is in
 The popup shows the current site’s effective protection state and **Controls
 for (site)**. Expand **Defaults for all sites** for global settings, then
 **Offers, prompts and broader limits** for the six default-off choices. The settings page and DevTools **Default protections** expose the
-same choices.
+same choices. **Block age gates for adult sites** and **Block intrusive
+torrent-site ads** appear only in full Settings and are both on by default.
 
 | Switch | How it works |
 | --- | --- |
@@ -133,13 +150,38 @@ same choices.
 | **Heavy ads** | Stops an identified third-party ad frame at 4 MB of declared downloads or 5 seconds of long tasks in 30 seconds. |
 | **All heavy third-party embeds** | Broadens Heavy ads to unrecognized third-party frames. Heavy ads must also be on. |
 | **Newsletter offers** | Uses [`rules/annoyances.json`](rules/annoyances.json): OptinMonster, Privy, Justuno, Sumo, Klaviyo forms and similar. |
-| **Notification requests** | Uses [`rules/notifications.json`](rules/notifications.json): OneSignal, PushEngage, iZooto, Webpushr, Aimtell and PushCrew. |
+| **Notification requests** | Uses [`rules/notifications.json`](rules/notifications.json): OneSignal, PushEngage, iZooto, Webpushr, Aimtell, PushCrew and the Pushly SDK observed on Orlando Sentinel. |
 | **Ad refresh and sync frames** | Uses [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts, plus 26 hidden cookie-sync frames from ad auctions by name (OpenX, PubMatic, Rubicon, AppNexus, Criteo, TripleLift, Index Exchange, LiveIntent and others) and 3 patterns for sync frames from anyone else. |
 | **Slow ad refresh** | Wraps Google's ad tag (`googletag.pubads().refresh()`) in [`refresh-throttle.js`](refresh-throttle.js). Every slot's first load goes through; after that each slot refreshes at most once every 2 minutes, and not while the tab is hidden. |
 | **Stop ad redirects** | [`ad-redirect-guard.js`](ad-redirect-guard.js) checks top-page navigation and scripted popups in every frame against the control you used. Article clicks and Play buttons cannot authorize a jump to another site. Links, forms, reload and back/forward remain usable. |
+| **Block age gates for adult sites** | Full Settings only. Hides recognized age-gate overlays, their containing dialogs and adjacent backdrops, and restores scrolling. Applies to Chaturbate, Pornhub, XVideos, XNXX, xHamster, Stripchat, YouPorn and RedTube, including subdomains. Turning it off or pausing the site restores the original page styles. |
+| **Block intrusive torrent-site ads** | Full Settings only. Activates the popup/redirect guard on the domains in [`torrent-sites.js`](torrent-sites.js), including their child frames, and blocks the observed popunder scripts in [`rules/torrent-ads.json`](rules/torrent-ads.json). Search actions cannot authorize unrelated popups; intentional links and sign-in buttons still work. Reload pages after changing this switch. |
 
 More on each:
 
+- **Torrent-site ads:** the [40-site browser audit](docs/testing/2026-11-07-torrent-sites.json)
+  reached 30 usable homepages; ten targets were behind bot checks or logins,
+  returned only an app shell, or failed to navigate. The source lists are not
+  an independently verified popularity ranking. The new rules cover observed
+  popunder loaders and unwanted window openings; they do not certify that every
+  ad on every target is blocked. Ordinary banner resources and shared CDN
+  domains are not broadly blocked. Main-page scripts and child frames consult
+  the top site's policy; site pauses override both parts of this feature.
+- **Local news:** pinned-ad handling includes the publisher structures observed
+  on News4JAX, First Coast News and WESH. Their ad boxes and close buttons scroll
+  with the page while ordinary banner content and site navigation remain.
+  For fewer additional interruptions, enable **Notification requests**,
+  **Newsletter offers**, **Ad refresh and sync frames**, and **Slow ad refresh**
+  in the site's controls. These remain optional: newsletter/notification tools
+  can also provide subscriptions a reader wants. Cookie-consent controls and
+  subscription/login gates are not treated as ad containers.
+- **Adult age gates:** coverage is limited to the hostnames and DOM patterns in
+  [`cosmetic.js`](cosmetic.js). It includes the supplied Chaturbate
+  `#age_gate_home` structure. Rules are tested against local fixtures, not every
+  live regional variant. Hiding a prompt only reveals content already delivered
+  to the browser; it cannot unlock content withheld by the server, complete
+  verification or grant account access. If hiding leaves an empty page, switch
+  the feature off in Settings to restore the prompt.
 - **Video ad companies:** Google's video ad engine (IMA, `ima3.js`) runs
   inside JW Player and lots of other players. Blocking it outright can
   leave the player waiting forever, so the extension swaps in its own
@@ -204,8 +246,9 @@ More on each:
 | --- | --- | --- |
 | Video ad companies | [`rules/video-ads.json`](rules/video-ads.json) | 20 |
 | Newsletter offers | [`rules/annoyances.json`](rules/annoyances.json) | 35 |
-| Notification requests | [`rules/notifications.json`](rules/notifications.json) | 6 |
+| Notification requests | [`rules/notifications.json`](rules/notifications.json) | 7 |
 | Ad refresh and sync frames | [`rules/ad-churn.json`](rules/ad-churn.json) | 30 |
+| Block intrusive torrent-site ads | [`rules/torrent-ads.json`](rules/torrent-ads.json) | 3 |
 
 Each rule's `urlFilter` is the URL it catches. Your own blocked URLs are on
 the settings page, and on an unpacked install the DevTools log lists every
@@ -338,7 +381,10 @@ in the header when blocking is off everywhere.
 | Charts | Blocks per day for 14, 30 or 90 days by type, what was blocked this week, the most blocked domains and the sites with the most blocks. Hover a bar for its numbers. **Show as a table** under Blocks per day lists every day |
 | What gets blocked | Every kind of blocking: what it stops, how many rules, whether it's on and how many it caught this week |
 | Recent blocks | The last 12 blocks: when, what type, the domain and the site you were on |
-| Block | The same nine global defaults as the popup |
+| Block | The global defaults also available in the popup |
+| Adult sites | The age-gate switch, shown only in this full settings view |
+| Torrent sites | The intrusive-ad switch, shown only in this full settings view |
+| Incognito | Access status, instructions and a link to Chrome's extension details |
 | Hidden elements and site overrides | Unhide elements and reset per-site choices |
 | Blocked URLs | Add a URL, search your list, remove entries |
 | Paused sites | See every paused site and **Unpause** any of them |
@@ -406,9 +452,10 @@ EasyList blocks everything, which is the opposite of the point.
 | [Better Ads Standards](https://www.betterads.org/standards/) (Coalition for Better Ads) | Not a blocklist. It defines the formats people hate: autoplay video with sound, pop-ups, countdown screens, large sticky ads | The best spec for what counts as "annoying" |
 | [`@adguard/dnr-rulesets`](https://www.npmjs.com/package/@adguard/dnr-rulesets) (npm) | AdGuard's lists already converted to Chrome's built-in blocking format (Manifest V3 rules) | The easiest way in, but GPL-3.0-only, so it isn't bundled here |
 
-None of these ship inside the extension. The four built-in lists
+None of these ship inside the extension. The five built-in lists
 ([`rules/video-ads.json`](rules/video-ads.json), [`rules/annoyances.json`](rules/annoyances.json),
-[`rules/notifications.json`](rules/notifications.json), [`rules/ad-churn.json`](rules/ad-churn.json)) are small and hand-made:
+[`rules/notifications.json`](rules/notifications.json), [`rules/ad-churn.json`](rules/ad-churn.json),
+[`rules/torrent-ads.json`](rules/torrent-ads.json)) are small and hand-made:
 
 - AdGuard's rulesets are GPL-3.0-only and this repo is MIT.
 - Most annoyance filters hide page elements with CSS, which Chrome's
@@ -428,22 +475,36 @@ The full reasoning is in [ADR-004](docs/adr/004-built-in-rulesets-are-hand-made-
 | Heavy ad removal | A long-task observer inside third-party frames, plus adding up download sizes in the background. Turning it off stops enforcement; site overrides can keep the guard enabled |
 | Element picker | Only loads into a tab when you use it, and takes its overlay off the page when you're done |
 | Box hiding and restore | One message listener per frame while autoplay or heavy-ad removal is enabled globally or on a site |
-| Site policy and element hiding | A shared settings cache and a small CSS injector per frame; no polling or mutation observer |
+| Site policy and element hiding | A shared settings cache and small CSS injectors per frame; no polling. Supported adult hosts also observe native dialog openings while age-gate removal is on |
 | Slow ad refresh | One small script in each top page while the switch is on for that site. It only does work when the page uses Google's ad tag |
-| Stop ad redirects | Event listeners and small wrappers for navigation, window.open and scripted link clicks; no polling |
+| Stop ad redirects and torrent popups | Event listeners and small wrappers for navigation, window.open and scripted link clicks; no polling. Registered while either protection is on, with torrent-only enforcement limited to listed top sites and their frames |
 | Google IMA stand-in | Only loads on pages that ask for Google's video ad engine, in place of the real one |
 
 ## Privacy
 
-This extension:
+URL Blocker processes page elements, resource URLs, frame download sizes and
+playback events on your device to apply your blocking choices and support the
+element picker. The developer receives none of this information. The extension
+has no analytics, advertising of its own, or developer-operated data server.
 
-- Works locally in your browser
-- Doesn't collect any data
-- Doesn't send anything to servers of its own. Your block list, paused
-  sites, switches, site overrides and hidden selectors sync through your Google account the way Chrome
-  syncs any extension's settings. The log and today's count never leave
-  your computer.
-- Blocks only the URLs you add and the built-in lists you leave on
+Your saved URL rules, paused sites, switches, site overrides and hidden-element
+selectors use Chrome's `storage.sync`. Chrome can sync these through your Google
+account according to your browser settings; they can contain site names or URLs.
+They are not sent to the developer, advertisers or data brokers.
+
+Where Chrome exposes blocking feedback, the extension stores the last 100 blocked
+request URLs with timestamps and page domains locally, plus up to 90 days of
+aggregated counts by domain, page and type. Older history is pruned when history
+is updated. This activity never syncs or leaves
+the device through the extension. Store installations cannot use Chrome's
+unpacked-only request feedback and show the affected statistics as unavailable.
+Incognito uses the same settings and local activity storage as regular windows.
+
+You can remove saved rules in Settings and clear the recent log in DevTools.
+Uninstalling removes the extension's local storage. The extension does not sell
+data, use it for advertising or credit decisions, or use it for purposes beyond
+its disclosed blocking features. Its use of information received from Google
+APIs adheres to the Chrome Web Store User Data Policy, including Limited Use.
 
 ## Permissions
 

@@ -209,7 +209,7 @@ test.describe("autoplay stopper", () => {
   test("switched off, it unregisters and autoplay plays", async ({ ext, page }) => {
     await ext.setSettings({ autoplayGuard: false });
     // The frame collapser stays for heavy ads
-    expect(await ext.registeredScripts()).toEqual(["cosmetic", "frame-collapse", "heavy-ad-guard"]);
+    expect(await ext.registeredScripts()).toEqual(["ad-redirect-guard", "cosmetic", "frame-collapse", "heavy-ad-guard", "page-world-policy"]);
 
     await page.goto(`${FIRST}/autoplay.html`);
     await expect.poll(async () => (await videoState(page)).mutedAuto).toEqual({ playing: true, tried: true });
@@ -223,8 +223,8 @@ test.describe("autoplay stopper", () => {
 
   test("with both frame features off, the collapser is unregistered too", async ({ ext }) => {
     await ext.setSettings({ autoplayGuard: false, heavyAds: false });
-    expect(await ext.registeredScripts()).toEqual(["cosmetic"]);
+    expect(await ext.registeredScripts()).toEqual(["ad-redirect-guard", "cosmetic", "page-world-policy"]);
     await ext.setSettings({});
-    expect(await ext.registeredScripts()).toEqual(["autoplay-guard", "cosmetic", "frame-collapse", "heavy-ad-guard"]);
+    expect(await ext.registeredScripts()).toEqual(["ad-redirect-guard", "autoplay-guard", "cosmetic", "frame-collapse", "heavy-ad-guard", "page-world-policy"]);
   });
 });

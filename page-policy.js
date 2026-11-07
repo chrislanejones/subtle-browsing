@@ -20,6 +20,8 @@
     refreshThrottle: false,
     adRedirectGuard: false,
     pinnedAds: true,
+    adultAgeGates: true,
+    torrentAds: true,
     aggressiveHeavyAds: false,
     cosmetic: true,
   };
@@ -44,6 +46,9 @@
     },
     subscribe(callback) { listeners.add(callback); return () => listeners.delete(callback); },
     get hiddenElements() { return state.hiddenElements ?? []; },
+    get torrentSite() {
+      return (state.torrentSites ?? []).some((host) => site === host || site.endsWith(`.${host}`));
+    },
     site,
     enabled(key) {
       if (

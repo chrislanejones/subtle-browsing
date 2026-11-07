@@ -47,6 +47,7 @@
   }
   for (const type of ["pointerdown", "click", "keydown"])
     listen(window, type, (event) => {
+      if (!on) { intent = null; return; }
       if (!event.isTrusted) return;
       if ((type === "keydown" && !["Enter", " "].includes(event.key)) ||
           (type !== "keydown" && event.button !== 0)) {
@@ -58,7 +59,10 @@
         ? target.closest("a[href], area[href], button, [role='button'], input[type='button'], input[type='submit']")
         : null;
       const href = control?.matches("a[href], area[href]") ? control.href : null;
-      if (!control || (!href && mediaControl(control))) {
+      // Search/submit/reset actions authorize their form, not an unrelated
+      // window.open borrowed by a document-wide advertising click handler.
+      const formControl = control?.form && ["submit", "reset"].includes(control.type);
+      if (!control || formControl || (!href && mediaControl(control))) {
         intent = null;
         return;
       }

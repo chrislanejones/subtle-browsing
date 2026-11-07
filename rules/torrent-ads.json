@@ -1,0 +1,182 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "requestDomains": [
+        "unhappyweakness.com",
+        "portalfluently.com",
+        "ucodp.org",
+        "displayvertising.com",
+        "d3mzokty951c5w.cloudfront.net",
+        "idgzqbnryogez.com",
+        "xhduilwxcewlzn.com",
+        "cdn4ads.com",
+        "d3g5ovfngjw9bw.cloudfront.net",
+        "ryivqamowwxxlk.com",
+        "spkeokimt.com",
+        "cleftplumous.com"
+      ],
+      "initiatorDomains": [
+        "1337x.to",
+        "thepiratebay.org",
+        "torlock.com",
+        "ext.to",
+        "limetorrents.fun",
+        "torrentdownloads.pro",
+        "knaben.org",
+        "eztvx.to",
+        "bitsearch.eu",
+        "nyaa.si",
+        "rutracker.org",
+        "fitgirl-repacks.site",
+        "torrentfunk.com",
+        "torrends.to",
+        "rarbgdump.com",
+        "rutor.is",
+        "tr4ker.net",
+        "uztracker.me",
+        "nnmclub.to",
+        "torrenting.com",
+        "fosstorrents.com",
+        "damag.net",
+        "bt4gprx.com",
+        "filemood.com",
+        "torrentproject.cc",
+        "torrentquest.com",
+        "extratorrent.st",
+        "cleanbay.netlify.app",
+        "torrents-csv.com",
+        "theblackholebay.lol",
+        "snowfl.com",
+        "uindex.org",
+        "0mag.net",
+        "publicdomaintorrents.info",
+        "btdig.com",
+        "crotorrents.com",
+        "myanonamouse.net",
+        "torrentleech.org",
+        "glodls.to",
+        "igg-games.com"
+      ],
+      "resourceTypes": [
+        "script"
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||torlock.com/z6r4p.php^",
+      "initiatorDomains": [
+        "1337x.to",
+        "thepiratebay.org",
+        "torlock.com",
+        "ext.to",
+        "limetorrents.fun",
+        "torrentdownloads.pro",
+        "knaben.org",
+        "eztvx.to",
+        "bitsearch.eu",
+        "nyaa.si",
+        "rutracker.org",
+        "fitgirl-repacks.site",
+        "torrentfunk.com",
+        "torrends.to",
+        "rarbgdump.com",
+        "rutor.is",
+        "tr4ker.net",
+        "uztracker.me",
+        "nnmclub.to",
+        "torrenting.com",
+        "fosstorrents.com",
+        "damag.net",
+        "bt4gprx.com",
+        "filemood.com",
+        "torrentproject.cc",
+        "torrentquest.com",
+        "extratorrent.st",
+        "cleanbay.netlify.app",
+        "torrents-csv.com",
+        "theblackholebay.lol",
+        "snowfl.com",
+        "uindex.org",
+        "0mag.net",
+        "publicdomaintorrents.info",
+        "btdig.com",
+        "crotorrents.com",
+        "myanonamouse.net",
+        "torrentleech.org",
+        "glodls.to",
+        "igg-games.com"
+      ],
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame"
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||torrentfunk.com/m8q2w.php^",
+      "initiatorDomains": [
+        "1337x.to",
+        "thepiratebay.org",
+        "torlock.com",
+        "ext.to",
+        "limetorrents.fun",
+        "torrentdownloads.pro",
+        "knaben.org",
+        "eztvx.to",
+        "bitsearch.eu",
+        "nyaa.si",
+        "rutracker.org",
+        "fitgirl-repacks.site",
+        "torrentfunk.com",
+        "torrends.to",
+        "rarbgdump.com",
+        "rutor.is",
+        "tr4ker.net",
+        "uztracker.me",
+        "nnmclub.to",
+        "torrenting.com",
+        "fosstorrents.com",
+        "damag.net",
+        "bt4gprx.com",
+        "filemood.com",
+        "torrentproject.cc",
+        "torrentquest.com",
+        "extratorrent.st",
+        "cleanbay.netlify.app",
+        "torrents-csv.com",
+        "theblackholebay.lol",
+        "snowfl.com",
+        "uindex.org",
+        "0mag.net",
+        "publicdomaintorrents.info",
+        "btdig.com",
+        "crotorrents.com",
+        "myanonamouse.net",
+        "torrentleech.org",
+        "glodls.to",
+        "igg-games.com"
+      ],
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame"
+      ]
+    }
+  }
+]

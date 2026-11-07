@@ -1,0 +1,754 @@
+{
+  "date": "2026-11-07",
+  "selection": "40 candidates from public lists, including FOSS/public-domain controls. Not an independently measured popularity ranking or a recommendation.",
+  "scope": "Initial pages inspected through the shared browser, plus a trusted click reproduction on Torlock. Login-protected and bot-check content was not inspected. No torrent downloads or account sign-ins.",
+  "sources": [
+    "https://privacysavvy.com/security/torrents/best-torrent-sites/",
+    "https://fmhy.net/torrenting",
+    "https://vpnalert.com/resources/best-torrent-websites/"
+  ],
+  "totals": {
+    "bot_check": 4,
+    "homepage_inspected": 30,
+    "app_shell_only": 1,
+    "login_required": 3,
+    "navigation_failed": 2
+  },
+  "reproductions": [
+    {
+      "site": "torlock.com",
+      "action": "Clicked the search input without submitting a search",
+      "data": {
+        "url": "https://www.torlock.com/",
+        "attempts": [
+          [
+            "/z6r4p.php?c=p1",
+            "_blank",
+            "noopener,noreferrer"
+          ]
+        ]
+      },
+      "popupDestination": "https://trustedvpn.site/vpnywarning"
+    }
+  ],
+  "sites": [
+    {
+      "name": "1337x",
+      "url": "https://1337x.to/home/",
+      "checkedAt": "2026-11-07T05:52:13.330Z",
+      "status": "bot_check",
+      "finalUrl": "https://1337x.to/home/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://1337x.to/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1",
+        "https://challenges.cloudflare.com/turnstile/v0/b/8340802ab0bb/api.js"
+      ]
+    },
+    {
+      "name": "The Pirate Bay",
+      "url": "https://thepiratebay.org/",
+      "checkedAt": "2026-11-07T05:52:16.721Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://thepiratebay.org/index.html",
+      "findings": "Three loaded script sources contained popunder, window.open or notification code.",
+      "scripts": [
+        "https://thepiratebay.org/static/main.js",
+        "https://unhappyweakness.com/0c/e3/13/0ce3135c177b20043c5650228182ad9a.js",
+        "https://portalfluently.com/sfp.js",
+        "https://ucodp.org/9/87af602928113e122cd6f92e7eda1764",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "Torlock",
+      "url": "https://www.torlock.com/",
+      "checkedAt": "2026-11-07T05:52:19.918Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://www.torlock.com/",
+      "findings": "Clicking the search input opened /z6r4p.php?c=p1, which redirected to a VPN-warning tab.",
+      "scripts": [
+        "https://e.dtscout.com/e/",
+        "https://l.t0r.store/jquery-3.5.1.s.m.js",
+        "https://l.t0r.store/bs/bootstrap.min.js",
+        "https://s10.histats.com/js15_as.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092",
+        "https://s4.histats.com/stats/0.php",
+        "https://pd.sharethis.com/pd/dtscout",
+        "https://p.mrktmtrcs.net/mm.js",
+        "https://tags.crwdcntrl.net/lt/c/3825/lt.min.js",
+        "https://t.dtscdn.com/widget/"
+      ]
+    },
+    {
+      "name": "EXT",
+      "url": "https://ext.to/",
+      "checkedAt": "2026-11-07T05:52:20.763Z",
+      "status": "bot_check",
+      "finalUrl": "https://ext.to/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://ext.to/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1",
+        "https://challenges.cloudflare.com/turnstile/v0/b/8340802ab0bb/api.js"
+      ]
+    },
+    {
+      "name": "LimeTorrents",
+      "url": "https://www.limetorrents.fun/",
+      "checkedAt": "2026-11-07T05:52:21.459Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://www.limetorrents.fun/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://www.googletagmanager.com/gtag/js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "TorrentDownloads",
+      "url": "https://www.torrentdownloads.pro/",
+      "checkedAt": "2026-11-07T05:52:39.855Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://www.torrentdownloads.pro/",
+      "findings": "Inline aclib.runPop call and cleftplumous.com loader.",
+      "scripts": [
+        "https://ssl.google-analytics.com/ga.js",
+        "https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js",
+        "https://acscdn.com/script/suv5.js",
+        "https://acscdn.com/script/aclib.js",
+        "https://tb.cleftplumous.com/spvJApoPwZrPS/158220",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "Knaben",
+      "url": "https://knaben.org/",
+      "checkedAt": "2026-11-07T05:52:40.811Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://knaben.org/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://knaben.org/js/main-min.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "EZTV",
+      "url": "https://eztvx.to/",
+      "checkedAt": "2026-11-07T05:52:41.647Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://eztvx.to/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js",
+        "https://www.googletagmanager.com/gtag/js",
+        "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.min.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "BitSearch",
+      "url": "https://bitsearch.eu/",
+      "checkedAt": "2026-11-07T05:52:45.674Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://bitsearch.eu/",
+      "findings": "Inline popundersPerIP loader injects JavaScript from displayvertising.com and three fallbacks.",
+      "scripts": [
+        "https://www.displayvertising.com/uoffline.min.css",
+        "https://getstats.org/api/script.js",
+        "https://getstats.org/api/script.js",
+        "https://bitsearch.eu/js/live-count.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092",
+        "https://c.adsco.re/"
+      ]
+    },
+    {
+      "name": "Nyaa",
+      "url": "https://nyaa.si/",
+      "checkedAt": "2026-11-07T05:52:46.268Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://nyaa.si/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/markdown-it/8.3.1/markdown-it.min.js",
+        "https://nyaa.si/static/js/bootstrap-select.min.js",
+        "https://nyaa.si/static/js/main.min.js"
+      ]
+    },
+    {
+      "name": "RuTracker",
+      "url": "https://rutracker.org/",
+      "checkedAt": "2026-11-07T05:54:07.982Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://rutracker.org/forum/index.php",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://static.rutracker.cc/templates/v1/min/4e695e8ea9cf5a1dcc7aed231b887c51.lib.min.js",
+        "https://static.rutracker.cc/templates/v1/min/e0cee5d0f2c39a24f6b4233f4c6e85f8.bb.min.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "FitGirl",
+      "url": "https://fitgirl-repacks.site/",
+      "checkedAt": "2026-11-07T05:54:12.178Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://fitgirl-repacks.site/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://web.tolstoycomments.com/sitejs/app.js",
+        "https://fitgirl-repacks.site/wp-includes/js/jquery/jquery.min.js",
+        "https://fitgirl-repacks.site/wp-includes/js/jquery/jquery-migrate.min.js",
+        "https://fitgirl-repacks.site/wp-content/plugins/wp-polls/polls-js.js",
+        "https://fitgirl-repacks.site/wp-includes/js/imagesloaded.min.js",
+        "https://fitgirl-repacks.site/wp-includes/js/masonry.min.js",
+        "https://fitgirl-repacks.site/wp-includes/js/jquery/jquery.masonry.min.js",
+        "https://fitgirl-repacks.site/wp-content/themes/twentyfourteen-fg/js/functions.js",
+        "https://stats.wp.com/e-202645.js",
+        "https://fitgirl-repacks.site/wp-content/plugins/wp-latest-posts/js/swiper-bundle.js",
+        "https://fitgirl-repacks.site/wp-content/plugins/wp-latest-posts/js/wplp_front.js",
+        "https://fitgirl-repacks.site/wp-content/plugins/shortcodes-ultimate/includes/js/shortcodes/index.js"
+      ]
+    },
+    {
+      "name": "TorrentFunk",
+      "url": "https://www.torrentfunk.com/",
+      "checkedAt": "2026-11-07T05:54:15.095Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://www.torrentfunk.com/",
+      "findings": "Document-capture click handler opens /m8q2w.php?c=p1.",
+      "scripts": [
+        "https://e.dtscout.com/e/",
+        "https://s10.histats.com/js15_as.js",
+        "https://f.t0r.store/instantpage-5.2.0.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092",
+        "https://s4.histats.com/stats/0.php",
+        "https://tags.crwdcntrl.net/lt/c/3825/lt.min.js",
+        "https://t.dtscdn.com/widget/",
+        "https://pd.sharethis.com/pd/dtscout",
+        "https://p.mrktmtrcs.net/mm.js"
+      ]
+    },
+    {
+      "name": "Torrends",
+      "url": "https://torrends.to/",
+      "checkedAt": "2026-11-07T05:54:15.830Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://torrends.to/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://www.google-analytics.com/analytics.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.1/jquery.min.js",
+        "https://torrends.to/theme/assets/js/jquery-ui.min.js",
+        "https://torrends.to/theme/assets/js/foundation.min.js",
+        "https://torrends.to/theme/assets/js/foundation.tab.js",
+        "https://torrends.to/theme/assets/js/script.js",
+        "https://torrends.to/theme/assets/js/chart.js",
+        "https://torrends.to/theme/assets/js/chart-st.js",
+        "https://torrends.to/theme/assets/js/particles.js",
+        "https://torrends.to/theme/assets/js/app.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "RARBG Dump",
+      "url": "https://rarbgdump.com/",
+      "checkedAt": "2026-11-07T05:54:16.692Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://rarbgdump.com/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://rarbgdump.com/_next/static/chunks/1nmw325imwb_e.js",
+        "https://rarbgdump.com/_next/static/chunks/36l_2xs6cbv7i.js",
+        "https://rarbgdump.com/_next/static/chunks/0ljeln5jlqeh2.js",
+        "https://rarbgdump.com/_next/static/chunks/turbopack-2scuynh7-__6q.js",
+        "https://rarbgdump.com/_next/static/chunks/2e2n0wy891_-d.js",
+        "https://rarbgdump.com/_next/static/chunks/2u1fu_c--wn5d.js",
+        "https://rarbgdump.com/_next/static/chunks/2m6sj5hlj98u5.js",
+        "https://rarbgdump.com/_next/static/chunks/1sdzbn10h8mrx.js",
+        "https://rarbgdump.com/_next/static/chunks/0cz1d0mv5g_q7.js",
+        "https://rarbgdump.com/cdn-cgi/challenge-platform/scripts/precursor/main.js",
+        "https://rarbgdump.com/_next/static/chunks/3fbl4h2gctkhx.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "Rutor",
+      "url": "https://rutor.is/",
+      "checkedAt": "2026-11-07T05:54:28.220Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://rutor.is/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "http://6tor.org/ping.php",
+        "https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js",
+        "https://cdnbunny.org/jquery.cookie-min.js",
+        "https://cdnbunny.org/t/functions.js",
+        "https://deltarockme.com/services/",
+        "https://vak345.com/s.js",
+        "https://miceonme.com/horse/complete.js"
+      ]
+    },
+    {
+      "name": "TR4KER",
+      "url": "https://tr4ker.net/",
+      "checkedAt": "2026-11-07T05:54:29.559Z",
+      "status": "app_shell_only",
+      "finalUrl": "https://tr4ker.net/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://tr4ker.net/assets/V6OUW5OR.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "UZTracker",
+      "url": "https://uztracker.me/",
+      "checkedAt": "2026-11-07T05:54:34.077Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://uztracker.me/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://uztracker.me/assets/js/tailwindcss.js",
+        "https://uztracker.me/assets/js/libs/jquery-1.12.4.min.js",
+        "https://uztracker.me/assets/js/libs/jquery-migrate.min.js",
+        "https://uztracker.me/assets/js/libs/clipboard.min.js",
+        "https://uztracker.me/assets/js/libs/printThis.min.js",
+        "https://uztracker.me/assets/js/libs/legacy.js",
+        "https://uztracker.me/assets/js/main.js",
+        "https://uztracker.me/assets/js/live-search.js",
+        "https://uztracker.me/assets/js/bbcode.js",
+        "https://uztracker.me/assets/js/modernthumb.js",
+        "https://uztracker.me/assets/js/index_releases.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "NNM-Club",
+      "url": "https://nnmclub.to/",
+      "checkedAt": "2026-11-07T05:54:36.426Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://nnmclub.to/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://pagead2.googlesyndication.com/pagead/managed/js/adsense/m202611050101/show_ads_impl_fy2021.js",
+        "https://ssl.google-analytics.com/ga.js",
+        "https://mc.yandex.ru/metrika/tag.js",
+        "https://s.ytimg.com/yt/jsbin/www-widgetapi-vflm8JaFy.js",
+        "https://nnmstatic.win/forum/misc/js/imdb.min.js",
+        "https://nnmstatic.win/forum/misc/js/m.bbcode.js",
+        "https://nnmstatic.win/forum/misc/js/jquery-3.4.0.min.js",
+        "https://nnmstatic.win/forum/misc/js/jquery-migrate-3.0.1.min.js",
+        "https://nnmstatic.win/forum/misc/js/20230923.js",
+        "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js",
+        "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js",
+        "https://nnmstatic.win/forum/docs/requests.js",
+        "https://nnmstatic.win/forum/misc/js/logomusic.js",
+        "https://nnmstatic.win/forum/misc/js/imgbbtest.js",
+        "https://www.google-analytics.com/ga.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "Torrenting",
+      "url": "https://www.torrenting.com/",
+      "checkedAt": "2026-11-07T05:54:38.046Z",
+      "status": "login_required",
+      "finalUrl": "https://www.torrenting.com/login.php",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://www.torrenting.com/js/tt-theme.js",
+        "https://www.torrenting.com/js/jquery-1.11.1.min.js",
+        "https://challenges.cloudflare.com/turnstile/v0/api.js"
+      ]
+    },
+    {
+      "name": "FOSS Torrents",
+      "url": "https://fosstorrents.com/",
+      "checkedAt": "2026-11-07T05:54:51.714Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://fosstorrents.com/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://code.jquery.com/jquery-4.0.0.slim.min.js",
+        "https://fosstorrents.com/js/navigation.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/js/all.min.js",
+        "https://fosstorrents.com/js/search/project-names.js",
+        "https://fosstorrents.com/js/search/autocomplete.js"
+      ]
+    },
+    {
+      "name": "DaMagNet",
+      "url": "https://damag.net/",
+      "checkedAt": "2026-11-07T05:54:52.412Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://damag.net/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://damag.net/static/js/main.js"
+      ]
+    },
+    {
+      "name": "BT4G",
+      "url": "https://bt4gprx.com/",
+      "checkedAt": "2026-11-07T05:54:53.162Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://bt4gprx.com/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js"
+      ]
+    },
+    {
+      "name": "FileMood",
+      "url": "https://filemood.com/",
+      "checkedAt": "2026-11-07T05:54:54.928Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://filemood.com/",
+      "findings": "Inline popundersPerIP loader injects JavaScript from cdn4ads.com and three fallbacks; retrieved loader contains PopAds/window.open.",
+      "scripts": [
+        "https://www.cdn4ads.com/hmijs.css",
+        "https://filemood.com/bundles/js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092",
+        "https://c.adsco.re/"
+      ]
+    },
+    {
+      "name": "TorrentProject",
+      "url": "https://torrentproject.cc/",
+      "checkedAt": "2026-11-07T05:54:57.481Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://torrentproject.cc/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://torrentproject.cc/static/cache.php",
+        "https://torrentproject.cc/helper-js/",
+        "https://mc.yandex.ru/metrika/watch.js",
+        "https://torrentproject.cc/torrentproject.t.js",
+        "https://demiseskill.com/a1/04/0a/a1040a715855a49bb3ac95c39a09bbb7.js",
+        "https://demiseskill.com/c8/f9/54/c8f9548e676c5d951205961ac07245f3.js",
+        "https://origunix.com/sdk.js",
+        "https://used-association.com/cDDq9H6.be2g5lloSAW/QN9pNLD/gI4gM/D/E/w/MMSq0/0UOKDNgewmMjT_AByM",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092",
+        "https://www.forthright-film.com/ecc874/514c38d2ecff.js"
+      ]
+    },
+    {
+      "name": "TorrentQuest",
+      "url": "https://torrentquest.com/",
+      "checkedAt": "2026-11-07T05:55:06.793Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://torrentquest.com/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "ExtraTorrent",
+      "url": "https://extratorrent.st/",
+      "checkedAt": "2026-11-07T05:55:07.199Z",
+      "status": "bot_check",
+      "finalUrl": "https://extratorrent.st/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://extratorrent.st/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1",
+        "https://challenges.cloudflare.com/turnstile/v0/b/8340802ab0bb/api.js"
+      ]
+    },
+    {
+      "name": "Cleanbay",
+      "url": "https://cleanbay.netlify.app/",
+      "checkedAt": "2026-11-07T05:55:07.823Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://cleanbay.netlify.app/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://cleanbay.netlify.app/static/js/2.045c712a.chunk.js",
+        "https://cleanbay.netlify.app/static/js/main.61431a35.chunk.js"
+      ]
+    },
+    {
+      "name": "Torrents-CSV",
+      "url": "https://torrents-csv.com/",
+      "checkedAt": "2026-11-07T05:55:08.865Z",
+      "status": "bot_check",
+      "finalUrl": "https://torrents-csv.com/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://torrents-csv.com/.within.website/x/cmd/anubis/static/js/main.mjs"
+      ]
+    },
+    {
+      "name": "The Black Hole Bay",
+      "url": "https://theblackholebay.lol/",
+      "checkedAt": "2026-11-07T05:55:09.408Z",
+      "status": "navigation_failed",
+      "finalUrl": null,
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [],
+      "error": "Preview automation navigate failed: Navigation to https://theblackholebay.lol/ failed: ERR_ABORTED"
+    },
+    {
+      "name": "Snowfl",
+      "url": "https://snowfl.com/",
+      "checkedAt": "2026-11-07T05:55:21.050Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://snowfl.com/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://snowfl.com/b.min.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "uIndex",
+      "url": "https://uindex.org/",
+      "checkedAt": "2026-11-07T05:55:21.917Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://uindex.org/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://code.jquery.com/jquery-3.6.0.min.js",
+        "https://uindex.org/js/trailer.js",
+        "https://uindex.org/js/theme.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "0Mag",
+      "url": "https://www.0mag.net/",
+      "checkedAt": "2026-11-07T05:55:23.067Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://www.0mag.net/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://scripts.clarity.ms/0.8.75/clarity.js",
+        "https://www.clarity.ms/tag/xro0ve7bgv",
+        "https://www.googletagmanager.com/gtag/js",
+        "https://www.0mag.net/assets/js/upload2.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "Public Domain Torrents",
+      "url": "https://www.publicdomaintorrents.info/",
+      "checkedAt": "2026-11-07T05:55:25.380Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://www.publicdomaintorrents.info/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://pagead2.googlesyndication.com/pagead/managed/js/adsense/m202611030101/reactive_library_fy2021.js",
+        "https://pagead2.googlesyndication.com/pagead/managed/js/adsense/m202611030101/show_ads_impl_fy2021.js",
+        "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js",
+        "https://fundingchoicesmessages.google.com/i/ca-pub-7059974923566616",
+        "https://fundingchoicesmessages.google.com/f/AGSKWxU3fvfryrHHRJxjWvytKt5FuIh8o_kVKTn1TxrW6dFwUp7kmkUK-Y1NxAEnLF7OT-bmHCR3421-UaCyOlzKjS3rsM4afARXn6birfDKwQMAp4mzGKS_s-Ja3FMq-XLSlUBvFuqkZw==",
+        "http://digg.com/tools/diggthis.js",
+        "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js",
+        "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
+      ]
+    },
+    {
+      "name": "BTDig",
+      "url": "https://btdig.com/",
+      "checkedAt": "2026-11-07T05:55:27.348Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://btdig.com/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://e.dtscout.com/e/",
+        "https://s10.histats.com/js15_as.js",
+        "https://s4.histats.com/stats/0.php",
+        "https://tags.crwdcntrl.net/lt/c/3825/lt.min.js",
+        "https://t.dtscdn.com/widget/",
+        "https://pd.sharethis.com/pd/dtscout",
+        "https://p.mrktmtrcs.net/mm.js"
+      ]
+    },
+    {
+      "name": "CROTorrents",
+      "url": "https://crotorrents.com/",
+      "checkedAt": "2026-11-07T05:55:36.376Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://crotorrents.com/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://www.googletagmanager.com/gtag/js",
+        "https://crotorrents.com/wp-content/themes/crotorrents-2026/assets/js/theme.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "MyAnonaMouse",
+      "url": "https://www.myanonamouse.net/",
+      "checkedAt": "2026-11-07T05:55:37.982Z",
+      "status": "login_required",
+      "finalUrl": "https://www.myanonamouse.net/login.php?returnto=%2F",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://sas.myanonamouse.net/js/jquery/3.5.1/jquery-3.5.1.min.js",
+        "https://sas.myanonamouse.net/js/jquery/ui-1.12.1/jquery-ui.min.js",
+        "https://sas.myanonamouse.net/js/jquery/cookie-1.4.1/jquery.cookie.min.js",
+        "https://sas.myanonamouse.net/js/jquery/tablesorter-1/jquery.tablesorter.min.js",
+        "https://sas.myanonamouse.net/js/jquery/tablesorter-1/jquery.metadata.min.js",
+        "https://sas.myanonamouse.net/js/xregexp-all.min.js",
+        "https://sas.myanonamouse.net/vcbh/site.js/Tc2nyowlCxLkbA6QA8QT8OKWYPHP-OLQabP47FOrslcwmKu17Sh9wKGJcuWAGaZa/site.js"
+      ]
+    },
+    {
+      "name": "TorrentLeech",
+      "url": "https://www.torrentleech.org/",
+      "checkedAt": "2026-11-07T05:55:38.940Z",
+      "status": "login_required",
+      "finalUrl": "https://www.torrentleech.org/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://www.gstatic.com/recaptcha/releases/kxxK8h62TERPFgxXTKenDcjR/recaptcha__en.js",
+        "https://www.google.com/recaptcha/api.js",
+        "https://www.torrentleech.org/common.9cfb168b956040779998.js",
+        "https://www.torrentleech.org/access.f310131c12033dd81136.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ]
+    },
+    {
+      "name": "GloTorrents",
+      "url": "https://glodls.to/",
+      "checkedAt": "2026-11-07T05:56:05.992Z",
+      "status": "navigation_failed",
+      "finalUrl": null,
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [],
+      "error": "Preview automation navigate timed out after 12000ms."
+    },
+    {
+      "name": "IGG Games",
+      "url": "https://igg-games.com/",
+      "checkedAt": "2026-11-07T05:56:07.246Z",
+      "status": "homepage_inspected",
+      "finalUrl": "https://igg-games.com/",
+      "findings": "No intrusive popup reproduced in this homepage-only sample; this is not a clean-site certification.",
+      "scripts": [
+        "https://igg-games.com/wp-content/themes/iggtheme2/vendor/assets/uikit/dist/js/uikit.min.js",
+        "https://igg-games.com/wp-content/themes/iggtheme2/vendor/assets/uikit/dist/js/uikit-icons-joline.min.js",
+        "https://igg-games.com/wp-content/themes/iggtheme2/js/theme.js",
+        "https://igg-games.com/wp-content/plugins/nextend-smart-slider3-pro/Public/SmartSlider3/Application/Frontend/Assets/dist/n2.min.js",
+        "https://igg-games.com/wp-content/plugins/nextend-smart-slider3-pro/Public/SmartSlider3/Application/Frontend/Assets/dist/smartslider-frontend.min.js",
+        "https://igg-games.com/wp-content/plugins/nextend-smart-slider3-pro/Public/SmartSlider3/Slider/SliderType/Simple/Assets/dist/ss-simple.min.js",
+        "https://igg-games.com/wp-content/plugins/nextend-smart-slider3-pro/Public/SmartSlider3/Widget/Arrow/ArrowImage/Assets/dist/w-arrow-image.min.js",
+        "https://igg-games.com/wp-content/plugins/nextend-smart-slider3-pro/Public/SmartSlider3/Widget/Thumbnail/Basic/Assets/dist/w-thumbnail-vertical.min.js",
+        "https://ji.queachycorer.com/tPDYwnYO7e5qRy/56690",
+        "https://cdn.fastcomments.com/js/embed-widget-comment-count-bulk.min.js",
+        "https://igg-games.com/wp-content/plugins/widgetkit/assets/js/maps.js",
+        "https://www.googletagmanager.com/gtag/js"
+      ]
+    }
+  ],
+  "postImplementationSmoke": {
+    "command": "LIVE_TARGETS=<four target URLs> pnpm run test:live artifacts/torrent-validation",
+    "method": "Separate fresh baseline/protected Chromium profiles; homepage load and scroll only, no search clicks or downloads.",
+    "limitations": "One paired sample per site. No recognized banner slots; banner preservation is inconclusive. Click-triggered popup protection is covered by local regression fixtures.",
+    "results": [
+      {
+        "url": "https://thepiratebay.org/",
+        "enabled": false,
+        "checkedAt": "2026-11-07T06:04:35.094Z",
+        "status": 200,
+        "title": "Download music, movies, games, software! The Pirate Bay - The galaxy's most resilient BitTorrent site",
+        "visibleImages": 1,
+        "failedRequests": 0,
+        "blockedRequests": 0,
+        "extensionLog": []
+      },
+      {
+        "url": "https://thepiratebay.org/",
+        "enabled": true,
+        "checkedAt": "2026-11-07T06:04:46.297Z",
+        "status": 200,
+        "title": "Download music, movies, games, software! The Pirate Bay - The galaxy's most resilient BitTorrent site",
+        "visibleImages": 1,
+        "failedRequests": 1,
+        "blockedRequests": 1,
+        "extensionLog": [
+          "https://unhappyweakness.com/0c/e3/13/0ce3135c177b20043c5650228182ad9a.js"
+        ]
+      },
+      {
+        "url": "https://www.torlock.com/",
+        "enabled": false,
+        "checkedAt": "2026-11-07T06:04:57.803Z",
+        "status": 200,
+        "title": "Torlock - The No Fakes Torrent Site.",
+        "visibleImages": 62,
+        "failedRequests": 0,
+        "blockedRequests": 0,
+        "extensionLog": []
+      },
+      {
+        "url": "https://www.torlock.com/",
+        "enabled": true,
+        "checkedAt": "2026-11-07T06:05:08.246Z",
+        "status": 200,
+        "title": "Torlock - The No Fakes Torrent Site.",
+        "visibleImages": 62,
+        "failedRequests": 1,
+        "blockedRequests": 0,
+        "extensionLog": []
+      },
+      {
+        "url": "https://bitsearch.eu/",
+        "enabled": false,
+        "checkedAt": "2026-11-07T06:05:18.628Z",
+        "status": 200,
+        "title": "Home | Bitsearch",
+        "visibleImages": 2,
+        "failedRequests": 1,
+        "blockedRequests": 0,
+        "extensionLog": []
+      },
+      {
+        "url": "https://bitsearch.eu/",
+        "enabled": true,
+        "checkedAt": "2026-11-07T06:05:29.816Z",
+        "status": 200,
+        "title": "Home | Bitsearch",
+        "visibleImages": 2,
+        "failedRequests": 4,
+        "blockedRequests": 4,
+        "extensionLog": [
+          "https://www.displayvertising.com/uoffline.min.css",
+          "https://d3mzokty951c5w.cloudfront.net/nwzxv/rsir-trevor.min.js",
+          "https://www.idgzqbnryogez.com/doffline.min.css",
+          "https://www.xhduilwxcewlzn.com/DVKhYw/asir-trevor.min.js"
+        ]
+      },
+      {
+        "url": "https://filemood.com/",
+        "enabled": false,
+        "checkedAt": "2026-11-07T06:05:41.379Z",
+        "status": 200,
+        "title": "FileMood: your gateway to explore discover and download files",
+        "visibleImages": 1,
+        "failedRequests": 1,
+        "blockedRequests": 0,
+        "extensionLog": []
+      },
+      {
+        "url": "https://filemood.com/",
+        "enabled": true,
+        "checkedAt": "2026-11-07T06:05:52.013Z",
+        "status": 200,
+        "title": "FileMood: your gateway to explore discover and download files",
+        "visibleImages": 1,
+        "failedRequests": 4,
+        "blockedRequests": 4,
+        "extensionLog": [
+          "https://www.cdn4ads.com/hmijs.css",
+          "https://d3g5ovfngjw9bw.cloudfront.net/VIYj/oquicksound.min.js",
+          "https://www.ryivqamowwxxlk.com/jmijs.css",
+          "https://www.spkeokimt.com/LzIw/hquicksound.min.js"
+        ]
+      }
+    ]
+  }
+}

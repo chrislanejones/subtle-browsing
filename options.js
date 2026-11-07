@@ -68,6 +68,8 @@ const toggles = {
   refreshThrottle: document.getElementById("refreshThrottleToggle"),
   adRedirectGuard: document.getElementById("adRedirectGuardToggle"),
   pinnedAds: document.getElementById("pinnedAdsToggle"),
+  adultAgeGates: $("adultAgeGatesToggle"),
+  torrentAds: $("torrentAdsToggle"),
   aggressiveHeavyAds: document.getElementById("aggressiveHeavyAdsToggle"),
   annoyanceRules: $("annoyanceRulesToggle"),
 };
@@ -209,12 +211,29 @@ async function renderShortcut() {
   }
 }
 renderShortcut();
+async function renderIncognitoAccess() {
+  try {
+    const allowed = await chrome.extension.isAllowedIncognitoAccess();
+    $("incognitoStatus").textContent = allowed
+      ? "Allowed in Incognito"
+      : "Not allowed in Incognito yet";
+  } catch {
+    $("incognitoStatus").textContent = "Check access in Chrome's extension details";
+  }
+}
+renderIncognitoAccess();
+$("incognitoButton").addEventListener("click", () =>
+  chrome.tabs.create({ url: `chrome://extensions/?id=${chrome.runtime.id}` }),
+);
 $("shortcutButton").addEventListener("click", () =>
   chrome.tabs.create({ url: "chrome://extensions/shortcuts" }),
 );
 // Picks up a change made on that page when the user comes back
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) renderShortcut();
+  if (!document.hidden) {
+    renderShortcut();
+    renderIncognitoAccess();
+  }
 });
 
 // Backup. The file name date is MM-DD-YYYY, since a person reads it.

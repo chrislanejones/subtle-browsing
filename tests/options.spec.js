@@ -120,7 +120,7 @@ test.describe("settings page", () => {
     await expect(page.locator("#annoyanceRulesToggle")).toBeChecked();
 
     await page.locator("#videoAdRulesToggle").uncheck();
-    await expect.poll(() => ext.enabledRulesets()).toEqual(["annoyances", "notifications"]);
+    await expect.poll(() => ext.enabledRulesets()).toEqual(["annoyances", "notifications", "torrent_ads"]);
   });
 
   test("exports a dated backup of the lists and switches", async ({ page }, testInfo) => {
@@ -141,7 +141,7 @@ test.describe("settings page", () => {
       hiddenElements: [],
       blockedUrls: ["connatix.com", "teads.tv", "primis.tech"],
       pausedSites: ["example.org"],
-      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: false, notificationRules: false, adChurnRules: false, refreshThrottle: false, adRedirectGuard: false, pinnedAds: true, aggressiveHeavyAds: false },
+      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: false, notificationRules: false, adChurnRules: false, refreshThrottle: false, adRedirectGuard: false, pinnedAds: true, adultAgeGates: true, torrentAds: true, aggressiveHeavyAds: false },
     });
     expect(new Date(backup.exportedAt).toISOString()).toBe(backup.exportedAt);
     await expect(page.locator("#backupStatus")).toHaveText("Backup saved to your downloads.");
@@ -160,12 +160,12 @@ test.describe("settings page", () => {
     expect(await ext.getSync()).toEqual({
       blockedUrls: ["connatix.com", "teads.tv", "primis.tech", "anyclip.com"],
       pausedSites: ["example.org", "news.example"],
-      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: true, notificationRules: true, adChurnRules: false, refreshThrottle: false, adRedirectGuard: false, pinnedAds: true, aggressiveHeavyAds: false },
+      settings: { videoAdRules: true, autoplayGuard: true, heavyAds: true, annoyanceRules: true, notificationRules: true, adChurnRules: false, refreshThrottle: false, adRedirectGuard: false, pinnedAds: true, adultAgeGates: true, torrentAds: true, aggressiveHeavyAds: false },
     });
     // The page and the worker both pick it up
     await expect(rows(page, "urlList").first()).toHaveText("anyclip.com");
     await expect(page.locator("#annoyanceRulesToggle")).toBeChecked();
-    await expect.poll(() => ext.enabledRulesets()).toEqual(["annoyances", "notifications", "video_ads"]);
+    await expect.poll(() => ext.enabledRulesets()).toEqual(["annoyances", "notifications", "torrent_ads", "video_ads"]);
     await expect
       .poll(async () => (await ext.dynamicRules()).find((r) => r.action.type === "allowAllRequests")?.condition.requestDomains)
       .toEqual(["example.org", "news.example"]);

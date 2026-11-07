@@ -46,9 +46,13 @@ export async function launchExtension(
 // switches); the content scripts are registered last, so their presence
 // means the extension is ready
 export async function waitForInstall(sw, settings = DEFAULT_SETTINGS) {
+  // Real archived releases predate the torrent ruleset and its default-on guard.
+  const torrentAds = settings.torrentAds ?? await sw.evaluate(() =>
+    chrome.runtime.getManifest().declarative_net_request.rule_resources.some((r) => r.id === "torrent_ads"),
+  );
   await expect
     .poll(() => registeredScripts(sw), { timeout: 10_000 })
-    .toEqual(expectedScripts(settings));
+    .toEqual(expectedScripts({ ...settings, torrentAds }));
 }
 
 export function registeredScripts(sw) {
@@ -64,14 +68,15 @@ export function expectedScripts({
   heavyAds,
   refreshThrottle,
   adRedirectGuard,
+  torrentAds = true,
 }) {
   return [
-    adRedirectGuard && "ad-redirect-guard",
+    (adRedirectGuard || torrentAds) && "ad-redirect-guard",
     autoplayGuard && "autoplay-guard",
     "cosmetic",
     (autoplayGuard || heavyAds) && "frame-collapse",
     heavyAds && "heavy-ad-guard",
-    (refreshThrottle || adRedirectGuard) && "page-world-policy",
+    (refreshThrottle || adRedirectGuard || torrentAds) && "page-world-policy",
     refreshThrottle && "refresh-throttle",
   ].filter(Boolean);
 }
@@ -81,11 +86,13 @@ export function expectedRulesets({
   annoyanceRules,
   notificationRules,
   adChurnRules,
+  torrentAds = true,
 }) {
   return [
     adChurnRules && "ad_churn",
     annoyanceRules && "annoyances",
     (notificationRules ?? annoyanceRules) && "notifications",
+    torrentAds && "torrent_ads",
     videoAdRules && "video_ads",
   ].filter(Boolean);
 }

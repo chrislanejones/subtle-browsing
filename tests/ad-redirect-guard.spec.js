@@ -10,8 +10,7 @@ const away = `${THIRD}/index.html`;
 const settle = (page) => page.waitForTimeout(1500);
 
 test.describe("stop ad redirects", () => {
-  test("is off by default, so an ad can send the tab away", async ({ ext, page }) => {
-    expect(await ext.registeredScripts()).not.toContain("ad-redirect-guard");
+  test("is off by default on ordinary sites, even with torrent protection on", async ({ ext, page }) => {
     await page.goto(adPage(away));
     await page.waitForURL(away);
   });
