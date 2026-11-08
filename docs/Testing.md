@@ -6,20 +6,10 @@ The testing policy is [ADR-020](adr/020-live-site-checks-are-separate-from-regre
 
 ## Unreleased verification, 11-07-2026
 
-`pnpm exec playwright test --workers 2`: **219 passed in 2.6 minutes**, including
-CPU and performance checks. All 66 JavaScript files passed syntax checks;
-`git diff --check` passed. The torrent rules and policy share the same 40-domain
-scope.
-
-The age-gate checks use local, non-explicit fixtures. Chaturbate is explicitly
-excluded because its server-side verification can
-refresh when a gate is hidden. The compatible-overlay checks cover seven site
-brands, hostname boundaries, late-added overlays, native modal dialogs,
-scroll/click restoration, live switches and pauses, full-settings-only controls,
-and a real Incognito context after enabling access in a disposable Chrome
-profile. This is cosmetic overlay coverage; content withheld by a server is
-not unlocked or manufactured. Live regional age-verification variants have not
-been verified.
+`pnpm exec playwright test --project=main --workers 2`: **198 passed in 1.9
+minutes** after removing the age-gate feature. All 65 JavaScript files passed
+syntax checks; `git diff --check` passed. The torrent rules and policy share
+the same 40-domain scope.
 
 The [40-target torrent audit](testing/2026-11-07-torrent-sites.json) reached 30
 usable homepages. Four targets showed bot checks, three required login, one

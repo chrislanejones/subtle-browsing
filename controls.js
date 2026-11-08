@@ -9,10 +9,10 @@ import {
   getPauseState,
 } from "./settings.js";
 
-// The adult/torrent switches belong only in the full settings page, including
-// when the popup or DevTools renders its shared per-site/default controls.
+// The torrent switch belongs only in the full settings page, including when
+// the popup or DevTools renders its shared per-site/default controls.
 const quickFeatures = Object.entries(FEATURES).filter(
-  ([key]) => !["adultAgeGates", "torrentAds"].includes(key),
+  ([key]) => key !== "torrentAds",
 );
 
 // Shared across toolbar, settings and DevTools. Native selects make the

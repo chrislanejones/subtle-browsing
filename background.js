@@ -19,6 +19,7 @@ import {
   validSite,
   matchesSite,
   getPauseState,
+  removeRetiredAgeGateSettings,
 } from "./settings.js";
 
 const RESOURCE_TYPES = [
@@ -83,6 +84,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   });
 
   queue(moveSettingsToSync);
+  queue(removeRetiredAgeGateSettings);
   queue(syncDynamicRules);
   // An update resets rulesets to their manifest defaults, so reapply
   queue(async () => applySettings(await getSettings()));

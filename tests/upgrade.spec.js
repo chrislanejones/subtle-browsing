@@ -5,6 +5,7 @@
 
 import { test, expect } from "@playwright/test";
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { EXTENSION_DIR } from "./helpers/env.js";
@@ -25,7 +26,10 @@ async function copyExtension(target) {
     { cwd: EXTENSION_DIR, encoding: "utf8" },
   )
     .split("\n")
-    .filter(Boolean);
+    .filter(Boolean)
+    // While working in a dirty tree, Git's index can still name a tracked
+    // file that the current source has deleted.
+    .filter((file) => existsSync(join(EXTENSION_DIR, file)));
   for (const file of files) {
     await mkdir(dirname(join(target, file)), { recursive: true });
     await copyFile(join(EXTENSION_DIR, file), join(target, file));

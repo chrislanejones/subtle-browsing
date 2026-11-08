@@ -72,7 +72,6 @@ on every bad ad by hand.
 | Slow ad refresh | Lets each Google ad slot refresh at most once every 2 minutes, and not in a hidden tab | No |
 | Stop ad redirects | Stops unwanted cross-site redirects and click-triggered popunders | No |
 | Pinned ads | Supported sticky ads scroll with the page, including news-site sidebars and bottom banners. The site's own sticky header is left alone | Yes |
-| Block age gates for adult sites | Hides recognized age-gate overlays on selected adult sites and releases their scroll lock. The switch appears only in full Settings | Yes |
 | Block intrusive torrent-site ads | Stops unrequested popups and identified popunder scripts on the 40 audited domains; ordinary banners remain. The switch appears only in full Settings | Yes |
 | Site controls | Override individual protections for a site and its subdomains | Inherit defaults |
 | Hide on this site | Hide a picked element only on its hostname; undo in settings or DevTools | — |
@@ -140,8 +139,8 @@ this extension a separate private log.
 The popup shows the current site’s effective protection state and **Controls
 for (site)**. Expand **Defaults for all sites** for global settings, then
 **Offers, prompts and broader limits** for the six default-off choices. The settings page and DevTools **Default protections** expose the
-same choices. **Block age gates for adult sites** and **Block intrusive
-torrent-site ads** appear only in full Settings and are both on by default.
+same choices. **Block intrusive torrent-site ads** appears only in full
+Settings and is on by default.
 
 | Switch | How it works |
 | --- | --- |
@@ -154,7 +153,6 @@ torrent-site ads** appear only in full Settings and are both on by default.
 | **Ad refresh and sync frames** | Uses [`rules/ad-churn.json`](rules/ad-churn.json): Browsi's ad-refresh scripts, plus 26 hidden cookie-sync frames from ad auctions by name (OpenX, PubMatic, Rubicon, AppNexus, Criteo, TripleLift, Index Exchange, LiveIntent and others) and 3 patterns for sync frames from anyone else. |
 | **Slow ad refresh** | Wraps Google's ad tag (`googletag.pubads().refresh()`) in [`refresh-throttle.js`](refresh-throttle.js). Every slot's first load goes through; after that each slot refreshes at most once every 2 minutes, and not while the tab is hidden. |
 | **Stop ad redirects** | [`ad-redirect-guard.js`](ad-redirect-guard.js) checks top-page navigation and scripted popups in every frame against the control you used. Article clicks and Play buttons cannot authorize a jump to another site. Links, forms, reload and back/forward remain usable. |
-| **Block age gates for adult sites** | Full Settings only. Hides recognized age-gate overlays, their containing dialogs and adjacent backdrops, and restores scrolling on compatible sites: Pornhub, XVideos, XNXX, xHamster, Stripchat, YouPorn and RedTube, including subdomains. Chaturbate is excluded because its server-side verification flow can refresh when its gate is hidden. Turning it off or pausing a supported site restores the original page styles. |
 | **Block intrusive torrent-site ads** | Full Settings only. Activates the popup/redirect guard on the domains in [`torrent-sites.js`](torrent-sites.js), including their child frames, and blocks the observed popunder scripts in [`rules/torrent-ads.json`](rules/torrent-ads.json). Search actions cannot authorize unrelated popups; intentional links and sign-in buttons still work. Reload pages after changing this switch. |
 
 More on each:
@@ -175,13 +173,6 @@ More on each:
   in the site's controls. These remain optional: newsletter/notification tools
   can also provide subscriptions a reader wants. Cookie-consent controls and
   subscription/login gates are not treated as ad containers.
-- **Adult age gates:** coverage is limited to the hostnames and DOM patterns in
-  [`cosmetic.js`](cosmetic.js). It includes the supplied Chaturbate
-  `#age_gate_home` structure. Rules are tested against local fixtures, not every
-  live regional variant. Hiding a prompt only reveals content already delivered
-  to the browser; it cannot unlock content withheld by the server, complete
-  verification or grant account access. If hiding leaves an empty page, switch
-  the feature off in Settings to restore the prompt.
 - **Video ad companies:** Google's video ad engine (IMA, `ima3.js`) runs
   inside JW Player and lots of other players. Blocking it outright can
   leave the player waiting forever, so the extension swaps in its own
@@ -382,7 +373,6 @@ in the header when blocking is off everywhere.
 | What gets blocked | Every kind of blocking: what it stops, how many rules, whether it's on and how many it caught this week |
 | Recent blocks | The last 12 blocks: when, what type, the domain and the site you were on |
 | Block | The global defaults also available in the popup |
-| Adult sites | The age-gate switch, shown only in this full settings view |
 | Torrent sites | The intrusive-ad switch, shown only in this full settings view |
 | Incognito | Access status, instructions and a link to Chrome's extension details |
 | Hidden elements and site overrides | Unhide elements and reset per-site choices |
@@ -475,7 +465,7 @@ The full reasoning is in [ADR-004](docs/adr/004-built-in-rulesets-are-hand-made-
 | Heavy ad removal | A long-task observer inside third-party frames, plus adding up download sizes in the background. Turning it off stops enforcement; site overrides can keep the guard enabled |
 | Element picker | Only loads into a tab when you use it, and takes its overlay off the page when you're done |
 | Box hiding and restore | One message listener per frame while autoplay or heavy-ad removal is enabled globally or on a site |
-| Site policy and element hiding | A shared settings cache and small CSS injectors per frame; no polling. Supported adult hosts also observe native dialog openings while age-gate removal is on |
+| Site policy and element hiding | A shared settings cache and small CSS injectors per frame; no polling |
 | Slow ad refresh | One small script in each top page while the switch is on for that site. It only does work when the page uses Google's ad tag |
 | Stop ad redirects and torrent popups | Event listeners and small wrappers for navigation, window.open and scripted link clicks; no polling. Registered while either protection is on, with torrent-only enforcement limited to listed top sites and their frames |
 | Google IMA stand-in | Only loads on pages that ask for Google's video ad engine, in place of the real one |

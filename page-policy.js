@@ -20,7 +20,6 @@
     refreshThrottle: false,
     adRedirectGuard: false,
     pinnedAds: true,
-    adultAgeGates: true,
     torrentAds: true,
     aggressiveHeavyAds: false,
     cosmetic: true,

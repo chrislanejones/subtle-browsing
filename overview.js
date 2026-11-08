@@ -97,12 +97,6 @@ const KINDS = [
     rule: "Size and CPU limit",
   },
   {
-    setting: "adultAgeGates",
-    name: "Block age gates for adult sites",
-    what: "Supported age-gate overlays on selected adult sites; cannot unlock server-blocked content",
-    rule: "Page style",
-  },
-  {
     setting: "torrentAds",
     name: "Block intrusive torrent-site ads",
     what: "Unwanted popups and intrusive ad scripts on supported torrent sites",

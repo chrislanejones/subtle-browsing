@@ -1,4 +1,4 @@
-import { readSync, onSyncChanged } from "./sync-storage.js";
+import { readSync, writeSync, onSyncChanged } from "./sync-storage.js";
 import { mutate } from "./storage-client.js";
 // On/off switches and paused sites, shared by the background, popup and
 // settings page. Stored in chrome.storage.sync like the block list.
@@ -15,7 +15,6 @@ export const DEFAULTS = {
   refreshThrottle: false, // refresh-throttle.js
   adRedirectGuard: false, // ad-redirect-guard.js
   pinnedAds: true, // cosmetic.js
-  adultAgeGates: true, // cosmetic.js; control lives only in full settings
   torrentAds: true, // torrent-site popunders; control lives only in full settings
   aggressiveHeavyAds: false,
   heavyAds: true, // heavy-ad-guard.js and the download count in background.js
@@ -121,11 +120,16 @@ export function onPausedEverywhereChanged(callback) {
 // Older installs had one switch for both lists. Preserve that choice until
 // the user explicitly changes the new notification switch.
 export function normalizeSettings(settings = {}) {
+  const source =
+    settings && !Array.isArray(settings) && typeof settings === "object"
+      ? settings
+      : {};
+  const { adultAgeGates: _retiredAgeGateSetting, ...saved } = source;
   return {
     ...DEFAULTS,
-    ...settings,
+    ...saved,
     notificationRules:
-      settings.notificationRules ?? settings.annoyanceRules ?? false,
+      saved.notificationRules ?? saved.annoyanceRules ?? false,
   };
 }
 export const FEATURES = {
@@ -138,10 +142,36 @@ export const FEATURES = {
   refreshThrottle: "Slow ad refresh",
   adRedirectGuard: "Stop ad redirects",
   pinnedAds: "Pinned ads",
-  adultAgeGates: "Block age gates for adult sites",
   torrentAds: "Block intrusive torrent-site ads",
   aggressiveHeavyAds: "All heavy third-party embeds",
 };
+
+// Retire the former age-gate feature from existing profiles as well as fresh
+// installs. Old backups are filtered by FEATURES during import.
+export async function removeRetiredAgeGateSettings() {
+  const { settings, siteSettings } = await readSync(
+    ["settings", "siteSettings"],
+    { strict: true },
+  );
+  const update = {};
+  if (settings && !Array.isArray(settings) && typeof settings === "object" && Object.hasOwn(settings, "adultAgeGates")) {
+    const { adultAgeGates: _retiredAgeGateSetting, ...saved } = settings;
+    update.settings = saved;
+  }
+  if (siteSettings && !Array.isArray(siteSettings) && typeof siteSettings === "object") {
+    const cleaned = Object.fromEntries(
+      Object.entries(siteSettings).flatMap(([site, values]) => {
+        if (!values || typeof values !== "object" || !Object.hasOwn(values, "adultAgeGates"))
+          return [[site, values]];
+        const { adultAgeGates: _retiredAgeGateSetting, ...saved } = values;
+        return Object.keys(saved).length ? [[site, saved]] : [];
+      }),
+    );
+    if (JSON.stringify(cleaned) !== JSON.stringify(siteSettings))
+      update.siteSettings = cleaned;
+  }
+  if (Object.keys(update).length) await writeSync(update);
+}
 export async function getSiteSettings() {
   return (await readSync("siteSettings")).siteSettings ?? {};
 }

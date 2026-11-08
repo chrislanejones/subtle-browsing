@@ -156,7 +156,7 @@ test.describe("overview", () => {
     await expect(page.locator(".viz-tooltip")).toContainText("20 blocked");
 
     const kinds = page.locator("#kinds tr");
-    await expect(kinds).toHaveCount(13);
+    await expect(kinds).toHaveCount(12);
     await expect(kinds.first()).toContainText("Video ad companies");
     await expect(kinds.first()).toContainText("20 rules");
     await expect(kinds.first().locator(".state")).toHaveText("On");

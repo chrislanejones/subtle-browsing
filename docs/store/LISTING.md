@@ -18,17 +18,8 @@ as the seller. Update those fields when a paid offering actually exists.
 [Accepting payment](https://developer.chrome.com/docs/webstore/program-policies/accepting-payment).
 
 The package and description below refer to 1.9.0. Current unreleased source adds
-adult-site age-overlay removal and torrent-site popup protection. Do not submit
-that source using an unchanged 1.9.0 description or screenshots.
-
-The adult integration increases review risk: Google's rejection guidance covers
-extensions primarily designed to enhance pornographic sites and requires the
-Mature content flag for adult-site integrations. The recommendation is to omit
-the age-gate functionality from a future Store build, retaining it only in the
-local build if desired. This is a risk assessment, not a Google review decision
-or a guarantee that another build will pass. Hiding a switch or changing its
-label does not remove its functionality from review.
-[Adult-content review guidance](https://developer.chrome.com/docs/webstore/troubleshooting#pornography).
+torrent-site popup protection. Do not submit that source using an unchanged
+1.9.0 description or screenshots.
 
 Keep torrent protection described as intrusive-ad blocking: it blocks ad scripts
 and unwanted popups and does not implement torrent downloading or alter site

@@ -68,7 +68,6 @@ const toggles = {
   refreshThrottle: document.getElementById("refreshThrottleToggle"),
   adRedirectGuard: document.getElementById("adRedirectGuardToggle"),
   pinnedAds: document.getElementById("pinnedAdsToggle"),
-  adultAgeGates: $("adultAgeGatesToggle"),
   torrentAds: $("torrentAdsToggle"),
   aggressiveHeavyAds: document.getElementById("aggressiveHeavyAdsToggle"),
   annoyanceRules: $("annoyanceRulesToggle"),

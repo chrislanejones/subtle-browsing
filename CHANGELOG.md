@@ -15,7 +15,7 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
   to optional **Notification requests** blocking.
 - Correct the privacy and Store-preparation wording to disclose local page/URL
   processing, activity retention, Chrome sync and shared Incognito storage.
-  Record the adult integration's Store-review risk without claiming approval.
+  Remove the age-gate overlay feature, its settings and its compatibility code.
 - Add default-on **Block intrusive torrent-site ads**, controlled only in full
   Settings. A 40-target browser audit supplied scoped popunder-loader rules;
   the existing popup guard also runs on those sites and their child frames.
@@ -24,13 +24,6 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 - Search/submit/reset controls no longer authorize an unrelated ad popup from
   a document-wide click handler. Ordinary form submission and intentional
   navigation links remain available.
-- Add **Block age gates for adult sites**, on by default and shown only in full
-  Settings. Host-scoped CSS handles recognized overlay patterns for Pornhub,
-  XVideos, XNXX, xHamster, Stripchat, YouPorn and RedTube. Chaturbate is
-  excluded because hiding its server-side verification gate can cause a refresh
-  loop. Global/site pauses and the switch restore the original styles.
-  This only changes compatible already-loaded overlays; it does not verify age
-  or unlock server-restricted content.
 - Show Incognito access status and an **Extension details** shortcut in Settings,
   with setup instructions and disclosure that settings and blocking history are
   shared with regular windows. Declare Chrome's existing `spanning` mode explicitly.
