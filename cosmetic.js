@@ -4,10 +4,11 @@
   const style = document.createElement("style");
   const pinned = document.createElement("style");
   const ageGates = document.createElement("style");
-  // Limit age-related selectors to these adult sites and their subdomains.
+  // Limit age-related selectors to compatible adult sites and their subdomains.
+  // Chaturbate is deliberately excluded: its server-side verification flow can
+  // refresh when a client hides its gate, and this extension does not verify age.
   // Never match by substring (e.g. chaturbate.com.example.org).
   const adultSites = [
-    ["chaturbate.com", "#age_gate_home, #age_gate_overlay"],
     ["pornhub.com", "#js-ageDisclaimerMain, #ageDisclaimer"],
     ["pornhub.org", "#js-ageDisclaimerMain, #ageDisclaimer"],
     ["xvideos.com", "#disclaimer, .modal-adult"],
@@ -38,7 +39,7 @@
       .lightbox, .lightbox-overlay)`;
     const wrapper = `${wrappers}:has(${gate})`;
     const backdrop = ":is(.modal-backdrop, .overlay-backdrop, .lightbox-backdrop)";
-    ageGateCss = `
+    ageGateCss = `/* url-blocker-age-gate */
       ${gate}, ${wrapper},
       ${gate} ~ ${backdrop}, ${backdrop}:has(~ ${gate}),
       ${wrapper} ~ ${backdrop}, ${backdrop}:has(~ ${wrappers} ${gate}) {

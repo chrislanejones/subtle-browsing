@@ -2,9 +2,10 @@ import { readFile } from "node:fs/promises";
 import { test, expect } from "./helpers/extension.js";
 
 const fixture = await readFile(new URL("./site/age-gate.html", import.meta.url), "utf8");
+const chaturbateFixture = fixture.replace("js-ageDisclaimerMain", "age_gate_home");
 
 // Serve only our non-explicit fixture. These tests never contact adult sites.
-async function openGate(page, host = "chaturbate.com", html = fixture) {
+async function openGate(page, host = "pornhub.com", html = fixture) {
   await page.route(/^https?:\/\//, (route) =>
     route.fulfill({ contentType: "text/html", body: html }),
   );
@@ -15,18 +16,37 @@ const overflow = (page) => page.evaluate(() =>
   [document.documentElement, document.body].map((node) => getComputedStyle(node).overflow),
 );
 
-test("the supplied gate, wrapper and both backdrops are hidden by default; content is usable", async ({ ext, page }) => {
+test("the supplied gate, wrapper and both backdrops are hidden on a compatible site; content is usable", async ({ ext, page }) => {
   await openGate(page);
-  for (const selector of ["#age_gate_home", "#overlay", ".modal-backdrop"])
+  for (const selector of ["#js-ageDisclaimerMain", "#overlay", ".modal-backdrop"])
     for (const element of await page.locator(selector).all()) await expect(element).toBeHidden();
   await expect.poll(() => overflow(page)).toEqual(["auto", "auto"]);
   await page.click("#content");
   await expect(page.locator("#clicks")).toHaveText("1");
   await page.mouse.wheel(0, 700);
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
-  expect(page.url()).toBe("https://chaturbate.com/");
+  expect(page.url()).toBe("https://pornhub.com/");
   expect(await page.context().cookies()).toEqual([]);
   expect(await page.locator("#choice-verifymy-email").isChecked()).toBe(false);
+});
+
+test("Chaturbate's server-verified gate is left untouched", async ({ ext, page }) => {
+  await openGate(page, "chaturbate.com", chaturbateFixture);
+  // The regular cosmetic stylesheet proves the content script completed its
+  // render, while no age-gate stylesheet was applied on this excluded host.
+  await expect.poll(() => page.evaluate(() =>
+    [...document.querySelectorAll("style")].some((sheet) =>
+      sheet.textContent.includes("#jpmasthead"),
+    ),
+  )).toBe(true);
+  await expect(page.locator("#age_gate_home")).toBeVisible();
+  await expect(page.locator("#overlay")).toBeVisible();
+  await expect.poll(() => overflow(page)).toEqual(["hidden", "hidden"]);
+  expect(await page.evaluate(() =>
+    [...document.querySelectorAll("style")].some((sheet) =>
+      sheet.textContent.includes("url-blocker-age-gate"),
+    ),
+  )).toBe(false);
 });
 
 for (const [host, markup] of [
@@ -49,7 +69,7 @@ for (const [host, markup] of [
 }
 
 test("late and replaced gates are hidden, while unrelated dialogs are preserved", async ({ ext, page }) => {
-  await openGate(page, "en.chaturbate.com");
+  await openGate(page, "www.pornhub.com");
   await expect(page.locator("#overlay")).toBeHidden();
   await page.evaluate(() => {
     document.getElementById("overlay").remove();
@@ -70,11 +90,11 @@ test("late and replaced gates are hidden, while unrelated dialogs are preserved"
 });
 
 test("turning off, site overrides and every pause restore the original gate and scrolling", async ({ ext, page }) => {
-  await openGate(page, "en.chaturbate.com");
+  await openGate(page, "www.pornhub.com");
   await expect(page.locator("#overlay")).toBeHidden();
   const restore = async () => {
     await expect(page.locator("#overlay")).toBeVisible();
-    await expect(page.locator("#age_gate_home")).toBeVisible();
+    await expect(page.locator("#js-ageDisclaimerMain")).toBeVisible();
     await expect(page.locator("#backdrop-before")).toBeVisible();
     await expect.poll(() => overflow(page)).toEqual(["hidden", "hidden"]);
   };
@@ -85,8 +105,8 @@ test("turning off, site overrides and every pause restore the original gate and 
   await ext.setSettings({}); // Older installs with no saved key inherit on.
   await expect(page.locator("#overlay")).toBeHidden();
   for (const state of [
-    { siteSettings: { "chaturbate.com": { adultAgeGates: false } } },
-    { pausedSites: ["chaturbate.com"] },
+    { siteSettings: { "pornhub.com": { adultAgeGates: false } } },
+    { pausedSites: ["pornhub.com"] },
     { pausedEverywhere: true },
   ]) {
     await ext.setSync(state);
@@ -94,34 +114,34 @@ test("turning off, site overrides and every pause restore the original gate and 
     await ext.setSync({ siteSettings: {}, pausedSites: [], pausedEverywhere: false });
     await expect(page.locator("#overlay")).toBeHidden();
   }
-  await ext.setLocal({ temporaryPauses: { "chaturbate.com": Date.now() + 60_000 } });
+  await ext.setLocal({ temporaryPauses: { "pornhub.com": Date.now() + 60_000 } });
   await restore();
   await ext.setLocal({ temporaryPauses: {} });
   await expect(page.locator("#overlay")).toBeHidden();
 });
 
-test("ordinary sites and lookalike domains keep age and other dialogs unchanged", async ({ ext, page }) => {
-  for (const host of ["example.org", "chaturbate.com.example.org", "notchaturbate.com"]) {
-    await openGate(page, host);
+test("Chaturbate, ordinary sites and lookalike domains keep age gates unchanged", async ({ ext, page }) => {
+  for (const host of ["chaturbate.com", "example.org", "chaturbate.com.example.org", "notchaturbate.com"]) {
+    await openGate(page, host, chaturbateFixture);
     await expect(page.locator("#age_gate_home")).toBeVisible();
     await expect.poll(() => overflow(page)).toEqual(["hidden", "hidden"]);
   }
 });
 
-test("a server-only gate does not create content or submit verification", async ({ ext, page }) => {
+test("a compatible site gate does not create content or submit verification", async ({ ext, page }) => {
   const requests = [];
   page.on("request", (request) => requests.push(request.url()));
-  await openGate(page, "chaturbate.com", '<!doctype html><div id="age_gate_home"><a href="/verify">Confirm Age</a></div>');
-  await expect(page.locator("#age_gate_home")).toBeHidden();
+  await openGate(page, "pornhub.com", '<!doctype html><div id="js-ageDisclaimerMain"><a href="/verify">Confirm Age</a></div>');
+  await expect(page.locator("#js-ageDisclaimerMain")).toBeHidden();
   expect(await page.locator("main, video, iframe").count()).toBe(0);
-  expect(requests).toEqual(["https://chaturbate.com/"]);
+  expect(requests).toEqual(["https://pornhub.com/"]);
 });
 
 test("a native age dialog does not leave the loaded page inert", async ({ ext, page }) => {
-  await openGate(page, "chaturbate.com", `<!doctype html><main><button id="content">Page content</button></main>
-    <dialog><div id="age_gate_home">Verify your age</div></dialog>
+  await openGate(page, "pornhub.com", `<!doctype html><main><button id="content">Page content</button></main>
+    <dialog><div id="js-ageDisclaimerMain">Verify your age</div></dialog>
     <script>document.querySelector('dialog').showModal()</script>`);
-  await expect(page.locator("#age_gate_home")).toBeHidden();
+  await expect(page.locator("#js-ageDisclaimerMain")).toBeHidden();
   await page.locator("#content").click({ timeout: 3000 });
   await ext.setSettings({ adultAgeGates: false });
   await expect(page.locator("dialog")).toBeVisible();
@@ -180,7 +200,7 @@ test("enabling Incognito access lets the blocker run in an Incognito window", as
   try {
     const tab = await incognito.newPage();
     await openGate(tab);
-    await expect(tab.locator("#age_gate_home")).toBeHidden();
+    await expect(tab.locator("#js-ageDisclaimerMain")).toBeHidden();
     await tab.locator("#content").click();
     await expect(tab.locator("#clicks")).toHaveText("1");
   } finally {

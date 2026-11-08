@@ -25,10 +25,12 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
   a document-wide click handler. Ordinary form submission and intentional
   navigation links remain available.
 - Add **Block age gates for adult sites**, on by default and shown only in full
-  Settings. Host-scoped CSS handles the supplied Chaturbate gate plus recognized
-  overlay patterns for Pornhub, XVideos, XNXX, xHamster, Stripchat, YouPorn and
-  RedTube. Global/site pauses and the switch restore the original styles.
-  This only exposes already-loaded content; server-side verification remains.
+  Settings. Host-scoped CSS handles recognized overlay patterns for Pornhub,
+  XVideos, XNXX, xHamster, Stripchat, YouPorn and RedTube. Chaturbate is
+  excluded because hiding its server-side verification gate can cause a refresh
+  loop. Global/site pauses and the switch restore the original styles.
+  This only changes compatible already-loaded overlays; it does not verify age
+  or unlock server-restricted content.
 - Show Incognito access status and an **Extension details** shortcut in Settings,
   with setup instructions and disclosure that settings and blocking history are
   shared with regular windows. Declare Chrome's existing `spanning` mode explicitly.

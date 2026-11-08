@@ -11,9 +11,10 @@ CPU and performance checks. All 66 JavaScript files passed syntax checks;
 `git diff --check` passed. The torrent rules and policy share the same 40-domain
 scope.
 
-The new age-gate checks use local, non-explicit fixtures, including the supplied
-Chaturbate markup with its temporary verification URL removed. They cover eight
-site brands, hostname boundaries, late-added overlays, native modal dialogs,
+The age-gate checks use local, non-explicit fixtures. Chaturbate is explicitly
+excluded because its server-side verification can
+refresh when a gate is hidden. The compatible-overlay checks cover seven site
+brands, hostname boundaries, late-added overlays, native modal dialogs,
 scroll/click restoration, live switches and pauses, full-settings-only controls,
 and a real Incognito context after enabling access in a disposable Chrome
 profile. This is cosmetic overlay coverage; content withheld by a server is
