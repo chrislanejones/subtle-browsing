@@ -6,10 +6,10 @@ The testing policy is [ADR-020](adr/020-live-site-checks-are-separate-from-regre
 
 ## Unreleased verification, 11-07-2026
 
-`pnpm exec playwright test --project=main --workers 2`: **198 passed in 1.9
-minutes** after removing the age-gate feature. All 65 JavaScript files passed
-syntax checks; `git diff --check` passed. The torrent rules and policy share
-the same 40-domain scope.
+`pnpm exec playwright test --project=main --workers 2`: **199 passed in 2.0
+minutes**, including the streaming-compatibility coverage. All 65 JavaScript
+files passed syntax checks; `git diff --check` passed. The torrent rules and
+policy share the same 40-domain scope.
 
 The [40-target torrent audit](testing/2026-11-07-torrent-sites.json) reached 30
 usable homepages. Four targets showed bot checks, three required login, one
@@ -37,6 +37,22 @@ paired observations are included in the audit JSON; screenshots and raw results
 remain local under `artifacts/torrent-validation/`.
 
 These are source changes, not a new packaged or published release.
+
+### Streaming compatibility follow-up, 11-09-2026
+
+Fresh baseline/protected profiles reproduced an autoplay-guard regression on
+Pluto TV's Live TV page, Plex Live TV and Xumo Play's live guide: the clean
+profile had a ready, advancing channel stream while the protected profile lost
+or never readied it. Disabling only **Autoplay videos** restored playback,
+isolating the guard rather than the video-ad rules. The fix leaves dedicated
+live-channel playback alone for `pluto.tv`, `plex.tv`, `tubitv.com` and
+`xumo.com`, including their subdomains. Post-fix protected checks on Pluto,
+Plex and Xumo again had a ready, advancing stream. Tubi's live landing page
+did not expose a playable source in either fresh profile, so its live result is
+inconclusive; its explicitly requested full-site compatibility exception is
+covered by the same host-preserving regression test. The Roku Channel home
+page had no media and no baseline/protected difference, so it received no
+exception. Ordinary-site autoplay coverage remains unchanged.
 
 ### Local-news follow-up, 11-07-2026
 

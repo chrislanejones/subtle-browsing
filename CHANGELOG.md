@@ -9,6 +9,9 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
 ## Unreleased
 
+- Restore normal live-channel playback on Pluto TV, Plex, Tubi and Xumo Play.
+  Their full-site channel streams are exempt from the autoplay guard; autoplay
+  protection remains active on other sites.
 - Extend **Pinned ads** to the publisher layouts observed on News4JAX, First
   Coast News and WESH. Their banners and close controls scroll with the page;
   unrelated sticky navigation remains unchanged. Add the observed Pushly SDK

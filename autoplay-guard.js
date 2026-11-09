@@ -14,6 +14,22 @@
   const saved = new WeakMap();
   const waiting = new Set();
 
+  // These dedicated live-TV apps start the selected channel as part of their
+  // normal navigation flow. Pausing that stream makes the player retry until
+  // it loses its source, so keep the exception explicit and limited.
+  // `subtlePolicy.site` is the top-level site in child frames too.
+  const CHANNEL_AUTOPLAY_SITES = [
+    "pluto.tv",
+    "plex.tv",
+    "tubitv.com",
+    "xumo.com",
+  ];
+  const channelAutoplaySite = () =>
+    CHANNEL_AUTOPLAY_SITES.some(
+      (domain) =>
+        subtlePolicy.site === domain || subtlePolicy.site.endsWith(`.${domain}`),
+    );
+
   function restoreVideo(video) {
     const record = saved.get(video);
     if (!record) return;
@@ -189,7 +205,11 @@
   }
 
   function shouldPause(video) {
-    if (restored.has(video) || !subtlePolicy.enabled("autoplayGuard"))
+    if (
+      channelAutoplaySite() ||
+      restored.has(video) ||
+      !subtlePolicy.enabled("autoplayGuard")
+    )
       return false;
     if (startedByUser(video)) return false;
     return true;

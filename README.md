@@ -63,7 +63,7 @@ on every bad ad by hand.
 | Feature | What it does | On at install |
 | --- | --- | --- |
 | Video ad blocking | Blocks the companies that serve video ads (Connatix, Primis, AnyClip, Teads, Celtra and others), and swaps Google's video ad engine for a stand-in that says "no ads". Banner ads still show | Yes |
-| Autoplay stopper | Pauses videos that start without a play gesture, including audible ads after unrelated clicks. A site's own video that floats into the corner goes back into the article, paused; a floating ad with no place on the page is hidden. Videos you start play normally | Yes |
+| Autoplay stopper | Pauses videos that start without a play gesture, including audible ads after unrelated clicks. A site's own video that floats into the corner goes back into the article, paused; a floating ad with no place on the page is hidden. Videos you start play normally; dedicated live channels on Pluto TV, Plex, Tubi and Xumo Play are left alone | Yes |
 | Heavy ad removal | Stops identified third-party ads at 4 MB or 5 seconds of long tasks in 30 seconds; offers Restore | Yes |
 | Broader heavy-embed mode | Applies those limits to unrecognized third-party embeds too; may stop legitimate content | No |
 | Newsletter offers | Blocks newsletter and promotional overlay tools | No |
@@ -145,7 +145,7 @@ Settings and is on by default.
 | Switch | How it works |
 | --- | --- |
 | **Video ad companies** | Uses the list in [`rules/video-ads.json`](rules/video-ads.json). Blocks whole video-ad companies, plus only the video parts of bigger networks (Taboola's video player, Amazon's video ads), so their regular ads still show. Also swaps in the Google IMA stand-in. |
-| **Autoplay videos** | Pauses videos that start without a play gesture, muted or audible. Click Play or use the player’s playback keys to watch. |
+| **Autoplay videos** | Pauses videos that start without a play gesture, muted or audible. Click Play or use the player’s playback keys to watch. Dedicated live channels on Pluto TV, Plex, Tubi and Xumo Play are exempt so their normal channel playback can start. |
 | **Heavy ads** | Stops an identified third-party ad frame at 4 MB of declared downloads or 5 seconds of long tasks in 30 seconds. |
 | **All heavy third-party embeds** | Broadens Heavy ads to unrecognized third-party frames. Heavy ads must also be on. |
 | **Newsletter offers** | Uses [`rules/annoyances.json`](rules/annoyances.json): OptinMonster, Privy, Justuno, Sumo, Klaviyo forms and similar. |
@@ -185,7 +185,9 @@ More on each:
   window is hidden as well, with **Play this video** at its former position.
   Unloaded videos and collapsed autoplay frames have restore controls.
   A video paused inside an article keeps its player. If it floated into a
-  corner, it returns to the article until you press Play.
+  corner, it returns to the article until you press Play. Dedicated live-channel
+  playback on Pluto TV, Plex, Tubi and Xumo Play is left alone; their players
+  need to start a channel as part of normal navigation.
 - **Heavy ads:** the limits stay at 4 MB and 5 seconds of long tasks per
   30 seconds. The parent frame requires a known ad hostname or an explicit
   ad-slot marker before removal. It blanks the frame to stop its scripts

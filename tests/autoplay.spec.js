@@ -1,5 +1,5 @@
 import { test, expect } from "./helpers/extension.js";
-import { FIRST, THIRD } from "./helpers/env.js";
+import { FIRST, PORT, THIRD } from "./helpers/env.js";
 import { quietEval } from "./helpers/quiet.js";
 
 // Every read goes through quietEval: a Playwright evaluate() counts as a user
@@ -59,6 +59,31 @@ test("editing another setting does not pause a video the user is already watchin
 });
 
 test.describe("autoplay stopper", () => {
+  test("leaves live channels playing on verified streaming apps", async ({ page }) => {
+    const channelSites = [
+      "pluto.tv",
+      "watch.plex.tv",
+      "tubitv.com",
+      "play.xumo.com",
+    ];
+    for (const site of channelSites) {
+      await page.route(`http://${site}:${PORT}/**`, async (route) => {
+        const requested = new URL(route.request().url());
+        const response = await route.fetch({
+          url: `${FIRST}${requested.pathname}${requested.search}`,
+        });
+        await route.fulfill({ response });
+      });
+    }
+
+    for (const site of channelSites) {
+      await page.goto(`http://${site}:${PORT}/autoplay.html`);
+      await expect
+        .poll(() => videoState(page))
+        .toMatchObject({ mutedAuto: { playing: true, tried: true } });
+    }
+  });
+
   test("pauses muted autoplay, also when the page retries play() later", async ({ ext, page }) => {
     await page.goto(`${FIRST}/autoplay.html`);
     await expect.poll(async () => (await videoState(page)).mutedAuto).toEqual({ playing: false, tried: true });
