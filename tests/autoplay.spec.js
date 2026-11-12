@@ -59,7 +59,7 @@ test("editing another setting does not pause a video the user is already watchin
 });
 
 test.describe("autoplay stopper", () => {
-  test("leaves playback alone on verified streaming and social apps", async ({ page }) => {
+  test("leaves feed videos and looping video GIFs alone on compatible apps", async ({ page }) => {
     const autoplaySites = [
       "pluto.tv",
       "watch.plex.tv",
@@ -67,6 +67,8 @@ test.describe("autoplay stopper", () => {
       "play.xumo.com",
       "www.instagram.com",
       "www.tiktok.com",
+      "x.com",
+      "mobile.twitter.com",
     ];
     for (const site of autoplaySites) {
       await page.route(`http://${site}:${PORT}/**`, async (route) => {

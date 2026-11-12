@@ -9,9 +9,9 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
 ## Unreleased
 
-- Restore normal Instagram and TikTok feed playback. Their core video feeds
-  join the explicit autoplay compatibility list used for free streaming apps;
-  autoplay protection remains active on other sites.
+- Restore normal Instagram, TikTok and X feed playback. Their core video feeds
+  and X's video-backed GIFs join the explicit autoplay compatibility list used
+  for free streaming apps; autoplay protection remains active on other sites.
 - Restore normal live-channel playback on Pluto TV, Plex, Tubi and Xumo Play.
   Their full-site channel streams are exempt from the autoplay guard; autoplay
   protection remains active on other sites.

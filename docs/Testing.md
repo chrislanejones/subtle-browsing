@@ -6,7 +6,7 @@ The testing policy is [ADR-020](adr/020-live-site-checks-are-separate-from-regre
 
 ## Unreleased verification, 11-07-2026
 
-`pnpm exec playwright test --project=main --workers 2`: **199 passed in 3.0
+`pnpm exec playwright test --project=main --workers 2`: **199 passed in 2.1
 minutes**, including streaming and social-video compatibility coverage. All 65
 JavaScript files passed syntax checks; `git diff --check` passed. The torrent
 rules and policy share the same 40-domain scope.
@@ -60,9 +60,12 @@ A fresh logged-out TikTok profile reproduced the same fault: its visible feed
 video was ready and playing without the extension, but ready and paused with
 default protection. The protected post-fix profile again had a ready, advancing
 video. Instagram's logged-out page is a login form in this environment and did
-not expose a video, so no account was used; its requested `instagram.com`
-exception is covered by the host-preserving regression fixture alongside
-TikTok. The autoplay guard remains active on every other hostname.
+not expose a video, so no account was used. X rejected this cloud browser
+before a public feed could load; its video-backed GIFs use the same looping
+`<video>` path as the covered fixture. The requested `instagram.com`, `x.com`
+and legacy `twitter.com` exceptions are covered by the host-preserving
+regression fixture alongside TikTok. The autoplay guard remains active on every
+other hostname.
 
 ### Local-news follow-up, 11-07-2026
 

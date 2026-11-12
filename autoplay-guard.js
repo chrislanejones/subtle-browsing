@@ -14,10 +14,10 @@
   const saved = new WeakMap();
   const waiting = new Set();
 
-  // These dedicated streaming and short-video apps start the selected or
-  // visible video as part of normal navigation. Pausing it makes the player
-  // retry until it loses its source, so keep the exception explicit and
-  // limited.
+  // These dedicated streaming and social-video apps start the selected or
+  // visible video as part of normal navigation. This also covers video-backed
+  // GIFs. Pausing it makes the player retry until it loses its source, so keep
+  // the exception explicit and limited.
   // `subtlePolicy.site` is the top-level site in child frames too.
   const AUTOPLAY_COMPATIBILITY_SITES = [
     "pluto.tv",
@@ -26,6 +26,8 @@
     "xumo.com",
     "instagram.com",
     "tiktok.com",
+    "x.com",
+    "twitter.com",
   ];
   const autoplayCompatibilitySite = () =>
     AUTOPLAY_COMPATIBILITY_SITES.some(
