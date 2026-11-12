@@ -59,14 +59,16 @@ test("editing another setting does not pause a video the user is already watchin
 });
 
 test.describe("autoplay stopper", () => {
-  test("leaves live channels playing on verified streaming apps", async ({ page }) => {
-    const channelSites = [
+  test("leaves playback alone on verified streaming and social apps", async ({ page }) => {
+    const autoplaySites = [
       "pluto.tv",
       "watch.plex.tv",
       "tubitv.com",
       "play.xumo.com",
+      "www.instagram.com",
+      "www.tiktok.com",
     ];
-    for (const site of channelSites) {
+    for (const site of autoplaySites) {
       await page.route(`http://${site}:${PORT}/**`, async (route) => {
         const requested = new URL(route.request().url());
         const response = await route.fetch({
@@ -76,7 +78,7 @@ test.describe("autoplay stopper", () => {
       });
     }
 
-    for (const site of channelSites) {
+    for (const site of autoplaySites) {
       await page.goto(`http://${site}:${PORT}/autoplay.html`);
       await expect
         .poll(() => videoState(page))

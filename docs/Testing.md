@@ -6,10 +6,10 @@ The testing policy is [ADR-020](adr/020-live-site-checks-are-separate-from-regre
 
 ## Unreleased verification, 11-07-2026
 
-`pnpm exec playwright test --project=main --workers 2`: **199 passed in 2.0
-minutes**, including the streaming-compatibility coverage. All 65 JavaScript
-files passed syntax checks; `git diff --check` passed. The torrent rules and
-policy share the same 40-domain scope.
+`pnpm exec playwright test --project=main --workers 2`: **199 passed in 3.0
+minutes**, including streaming and social-video compatibility coverage. All 65
+JavaScript files passed syntax checks; `git diff --check` passed. The torrent
+rules and policy share the same 40-domain scope.
 
 The [40-target torrent audit](testing/2026-11-07-torrent-sites.json) reached 30
 usable homepages. Four targets showed bot checks, three required login, one
@@ -53,6 +53,16 @@ inconclusive; its explicitly requested full-site compatibility exception is
 covered by the same host-preserving regression test. The Roku Channel home
 page had no media and no baseline/protected difference, so it received no
 exception. Ordinary-site autoplay coverage remains unchanged.
+
+### Social-video compatibility follow-up, 11-11-2026
+
+A fresh logged-out TikTok profile reproduced the same fault: its visible feed
+video was ready and playing without the extension, but ready and paused with
+default protection. The protected post-fix profile again had a ready, advancing
+video. Instagram's logged-out page is a login form in this environment and did
+not expose a video, so no account was used; its requested `instagram.com`
+exception is covered by the host-preserving regression fixture alongside
+TikTok. The autoplay guard remains active on every other hostname.
 
 ### Local-news follow-up, 11-07-2026
 
