@@ -15,6 +15,7 @@ test("a block is counted by type, blocked domain and the site it was on", async 
   ext,
   page,
 }) => {
+  await ext.setSettings({ autoplayGuard: false });
   await ext.setBlockedUrls(["localhost"]);
   await page.goto(`${FIRST}/pause.html`);
   await expect
@@ -60,6 +61,7 @@ test("legacy blockStats migrates into IndexedDB without losing earlier counts", 
       [daysAgo(100)]: day({ video_ads: 9 }),
     },
   });
+  await ext.setSettings({ autoplayGuard: false });
   await ext.setBlockedUrls(["localhost"]);
   await page.goto(`${FIRST}/pause.html`);
   await expect
@@ -156,18 +158,18 @@ test.describe("overview", () => {
     await expect(page.locator(".viz-tooltip")).toContainText("20 blocked");
 
     const kinds = page.locator("#kinds tr");
-    await expect(kinds).toHaveCount(12);
+    await expect(kinds).toHaveCount(13);
     await expect(kinds.first()).toContainText("Video ad companies");
     await expect(kinds.first()).toContainText("20 rules");
     await expect(kinds.first().locator(".state")).toHaveText("On");
     await expect(kinds.nth(1)).toContainText("2 URLs");
     await expect(kinds.nth(2)).toContainText("30 rules");
-    await expect(kinds.nth(2).locator(".state")).toHaveText("Off");
+    await expect(kinds.nth(2).locator(".state")).toHaveText("On");
     await expect(kinds.nth(2).locator("td.num")).toHaveText("20");
 
     // Live: a setting change updates the table
-    await ext.setSettings({ adChurnRules: true });
-    await expect(kinds.nth(2).locator(".state")).toHaveText("On");
+    await ext.setSettings({ adChurnRules: false });
+    await expect(kinds.nth(2).locator(".state")).toHaveText("Off");
     await ext.setSync({ pausedEverywhere: true });
     await expect(page.locator("#powerState")).toHaveText("Off everywhere");
   });

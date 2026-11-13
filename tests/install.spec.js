@@ -1,8 +1,8 @@
 import { test, expect } from "./helpers/extension.js";
 
 test.describe("fresh install", () => {
-  test("turns on the video ad list and leaves the annoyances list off", async ({ ext }) => {
-    expect(await ext.enabledRulesets()).toEqual(["torrent_ads", "video_ads"]);
+  test("turns on the video ad, sync-frame and scam lists and leaves the annoyances list off", async ({ ext }) => {
+    expect(await ext.enabledRulesets()).toEqual(["ad_churn", "scam_ads", "torrent_ads", "video_ads"]);
   });
 
   test("registers the frame scripts", async ({ ext }) => {
@@ -97,4 +97,23 @@ test.describe("fresh install", () => {
     expect(await ext.dynamicRules()).toEqual([]);
     expect(await ext.getSync()).toEqual({});
   });
+});
+
+test("scam ad hosts are blocked by default while newsletter tools are not", async ({ ext }) => {
+  const matched = (url, type = "script") =>
+    ext.sw.evaluate(
+      async ([url, type]) =>
+        (
+          await chrome.declarativeNetRequest.testMatchOutcome({
+            url,
+            initiator: "https://movy.sx",
+            type,
+            tabId: -1,
+          })
+        ).matchedRules.map((rule) => rule.rulesetId),
+      [url, type],
+    );
+  expect(await matched("https://proadblocker.pro/offer", "main_frame")).toEqual(["scam_ads"]);
+  expect(await matched("https://doomsarchaic.com/tag.js")).toEqual(["scam_ads"]);
+  expect(await matched("https://optinmonster.com/app.js")).toEqual([]);
 });

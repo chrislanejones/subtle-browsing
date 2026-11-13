@@ -13,6 +13,7 @@
   const restored = new WeakSet();
   const saved = new WeakMap();
   const waiting = new Set();
+  const counted = new WeakSet();
 
   // These dedicated streaming and social-video apps start the selected or
   // visible video as part of normal navigation. This also covers video-backed
@@ -77,7 +78,7 @@
     const placeholder = document.createElement("subtle-paused-video");
     if (getComputedStyle(container).position === "fixed") {
       const rect = container.getBoundingClientRect();
-      const left = Math.max(8, Math.min(rect.left, innerWidth - 150));
+      const left = Math.max(8, Math.min(rect.left, innerWidth - 330));
       const top = Math.max(8, Math.min(rect.top, innerHeight - 44));
       placeholder.style.cssText = `position:fixed;left:${left}px;top:${top}px;z-index:2147483647;max-width:calc(100vw - 16px)`;
     }
@@ -87,7 +88,25 @@
     button.style.cssText =
       "font:13px/1.5 system-ui;padding:6px 10px;cursor:pointer";
     button.addEventListener("click", () => restoreVideo(video), { once: true });
-    root.append(button);
+    // Turns the autoplay stopper off for this site (and its subdomains) through
+    // a site control, so the choice shows up and can be undone in settings.
+    const allow = document.createElement("button");
+    allow.textContent = "Always allow video here";
+    allow.style.cssText = `${button.style.cssText};margin-left:6px`;
+    allow.addEventListener("click", async (event) => {
+      if (!event.isTrusted || allow.disabled) return;
+      allow.disabled = true;
+      try {
+        const response = await chrome.runtime.sendMessage({ action: "allowSiteVideo" });
+        if (!response?.ok) throw new Error(response?.error);
+      } catch {
+        allow.disabled = false;
+        allow.textContent = "Couldn't save; try again";
+        return;
+      }
+      for (const paused of [...waiting]) restoreVideo(paused);
+    });
+    root.append(button, allow);
     container.before(placeholder);
     record.placeholder = placeholder;
   }
@@ -209,6 +228,40 @@
     return playControl;
   }
 
+  // The page's main video (a watch page, a live stream, a film) is what the
+  // visitor came for. In the top page only: a first-party video that fills
+  // most of the window, isn't part of an article or pinned to the window, and
+  // is the largest video on the page. Article players, background loops and
+  // third-party ad video stay paused.
+  function mainVideo(video) {
+    if (window.top !== window || video.closest("article")) return false;
+    const { width, height } = video.getBoundingClientRect();
+    if (width < innerWidth * 0.6 || height < innerHeight * 0.5) return false;
+    const src = video.currentSrc || video.getAttribute("src") || "";
+    // Streaming players feed a blob: URL, which is always the page's own
+    if (src && !src.startsWith("blob:")) {
+      let host;
+      try {
+        host = new URL(src, location.href).hostname.replace(/^www\./, "");
+      } catch {
+        return false;
+      }
+      const site = subtlePolicy.site;
+      if (host !== site && !host.endsWith(`.${site}`) && !site.endsWith(`.${host}`))
+        return false;
+    }
+    // A full-window background loop or an overlay is pinned to the window; a
+    // watch page's player sits in the page
+    for (let box = video, depth = 0; box && depth < MAX_FLOAT_DEPTH; box = box.parentElement, depth++)
+      if (getComputedStyle(box).position === "fixed") return false;
+    for (const other of document.querySelectorAll("video")) {
+      if (other === video) continue;
+      const box = other.getBoundingClientRect();
+      if (box.width * box.height > width * height) return false;
+    }
+    return true;
+  }
+
   function shouldPause(video) {
     if (
       autoplayCompatibilitySite() ||
@@ -216,7 +269,7 @@
       !subtlePolicy.enabled("autoplayGuard")
     )
       return false;
-    if (startedByUser(video)) return false;
+    if (mainVideo(video) || startedByUser(video)) return false;
     return true;
   }
 
@@ -318,6 +371,12 @@
       video.pause();
     }
     if (pauses.length === 1) hideFloatingPlayer(video);
+    if (!counted.has(video)) {
+      counted.add(video);
+      chrome.runtime
+        .sendMessage({ action: "countAction", kind: "autoplay" })
+        .catch(() => {});
+    }
   }
   subtlePolicy.listen(document, "play", (event) => checkVideo(event.target), true);
   const checkExisting = () => {

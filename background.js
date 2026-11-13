@@ -42,6 +42,7 @@ const MAX_LOG_ENTRIES = 100;
 // by the site it was blocked on
 const STATS_TYPES = {
   video_ads: "video_ads",
+  scam_ads: "scam_ads",
   annoyances: "annoyances",
   notifications: "notifications",
   ad_churn: "ad_churn",
@@ -219,6 +220,7 @@ async function syncDynamicRules() {
 
 async function applySettings({
   videoAdRules,
+  scamAds,
   autoplayGuard,
   annoyanceRules,
   notificationRules,
@@ -232,6 +234,7 @@ async function applySettings({
   heavyAdsOn = heavyAds || overrides.some((s) => s.heavyAds);
   const rulesets = {
     [VIDEO_AD_RULESET_ID]: videoAdRules,
+    scam_ads: scamAds,
     [ANNOYANCES_RULESET_ID]: annoyanceRules,
     notifications: notificationRules,
     ad_churn: adChurnRules,
@@ -533,6 +536,7 @@ async function removeHeavyFrame(tabId, frameId, bytes) {
 let sessionAllowIds = new Set();
 const categoryFiles = {
   videoAdRules: "video-ads",
+  scamAds: "scam-ads",
   annoyanceRules: "annoyances",
   notificationRules: "notifications",
   adChurnRules: "ad-churn",
@@ -720,6 +724,21 @@ function getPagePolicy() {
     .then((state) => ({ ...state, torrentSites: TORRENT_SITES }))
     .catch((error) => { pagePolicySnapshot = undefined; throw error; });
 }
+const ACTION_TYPES = { autoplay: "autoplay", redirect: "redirects", popup: "redirects" };
+const ACTION_LABELS = {
+  autoplay: "Autoplay paused",
+  redirect: "Redirect stopped",
+  popup: "Popup stopped",
+};
+const ACTION_LIMIT = 50;
+const actionCounts = new Map();
+function countableDocument(documentId) {
+  if (typeof documentId !== "string") return false;
+  if (actionCounts.size > 1000) actionCounts.clear();
+  const count = (actionCounts.get(documentId) ?? 0) + 1;
+  actionCounts.set(documentId, count);
+  return count <= ACTION_LIMIT;
+}
 const frameGestures = new Map();
 function frameTicket(sender, kind, time = Date.now()) {
   for (const [key, value] of frameGestures)
@@ -834,6 +853,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case "stopSelector":
       sendToTab(message.tabId, { action: message.action })
         .then(sendResponse)
+        .catch((error) => sendResponse({ error: error.message }));
+      return true;
+
+    // The extension's own page scripts report what they stopped. These counts
+    // work in every install, unlike onRuleMatchedDebug. A page can fake the
+    // event behind a redirect count, so each document is capped.
+    case "countAction": {
+      const type = ACTION_TYPES[message.kind];
+      if (!type || !sender.tab || !countableDocument(sender.documentId)) return;
+      logBlockedUrl(`${ACTION_LABELS[message.kind]}: ${sender.url}`, {
+        type,
+        host: sender.url,
+        page: sender.tab.url,
+      });
+      return;
+    }
+
+    // "Always allow video here" on a paused video. The site comes from the
+    // tab Chrome reports, never from the page.
+    case "allowSiteVideo":
+      queue(async () => {
+        if (!/^https?:/.test(sender.tab?.url ?? ""))
+          throw new Error("Open a website first.");
+        const site = siteKey(new URL(sender.tab.url).hostname);
+        await applyMutation("siteSetting", { site, key: "autoplayGuard", value: false });
+        await applySettings(await getSettings());
+      })
+        .then(() => sendResponse({ ok: true }))
         .catch((error) => sendResponse({ error: error.message }));
       return true;
 

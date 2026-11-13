@@ -10,22 +10,28 @@
          with the dataviz palette checker on both surfaces. */
       :root {
         --type-video_ads: #2a78d6;
+        --type-scam_ads: #c43c3c;
         --type-personal: #eb6834;
         --type-ad_churn: #1baf7a;
         --type-annoyances: #eda100;
         --type-notifications: #e87ba4;
         --type-heavy: #008300;
+        --type-autoplay: #7a5cd6;
+        --type-redirects: #a86b32;
         --type-other: oklch(62% 0.01 250);
         --type-single: #2a78d6;
       }
       @media (prefers-color-scheme: dark) {
         :root {
           --type-video_ads: #3987e5;
+          --type-scam_ads: #e05a5a;
           --type-personal: #d95926;
           --type-ad_churn: #199e70;
           --type-annoyances: #c98500;
           --type-notifications: #d55181;
           --type-heavy: #008300;
+          --type-autoplay: #9a80e8;
+          --type-redirects: #c4874c;
           --type-other: oklch(58% 0.01 250);
           --type-single: #3987e5;
         }
@@ -481,10 +487,10 @@
         <h2 id="overviewHeading" class="section-label">Overview</h2>
         <div id="tiles" class="tiles"></div>
         <p id="countNote" class="note" hidden>
-          Chrome only reports each block to unpacked installs, so the network
-          totals and charts are unavailable here. The toolbar icon shows each
-          tab's request count; heavy-content removals can still appear in recent
-          activity.
+          Chrome only reports network blocks to unpacked installs, so these
+          numbers count what the page scripts stopped: autoplay videos,
+          redirects, popups and heavy ads. The toolbar icon shows each tab's
+          blocked request count.
         </p>
       </section>
 
@@ -553,6 +559,15 @@
                 >
               </span>
               <input type="checkbox" id="videoAdRulesToggle" class="switch" />
+            </label>
+            <label class="row">
+              <span class="row-text">
+                <span class="row-title">Scam ad sites</span>
+                <span class="row-desc"
+                  >Fake ad-blocker offers and scam redirect pages</span
+                >
+              </span>
+              <input type="checkbox" id="scamAdsToggle" class="switch" />
             </label>
             <label class="row">
               <span class="row-text">

@@ -22,6 +22,14 @@ test.describe("stop ad redirects", () => {
     await settle(page);
     expect(page.url()).toBe(adPage(away));
     expect((await stopped).text()).toBe(`Subtle stopped a redirect to ${THIRD}`);
+    // Counted by the extension itself, so store installs see it too
+    await expect
+      .poll(async () =>
+        ((await ext.getLocal("blockedUrlLogs")).blockedUrlLogs ?? []).filter(
+          (entry) => entry.type === "redirects",
+        ).length,
+      )
+      .toBeGreaterThanOrEqual(1);
   });
 
   test("a click on a link still goes to another site", async ({ ext, page }) => {

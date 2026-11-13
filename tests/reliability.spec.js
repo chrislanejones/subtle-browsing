@@ -236,7 +236,7 @@ test("settings leads with activity, resumes blocking, and retains reset feedback
   );
 });
 
-test("store-style diagnostics distinguish unavailable network data from zero", async ({
+test("store-style diagnostics count what the page scripts stopped", async ({
   ext,
   page,
 }) => {
@@ -244,11 +244,12 @@ test("store-style diagnostics distinguish unavailable network data from zero", a
     chrome.declarativeNetRequest.onRuleMatchedDebug = undefined;
   });
   await page.goto(ext.url("options.html"));
-  await expect(page.locator("#tiles .tile-value").first()).toHaveText(
-    "Unavailable",
+  await expect(page.locator("#tiles .tile-label").first()).toHaveText(
+    "Stopped today",
   );
-  await expect(page.locator("#perDay")).toContainText("unavailable");
+  await expect(page.locator("#tiles .tile-value").first()).toHaveText("0");
   await expect(page.locator("#countNote")).toBeVisible();
+  await expect(page.locator("#countNote")).toContainText("page scripts stopped");
 });
 
 // Closed shadow controls are inspected through CDP, as in picker tests.
@@ -329,6 +330,32 @@ test("floating video recovery stays in the viewport on a long article", async ({
   await expect
     .poll(() => quietEval(page, () => !document.querySelector("video").paused))
     .toBe(true);
+});
+
+test("Always allow video here saves a site control and plays the video", async ({
+  ext,
+  page,
+}) => {
+  await page.route(`${FIRST}/corner-video.html`, (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: `<!doctype html><div style="height:600px">Article</div><div id="corner" style="position:fixed;right:16px;bottom:16px;width:200px;height:100px"><video muted autoplay loop src="${FIRST}/clip.webm"></video></div>`,
+    }),
+  );
+  await page.goto(`${FIRST}/corner-video.html`);
+  await expect(page.locator("subtle-paused-video")).toBeVisible();
+  await clickShadowButton(page, "subtle-paused-video", "Always allow video here");
+  await expect
+    .poll(async () => (await ext.getSync("siteSettings")).siteSettings)
+    .toEqual({ "127.0.0.1": { autoplayGuard: false } });
+  await expect(page.locator("subtle-paused-video")).toHaveCount(0);
+  await expect
+    .poll(() => quietEval(page, () => !document.querySelector("video").paused))
+    .toBe(true);
+  // The next visit leaves the site's video alone
+  await page.reload();
+  await page.waitForTimeout(1500);
+  expect(await quietEval(page, () => !document.querySelector("video").paused)).toBe(true);
 });
 
 test("simultaneous import and rule addition preserve both edits", async ({

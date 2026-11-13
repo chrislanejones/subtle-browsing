@@ -2,6 +2,7 @@ import { mountRuleForm } from "./rule-form.js";
 import { mountSiteControls } from "./controls.js";
 import { getBlockedUrls, onBlockedUrlsChanged } from "./blocklist.js";
 import {
+  FEATURES,
   getPauseState,
   getAllPausedSites,
   getSettings,
@@ -61,6 +62,7 @@ for (const [name, id] of [
 // Blocking switches, saved as soon as they change
 const toggles = {
   videoAdRules: document.getElementById("videoAdRulesToggle"),
+  scamAds: document.getElementById("scamAdsToggle"),
   autoplayGuard: document.getElementById("autoplayGuardToggle"),
   heavyAds: document.getElementById("heavyAdsToggle"),
   notificationRules: document.getElementById("notificationRulesToggle"),
@@ -180,16 +182,47 @@ async function changePower(mode) {
 for (const input of powerInputs)
   input.addEventListener("change", () => changePower(input.value));
 
-// The daily count needs the debug event, which only unpacked installs have
+// Report this site: a pre-filled GitHub issue with the site name only (never
+// the page address), the version and which switches are on.
+const REPORT_URL = "https://github.com/chrislanejones/subtle-browsing/issues/new";
+const reportButton = document.getElementById("reportButton");
+function reportUrl(site, settings, version, userAgent) {
+  const on = Object.entries(FEATURES)
+    .filter(([key]) => settings[key])
+    .map(([, label]) => label);
+  const body = [
+    `Site: ${site}`,
+    `Extension version: ${version}`,
+    `Chrome: ${userAgent.match(/Chrome\/([\d.]+)/)?.[1] ?? "unknown"}`,
+    `Switches on: ${on.join(", ") || "none"}`,
+    "",
+    "What happened? (An ad that got through, a video that wouldn't play, or something on the page that broke.)",
+    "",
+  ].join("\n");
+  return `${REPORT_URL}?${new URLSearchParams({ title: `Site report: ${site}`, body })}`;
+}
+if (site) {
+  reportButton.hidden = false;
+  reportButton.addEventListener("click", async () => {
+    await chrome.tabs.create({
+      url: reportUrl(site, await getSettings(), chrome.runtime.getManifest().version, navigator.userAgent),
+    });
+    window.close();
+  });
+}
+
+// Unpacked installs count every network block. Store installs only count
+// what the page scripts stopped, so the label says that instead.
 const blockedToday = document.getElementById("blockedToday");
-if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
+const countsNetwork = Boolean(chrome.declarativeNetRequest.onRuleMatchedDebug);
+{
   const renderBlockedToday = (record) => {
     const today = new Date().toLocaleDateString("en-CA");
     const count = record?.date === today ? record.count : 0;
     const number = document.createElement("b");
     number.textContent = count.toLocaleString();
     const label = document.createElement("span");
-    label.textContent = "blocked today";
+    label.textContent = countsNetwork ? "blocked today" : "stopped today";
     blockedToday.replaceChildren(number, " ", label);
   };
   renderBlockedToday(

@@ -257,3 +257,43 @@ test.describe("autoplay stopper", () => {
     expect(await ext.registeredScripts()).toEqual(["ad-redirect-guard", "autoplay-guard", "cosmetic", "frame-collapse", "heavy-ad-guard", "page-world-policy"]);
   });
 });
+
+test("each paused autoplay video counts once toward the daily totals", async ({ ext, page }) => {
+  await page.goto(`${FIRST}/autoplay.html`);
+  // The page retries play() after a second; the retry isn't a second count
+  await expect
+    .poll(() => quietEval(page, () => document.getElementById("mutedAuto").paused && window.plays.mutedAuto >= 2))
+    .toBe(true);
+  const pageEntries = async () =>
+    ((await ext.getLocal("blockedUrlLogs")).blockedUrlLogs ?? []).filter(
+      (entry) => entry.type === "autoplay" && entry.url === `Autoplay paused: ${FIRST}/autoplay.html`,
+    );
+  await expect.poll(async () => (await pageEntries()).length).toBe(1);
+  const today = new Date().toLocaleDateString("en-CA");
+  await expect
+    .poll(async () => (await ext.sendMessage({ action: "getHistory" })).days[today]?.types?.autoplay ?? 0)
+    .toBeGreaterThanOrEqual(1);
+});
+
+test.describe("the page's main video", () => {
+  const settled = async (page) => {
+    await expect.poll(() => quietEval(page, () => window.plays > 0)).toBe(true);
+    await page.waitForTimeout(1000);
+    return quietEval(page, () => !document.getElementById("main").paused);
+  };
+
+  test("a large first-party video outside an article plays", async ({ ext, page }) => {
+    await page.goto(`${FIRST}/main-video.html`);
+    expect(await settled(page)).toBe(true);
+  });
+
+  test("the same video inside an article is paused", async ({ ext, page }) => {
+    await page.goto(`${FIRST}/main-video.html?article`);
+    expect(await settled(page)).toBe(false);
+  });
+
+  test("a large video from another site is paused", async ({ ext, page }) => {
+    await page.goto(`${FIRST}/main-video.html?third`);
+    expect(await settled(page)).toBe(false);
+  });
+});

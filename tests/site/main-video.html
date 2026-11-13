@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>body{margin:0} video{display:block;width:90vw;height:70vh}</style></head><body>
+<!-- A watch page: one large video is what the visitor came for.
+     ?article puts it in an article, ?third serves it from another site. -->
+<script>
+  const params = new URLSearchParams(location.search);
+  const video = document.createElement("video");
+  Object.assign(video, { id: "main", muted: true, autoplay: true, loop: true,
+    src: params.has("third") ? "__THIRD__/clip.webm" : "/clip.webm" });
+  window.plays = 0;
+  video.addEventListener("play", () => plays++);
+  const home = document.createElement(params.has("article") ? "article" : "div");
+  home.append(video);
+  document.body.append(home);
+</script>
+</body></html>

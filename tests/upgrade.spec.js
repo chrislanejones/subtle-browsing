@@ -272,7 +272,7 @@ test("on a second computer, lists are merged and the synced switches win", async
             chrome.declarativeNetRequest.getEnabledRulesets(),
           )
         ).sort(),
-      ).toEqual(["torrent_ads", "video_ads"]);
+      ).toEqual(["ad_churn", "scam_ads", "torrent_ads", "video_ads"]);
     },
   );
 });

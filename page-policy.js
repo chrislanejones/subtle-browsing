@@ -12,11 +12,12 @@
   } catch {}
   const defaults = {
     videoAdRules: true,
+    scamAds: true,
     autoplayGuard: true,
     heavyAds: true,
     annoyanceRules: false,
     notificationRules: false,
-    adChurnRules: false,
+    adChurnRules: true,
     refreshThrottle: false,
     adRedirectGuard: false,
     pinnedAds: true,

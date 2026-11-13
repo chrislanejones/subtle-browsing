@@ -14,14 +14,19 @@ const $ = (id) => document.getElementById(id);
 // Fixed order: the colors in the options page follow it (--type-1 … --type-6)
 export const TYPES = [
   { key: "video_ads", label: "Video ads" },
+  { key: "scam_ads", label: "Scam ad sites" },
   { key: "personal", label: "Your list" },
   { key: "ad_churn", label: "Ad refresh and sync" },
   { key: "annoyances", label: "Newsletter offers" },
   { key: "notifications", label: "Notification requests" },
   { key: "heavy", label: "Heavy ads" },
+  { key: "autoplay", label: "Autoplay paused" },
+  { key: "redirects", label: "Redirects and popups stopped" },
   { key: "other", label: "Other" },
 ];
 const color = (key) => `var(--type-${key})`;
+// Counted by the extension's own scripts, so every install has these
+const SCRIPT_TYPES = new Set(["heavy", "autoplay", "redirects"]);
 
 // Every kind of blocking, for the "What gets blocked" table
 const KINDS = [
@@ -60,6 +65,13 @@ const KINDS = [
     rules: "rules/notifications.json",
   },
   {
+    type: "scam_ads",
+    setting: "scamAds",
+    name: "Scam ad sites",
+    what: "Fake ad-blocker offers and scam redirect hosts seen on real pages",
+    rules: "rules/scam-ads.json",
+  },
+  {
     type: "heavy",
     setting: "heavyAds",
     name: "Heavy ads",
@@ -67,6 +79,7 @@ const KINDS = [
     rule: "Size and CPU limit",
   },
   {
+    type: "autoplay",
     setting: "autoplayGuard",
     name: "Autoplay videos",
     what: "Paused, even with sound; videos you start still play",
@@ -79,6 +92,7 @@ const KINDS = [
     rule: "Page script",
   },
   {
+    type: "redirects",
     setting: "adRedirectGuard",
     name: "Stop ad redirects",
     what: "Unwanted redirects and click-triggered popups",
@@ -380,13 +394,15 @@ async function renderData() {
   const hidden = (sync.hiddenElements ?? []).length;
   const overrides = Object.keys(siteSettings).length;
 
+  // Store installs only count what the page scripts stopped (autoplay,
+  // redirects, popups, heavy ads); network blocks aren't reported to them.
   $("tiles").replaceChildren(
-    tile("Blocked today", canCount ? fmt(todayCount) : "Unavailable"),
-    tile("Last 7 days", canCount ? fmt(weekTotal) : "Unavailable"),
+    tile(canCount ? "Blocked today" : "Stopped today", fmt(todayCount)),
+    tile("Last 7 days", fmt(weekTotal)),
     tile(
       "Last 30 days",
-      canCount ? fmt(monthTotal) : "Unavailable",
-      canCount && Object.keys(stats).length < 30
+      fmt(monthTotal),
+      Object.keys(stats).length < 30
         ? `Counting since ${Object.keys(stats).sort()[0] ?? "today"}`
         : null,
     ),
@@ -438,18 +454,9 @@ async function renderData() {
     pages.length ? barList(pages) : empty("Nothing blocked yet this week."),
   );
 
-  if (!canCount) {
-    for (const id of ["perDay", "byType", "topHosts", "topPages"])
-      $(id).replaceChildren(
-        empty(
-          "Network activity is unavailable in this install, not zero. Use the toolbar for this tab’s request count.",
-        ),
-      );
-  }
-
   // Recent blocks, newest first
   const recent = blockedUrlLogs
-    .filter((entry) => canCount || entry.type === "heavy")
+    .filter((entry) => canCount || SCRIPT_TYPES.has(entry.type))
     .slice(-12)
     .reverse();
   $("recent").replaceChildren(
@@ -504,7 +511,7 @@ async function renderData() {
       : empty(
           canCount
             ? "Nothing blocked yet."
-            : "No heavy-content removals observed. Network logs are unavailable.",
+            : "Nothing stopped yet. Network blocks aren't listed in this install.",
         ),
   );
 

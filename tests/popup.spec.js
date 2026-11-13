@@ -80,11 +80,12 @@ test.describe("popup", () => {
       .poll(async () => (await ext.getSync("settings")).settings)
       .toEqual({
         videoAdRules: true,
+        scamAds: true,
         autoplayGuard: false,
         heavyAds: false,
         annoyanceRules: true,
         notificationRules: false,
-        adChurnRules: false,
+        adChurnRules: true,
         refreshThrottle: false,
         adRedirectGuard: false,
         pinnedAds: true,
@@ -94,7 +95,7 @@ test.describe("popup", () => {
     // The worker applies them
     await expect
       .poll(() => ext.enabledRulesets())
-      .toEqual(["annoyances", "torrent_ads", "video_ads"]);
+      .toEqual(["ad_churn", "annoyances", "scam_ads", "torrent_ads", "video_ads"]);
     await expect.poll(() => ext.registeredScripts()).toEqual(["ad-redirect-guard", "cosmetic", "page-world-policy"]);
   });
 
@@ -169,6 +170,33 @@ test.describe("popup", () => {
     await expect(page.locator("#powerDesc")).toHaveText(
       "Blocking on every site.",
     );
+  });
+
+  test("Report a problem opens a pre-filled issue with only the site name", async ({ ext, page }) => {
+    await page.addInitScript(() => {
+      const query = chrome.tabs.query.bind(chrome.tabs);
+      chrome.tabs.query = async (filter) =>
+        filter?.active
+          ? [{ id: 999999, url: "https://news.example.com/story?id=private" }]
+          : query(filter);
+      chrome.tabs.create = async ({ url }) => {
+        window.reportedUrl = url;
+      };
+      window.close = () => {};
+    });
+    await page.goto(ext.url("popup.html"));
+    await page.locator("#powerRow summary").click();
+    await page.locator("#reportButton").click();
+    await expect.poll(() => page.evaluate(() => window.reportedUrl ?? null)).not.toBeNull();
+    const url = new URL(await page.evaluate(() => window.reportedUrl));
+    expect(url.origin + url.pathname).toBe(
+      "https://github.com/chrislanejones/subtle-browsing/issues/new",
+    );
+    expect(url.searchParams.get("title")).toBe("Site report: news.example.com");
+    const body = url.searchParams.get("body");
+    expect(body).toContain("Site: news.example.com");
+    expect(body).toContain("Video ad companies");
+    expect(body).not.toContain("private");
   });
 
   test("fits under 600px with a long site name", async ({ ext, page }) => {

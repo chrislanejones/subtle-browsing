@@ -15,6 +15,15 @@
       }),
     );
   subtlePolicy.listen(window, "subtle-page-policy-request", send);
+  // ad-redirect-guard.js reports each redirect or popup it stops. The page
+  // can dispatch this event too, so a frame forwards only a few.
+  let reported = 0;
+  subtlePolicy.listen(window, "subtle-stopped", (event) => {
+    if (!["redirect", "popup"].includes(event.detail) || ++reported > 20) return;
+    chrome.runtime
+      .sendMessage({ action: "countAction", kind: event.detail })
+      .catch(() => {});
+  });
   send();
   subtlePolicy.subscribe(send);
 })();
