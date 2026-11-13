@@ -63,12 +63,13 @@ on every bad ad by hand.
 | Feature | What it does | On at install |
 | --- | --- | --- |
 | Video ad blocking | Blocks the companies that serve video ads (Connatix, Primis, AnyClip, Teads, Celtra and others), and swaps Google's video ad engine for a stand-in that says "no ads". Banner ads still show | Yes |
-| Autoplay stopper | Pauses videos that start without a play gesture, including audible ads after unrelated clicks. A site's own video that floats into the corner goes back into the article, paused; a floating ad with no place on the page is hidden. Videos you start play normally; core playback on Pluto TV, Plex, Tubi, Xumo Play, Instagram, TikTok and X is left alone | Yes |
+| Scam ad sites | Blocks fake ad-blocker offers and scam redirect hosts seen on real pages | Yes |
+| Autoplay stopper | Pauses videos that start without a play gesture, including audible ads after unrelated clicks. A site's own video that floats into the corner goes back into the article, paused; a floating ad with no place on the page is hidden. Videos you start play normally, and so does a page's main video (a large video from the site itself, outside an article). **Always allow video here** on a paused video turns it off for that site. Core playback on Pluto TV, Plex, Tubi, Xumo Play, Instagram, TikTok and X is left alone | Yes |
 | Heavy ad removal | Stops identified third-party ads at 4 MB or 5 seconds of long tasks in 30 seconds; offers Restore | Yes |
 | Broader heavy-embed mode | Applies those limits to unrecognized third-party embeds too; may stop legitimate content | No |
 | Newsletter offers | Blocks newsletter and promotional overlay tools | No |
 | Notification requests | Blocks website push-prompt tools independently | No |
-| Ad refresh and sync frames | Blocks Browsi's ad refresh and the hidden cookie-sync frames that ad auctions open. [See the URLs](rules/ad-churn.json) | No |
+| Ad refresh and sync frames | Blocks Browsi's ad refresh and the hidden cookie-sync frames that ad auctions open. On Variety this took a tab from 3.2 GB to 1.0 GB. [See the URLs](rules/ad-churn.json) | Yes |
 | Slow ad refresh | Lets each Google ad slot refresh at most once every 2 minutes, and not in a hidden tab | No |
 | Stop ad redirects | Stops unwanted cross-site redirects and click-triggered popunders | No |
 | Pinned ads | Supported sticky ads scroll with the page, including news-site sidebars and bottom banners. The site's own sticky header is left alone | Yes |

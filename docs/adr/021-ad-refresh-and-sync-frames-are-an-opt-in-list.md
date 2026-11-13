@@ -1,6 +1,9 @@
 # ADR-021: Ad refresh and sync frames are an opt-in list
 Date: 2026-10-26   Status: draft
 
+> Amended by [ADR-028](028-sync-frames-and-scam-ad-hosts-are-on-by-default.md):
+> on by default for new and never-saved installs.
+
 ## Context
 A firstcoastnews.com (TEGNA) article tab reached 1.2-1.3 GB in Chrome Task
 Manager. Main-frame JS heap went from 200 MB at 8 s to 290 MB at about 5 min

@@ -47,3 +47,6 @@ video-heavy site (PCWorld) drifting toward zero.
 
 ## 1.6.0 follow-up
 1.6.0 splits the handmade annoyance rules into newsletter and notification lists. See [ADR-019](019-newsletter-and-notification-lists-are-independent.md).
+
+Amended by [ADR-028](028-sync-frames-and-scam-ad-hosts-are-on-by-default.md):
+a third hand-made list, `scam_ads`, is on by default.

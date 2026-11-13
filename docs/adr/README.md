@@ -40,3 +40,7 @@ for a new one.
 | [025](025-pinned-ads-are-unpinned-with-css-not-hidden.md) | Pinned ads are un-pinned with CSS, not hidden or blocked | Draft | 2026-10-28 |
 | [026](026-history-and-large-synced-lists.md) | 90-day local history in IndexedDB and chunked sync lists | Draft (1.9.0) | 2026-10-31 |
 | [027](027-child-frame-gestures-and-popup-guards.md) | Child-frame gestures and popup guards | Draft (1.9.0) | 2026-10-31 |
+| [028](028-sync-frames-and-scam-ad-hosts-are-on-by-default.md) | Ad refresh and sync frames, and a new Scam ad sites list, are on by default | Draft (unreleased); amends ADR-021 | 2026-11-13 |
+| [029](029-page-script-stops-count-in-the-daily-history.md) | What the page scripts stop counts in the same daily history as network blocks | Draft (unreleased); amends ADR-008 | 2026-11-13 |
+| [030](030-autoplay-stopper-lets-the-main-video-play.md) | The autoplay stopper lets a page's main video play, and a paused video can allow its site | Draft (unreleased); amends ADR-005 | 2026-11-13 |
+| [031](031-unlimitedstorage-and-webrequest-stay.md) | `unlimitedStorage` and `webRequest` stay in the manifest | Draft (rejected change, no code) | 2026-11-13 |

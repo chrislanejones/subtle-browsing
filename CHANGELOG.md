@@ -9,6 +9,25 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
 ## Unreleased
 
+- Turn **Ad refresh and sync frames** on by default. On Variety it took a tab
+  from 3,199 MB in 76 processes to 1,049 MB in 12. Installs that already saved
+  their switches keep the choice they had.
+- Add default-on **Scam ad sites**. The fake ad-blocker and scam redirect hosts
+  from movy.sx and therarbg.com used to sit in the off-by-default Newsletter
+  offers list, so a new install got no protection from them.
+- Count what the page scripts stop: paused autoplay videos, stopped redirects
+  and stopped popups join heavy ads in the daily totals. These work in Web
+  Store installs, where Chrome doesn't report network blocks, so the settings
+  page and popup show "Stopped today" instead of "Unavailable".
+- Paused videos get an **Always allow video here** button next to Play. It
+  saves an autoplay site control, so the choice shows up in settings and can
+  be undone there.
+- Let the page's main video play: a large video from the site itself, outside
+  an article and the biggest on the page, counts as what you came for. Article
+  players and video from other sites stay paused.
+- Add **Report a problem on this site** to the popup's Blocking menu. It opens
+  a pre-filled GitHub issue with the site name, version and switches; never
+  the page address.
 - Restore normal Instagram, TikTok and X feed playback. Their core video feeds
   and X's video-backed GIFs join the explicit autoplay compatibility list used
   for free streaming apps; autoplay protection remains active on other sites.

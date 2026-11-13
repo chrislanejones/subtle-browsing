@@ -1,6 +1,9 @@
 # ADR-005: The autoplay stopper pauses muted video that starts without a click
 Date: 2026-10-26   Backfilled: 2026-10-26   Status: draft (shipped in 1.2.0, `f48aedb`; restart limit 1.2.1, `812ccbf`; floating players 1.3.0, `18f4319`)
 
+> Amended by [ADR-030](030-autoplay-stopper-lets-the-main-video-play.md):
+> a page's main video may play, and a paused video can allow its site.
+
 ## Context
 Video ads start muted, because Chrome won't autoplay sound, and a vendor
 list can't name every player. In the `812ccbf` stress test a player

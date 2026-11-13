@@ -1,6 +1,10 @@
 # ADR-008: Blocked-today counts with onRuleMatchedDebug, and falls back to Chrome's per-tab count
 Date: 2026-10-26   Backfilled: 2026-10-26   Status: draft (shipped in 1.3.0, `18f4319`)
 
+> Amended by [ADR-029](029-page-script-stops-count-in-the-daily-history.md):
+> page-script stops (autoplay, redirects, popups) now count too, so store
+> installs show "Stopped today" instead of "Unavailable".
+
 ## Context
 The toolbar icon should show how many requests were blocked today.
 `onRuleMatchedDebug` is the only event that reports each match, and it
