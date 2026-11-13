@@ -24,7 +24,7 @@
 
 - **firstcoastnews.com run B:** run A (both switches off, 10-26-2026) is JS heap 162 MB → 207 MB in 5 minutes, about 0.7 requests a second, 34 iframes with 29 hidden. Run B (switches on) still has to happen in Chris's own Chrome, because the site's Akamai protection returns 403 to Playwright. The Variety numbers below already show the switches work, so this is a second data point, not a blocker.
 - **Default on? Done on the feat/defaults-and-reach branch (11-13-2026, ADR-028).** On Variety (10-27-2026, Playwright, per-process PSS) the three switches took the tab from 3,199 MB in 76 renderer processes to 1,049 MB in 12 at 20 s, and from 2,164 MB to 921 MB at 2 minutes, with 4 banners showing instead of 3. Slow ad refresh cut 150 s of the page's own refreshing from 10 ad requests to 2. Worth considering default-on for Ad refresh and sync frames after a few weeks of daily use without breakage.
-- **Stop ad redirects, live:** fixture-tested only. In a plain Chrome the Variety scam redirect showed up 2 of 2 times, then not at all on the loads made with the guard injected, because the ads rotate. Check a real hijack gets stopped next time one shows up (the console says "Subtle stopped a redirect to …").
+- **Stop ad redirects, live:** fixture-tested only. In a plain Chrome the Variety scam redirect showed up 2 of 2 times, then not at all on the loads made with the guard injected, because the ads rotate. Check a real hijack gets stopped next time one shows up (the console says "Quiet Shield stopped a redirect to …").
 - **Sync patterns still miss:** `33across.com/match?`, `ssp.cadent.com/um?`, `cm.adform.net/cookie?`, `ap.lijit.com/beacon/…`, `static.cdn.monetixads.com/cookie.html`, `cs.seedtag.com/cs.html`. Bare `/match`, `/um`, `/cm` and `/cookie` are too common in ordinary URLs to add as patterns; add them by name if they show up as heavy.
 - **Slow ad refresh marker is hidden on some sites:** SHE Media's `blogherads` wraps `refresh()` on top of ours, so `refresh.subtleThrottled` reads false even though the throttle still works. Don't use the marker to check whether it's active.
 - **`imprchmp.taboola.com/st` stays out of the sync list:** it carries creative and impression IDs, so it counts paid impressions rather than syncing IDs.
@@ -50,23 +50,34 @@
 
 - **Heavy-download test observation:** one full-suite run left the clicked-frame download empty; twelve focused repeats passed. The final verification uses two concurrent browsers to reduce load. No production-code cause established.
 
+- **Slow ad refresh test observation (11-13-2026):** one full-suite run timed
+  out "is off by default" at 10.6 s; it passed alone and 8 of 8 focused
+  repeats. No production-code cause established.
+
 ## Follow-ups from feat/defaults-and-reach (11-13-2026)
 
-- **Name and README:** the rename and the README trim (one sentence, a
-  before/after GIF, an install button, three bullets) wait on Chris picking a
-  name. Keep `url-blocker-history` (the IndexedDB name) and the
-  `url-blocker:collapse-frame` message as they are; renaming them loses history
-  or breaks frames on pages that are already open.
+- **README trim:** the name is now Quiet Shield (11-13-2026). The README top
+  still needs cutting to one sentence, a before/after GIF, an install button
+  and three bullets; it waits on recording the GIF. Kept on purpose:
+  `url-blocker-history` (the IndexedDB name), the `url-blocker:collapse-frame`
+  message and the `<url-blocker-ui>` picker element. Renaming the first loses
+  history; the other two break frames and pickers on pages already open.
+  The repo itself is still `subtle-browsing`.
 - **Store-review call for Chris:** rule 35 (`chaturbate.com/*campaign=`) stays
   in the off-by-default Newsletter offers list, and the torrent-site list stays
   default-on. Both are product decisions, not code ones.
-- **Main-video rule, live check:** fixture-tested only. Try YouTube, Twitch and a
-  news site with a big hero player on a narrow window; a first-party hero
-  player outside `<article>` will now play.
-- **Install warnings:** `declarativeNetRequestFeedback` lists "Read your browsing
-  history". It only powers the unpacked network log, so a store build could
-  drop it if Chrome doesn't already fold it into the `<all_urls>` warning.
-  Check the real install dialog (ADR-031).
+- **Main-video rule, live check (11-13-2026, headless, 1000x700 window):**
+  YouTube's player kept playing (10.7 s in at 12 s). CBS News live's 950x534
+  player sat paused with no source and no Play placeholder, so its own player
+  never started in headless; inconclusive. Vimeo and Twitch put no video in
+  the top page. Still worth a look in Chris's own Chrome on a news site with a
+  big hero player.
+- **Install warnings: resolved (11-13-2026).** Chromium's
+  `chrome_permission_message_rules.cc` folds both `declarativeNetRequest` and
+  `declarativeNetRequestFeedback` into the `<all_urls>` warning, so the only
+  install warning is "Read and change all your data on all websites".
+  Dropping the feedback permission would remove nothing. ADR-031's open
+  question is answered.
 - **Two numbers on store installs:** the badge is Chrome's per-tab network
   count, the popup is what the page scripts stopped.
 - **Pinned ads aren't counted:** they're plain CSS, so nothing reports them.

@@ -1,4 +1,4 @@
-// Element picker for the URL Blocker extension.
+// Element picker for the Quiet Shield extension.
 // background.js injects this only when the picker is needed. It can be
 // injected more than once into the same page, so the guard keeps one copy.
 (() => {

@@ -80,7 +80,7 @@
   }
   // page-world-policy.js forwards the kind to the worker's daily counts
   const stopped = (kind, url) => {
-    console.info(`Subtle stopped a ${kind} to ${url.origin}`);
+    console.info(`Quiet Shield stopped a ${kind} to ${url.origin}`);
     window.dispatchEvent(new CustomEvent("subtle-stopped", { detail: kind }));
   };
 

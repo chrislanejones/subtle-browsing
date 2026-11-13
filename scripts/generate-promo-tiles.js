@@ -18,7 +18,7 @@ const tile = (w, h, iconSize, font, padX, padY) => `<!doctype html><html><body s
       border-radius:${Math.round(iconSize * 0.19)}px;background:#fff">
       <img src="data:image/png;base64,${icon}" style="width:${Math.round(iconSize * 0.77)}px;height:${Math.round(iconSize * 0.77)}px">
     </div>
-    <span style="font:600 ${font}px/1 'Helvetica Neue',Arial,sans-serif;color:#f4f7f8;letter-spacing:-0.01em">URL Blocker</span>
+    <span style="font:600 ${font}px/1 'Helvetica Neue',Arial,sans-serif;color:#f4f7f8;letter-spacing:-0.01em">Quiet Shield</span>
   </div></div></body></html>`;
 for (const [name, w, h, iconSize, font, padX, padY] of [
   ["promo-small-440x280", 440, 280, 64, 34, 30, 24],

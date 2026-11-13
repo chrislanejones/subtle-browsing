@@ -17,11 +17,11 @@ test.describe("stop ad redirects", () => {
 
   test("on, an ad frame can't send the tab to another site", async ({ ext, page }) => {
     await ext.setSettings({ adRedirectGuard: true });
-    const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Subtle stopped a redirect"));
+    const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Quiet Shield stopped a redirect"));
     await page.goto(adPage(away));
     await settle(page);
     expect(page.url()).toBe(adPage(away));
-    expect((await stopped).text()).toBe(`Subtle stopped a redirect to ${THIRD}`);
+    expect((await stopped).text()).toBe(`Quiet Shield stopped a redirect to ${THIRD}`);
     // Counted by the extension itself, so store installs see it too
     await expect
       .poll(async () =>
@@ -56,7 +56,7 @@ test.describe("stop ad redirects", () => {
     test(`blocks a click hijack on ${target} without leaving the page`, async ({ ext, page }) => {
       await ext.setSettings({ adRedirectGuard: true });
       const url = `${FIRST}/redirect.html?attack=redirect&to=${encodeURIComponent(away)}`;
-      const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Subtle stopped a redirect"));
+      const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Quiet Shield stopped a redirect"));
       await page.goto(url);
       await page.click(`#${target}`);
       await stopped;
@@ -72,7 +72,7 @@ test.describe("stop ad redirects", () => {
       await page.goto(`${FIRST}/redirect.html?attack=${attack}&to=${encodeURIComponent(away)}`);
       const opened = [];
       page.on("popup", (popup) => opened.push(popup));
-      const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Subtle stopped a popup"));
+      const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Quiet Shield stopped a popup"));
       await page.click("#play");
       await stopped;
       expect(opened).toHaveLength(0);
@@ -85,7 +85,7 @@ test.describe("stop ad redirects", () => {
     const url = `${FIRST}/redirect.html?attack=redirect&to=${encodeURIComponent(away)}`;
     await page.goto(url);
     await quietEval(page, () => { document.getElementById("link").href = "/index.html"; });
-    const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Subtle stopped a redirect"));
+    const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Quiet Shield stopped a redirect"));
     await page.click("#link");
     await stopped;
     expect(page.url()).toBe(url);
@@ -103,7 +103,7 @@ test.describe("stop ad redirects", () => {
       play.setAttribute("aria-labelledby", label.id);
       document.body.append(label, play);
     });
-    const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Subtle stopped a popup"));
+    const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Quiet Shield stopped a popup"));
     await page.click("#play");
     await stopped;
     expect(await quietEval(page, () => window.popupBlocked)).toBe(true);
@@ -115,7 +115,7 @@ test.describe("stop ad redirects", () => {
     const url = `${FIRST}/redirect.html?to=${encodeURIComponent(away)}`;
     await page.goto(url);
     await page.keyboard.press("PageDown");
-    const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Subtle stopped a redirect"));
+    const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Quiet Shield stopped a redirect"));
     await quietEval(page, (to) => { location.href = to; }, away);
     await stopped;
     expect(page.url()).toBe(url);

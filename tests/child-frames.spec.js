@@ -67,7 +67,7 @@ for (const frameType of ["cross", "same", "srcdoc", "blank"])
       await paintedControl(page.frameLocator("#controls").locator("#play"));
       const opened = [];
       context.on("page", (page) => opened.push(page));
-      const stopped = page.waitForEvent("console", { predicate: (message) => message.text().startsWith("Subtle stopped a popup"), timeout: 8000 });
+      const stopped = page.waitForEvent("console", { predicate: (message) => message.text().startsWith("Quiet Shield stopped a popup"), timeout: 8000 });
       await page.frameLocator("#controls").locator("#play").click();
       await stopped;
       await expect.poll(() => playing(page)).toBe(true);

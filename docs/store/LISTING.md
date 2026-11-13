@@ -2,7 +2,7 @@
 
 Copy-paste text for the developer dashboard
 (https://chrome.google.com/webstore/devconsole). Zip: `pnpm run package`
-builds `dist/url-blocker-<version>.zip` from the last commit.
+builds `dist/quiet-shield-<version>.zip` from the last commit.
 
 ## Review notes, 11-07-2026
 
@@ -39,7 +39,7 @@ user data is handled merely because nothing is sent to the developer.
 
 | Field | Value |
 | --- | --- |
-| Upload | `dist/url-blocker-1.9.0.zip` |
+| Upload | `dist/quiet-shield-1.9.0.zip` |
 | Short description | From `manifest.json`: "Stop intrusive video, newsletter prompts and heavy ads while keeping ordinary banners." |
 
 ## Store listing
@@ -84,18 +84,19 @@ compares it with the two runner-up options.
 ### Description
 
 ```text
-URL Blocker goes after the ads people actually hate and leaves normal banner ads alone.
+Quiet Shield goes after the ads people actually hate and leaves normal banner ads alone.
 
 What it stops, out of the box:
 • Video ads from the companies that serve them (Connatix, Primis, AnyClip, Teads, Celtra and others). Google's video ad engine gets a stand-in that says "no ads," so the page keeps working.
 • Unwanted autoplay videos, muted or audible. Reading keys and unrelated clicks do not count as pressing Play. Videos you start play normally.
 • Pinned top-of-page ad banners scroll away as you read.
 • Heavy ads. An ad that downloads more than 4 MB or keeps your CPU busy gets unloaded, with a Restore button if you wanted it back.
+• Ad refresh and the hidden cookie-sync frames ad auctions open. On one entertainment news site this took a tab from 3.2 GB of memory to 1.0 GB.
+• Scam ad sites: fake ad-blocker offers and scam redirect hosts seen on real pages.
 
 Switches you can turn on:
 • Newsletter sign-up overlays
 • Website push-notification prompts
-• Ad refresh and the hidden cookie-sync frames ad auctions open
 • Slow ad refresh: each Google ad slot refreshes at most every 2 minutes
 • Stop ad redirects: blocks unwanted redirects and popunders in pages and child frames triggered by article clicks or media controls
 

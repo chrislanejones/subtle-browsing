@@ -33,7 +33,7 @@ async function serve(context) {
 }
 
 async function blockedClick(page, locator) {
-  const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Subtle stopped a popup"));
+  const stopped = page.waitForEvent("console", (m) => m.text().startsWith("Quiet Shield stopped a popup"));
   const count = page.context().pages().length;
   await locator.click();
   await stopped;

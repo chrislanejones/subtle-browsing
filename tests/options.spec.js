@@ -149,7 +149,7 @@ test.describe("settings page", () => {
     const download = await downloading;
 
     const [year, month, day] = new Date().toLocaleDateString("en-CA").split("-");
-    expect(download.suggestedFilename()).toBe(`url-blocker-backup-${month}-${day}-${year}.json`);
+    expect(download.suggestedFilename()).toBe(`quiet-shield-backup-${month}-${day}-${year}.json`);
     const path = testInfo.outputPath("backup.json");
     await download.saveAs(path);
     const backup = JSON.parse(await readFile(path, "utf8"));
@@ -201,11 +201,11 @@ test.describe("settings page", () => {
   test("rejects a file that isn't JSON, or has nothing usable", async ({ ext, page }) => {
     const before = await ext.getSync();
     await page.setInputFiles("#importFile", jsonFile("notes.json", "not json at all"));
-    await expect(page.locator("#backupStatus")).toHaveText("That file isn't a URL Blocker backup.");
+    await expect(page.locator("#backupStatus")).toHaveText("That file isn't a Quiet Shield backup.");
 
     await page.locator("#backupStatus").evaluate((el) => (el.textContent = ""));
     await page.setInputFiles("#importFile", jsonFile("other.json", { hello: "world", settings: { bogus: true } }));
-    await expect(page.locator("#backupStatus")).toHaveText("That file isn't a URL Blocker backup.");
+    await expect(page.locator("#backupStatus")).toHaveText("That file isn't a Quiet Shield backup.");
     expect(await ext.getSync()).toEqual(before);
   });
 

@@ -256,7 +256,7 @@ $("exportButton").addEventListener("click", async () => {
     const link = document.createElement("a");
     const [year, month, day] = new Date().toLocaleDateString("en-CA").split("-");
     link.href = URL.createObjectURL(blob);
-    link.download = `url-blocker-backup-${month}-${day}-${year}.json`;
+    link.download = `quiet-shield-backup-${month}-${day}-${year}.json`;
     link.click();
     URL.revokeObjectURL(link.href);
     backupStatus.className = "status ok";
@@ -278,11 +278,11 @@ $("importFile").addEventListener("change", async (event) => {
   try {
     backup = JSON.parse(await file.text());
   } catch {
-    backupStatus.textContent = "That file isn't a URL Blocker backup.";
+    backupStatus.textContent = "That file isn't a Quiet Shield backup.";
     return;
   }
   if (!backup || typeof backup !== "object" || Array.isArray(backup)) {
-    backupStatus.textContent = "That file isn't a URL Blocker backup.";
+    backupStatus.textContent = "That file isn't a Quiet Shield backup.";
     return;
   }
   const incomingOverrides = {};
@@ -349,7 +349,7 @@ $("importFile").addEventListener("change", async (event) => {
       Object.keys(incomingOverrides).length ===
     0
   ) {
-    backupStatus.textContent = "That file isn't a URL Blocker backup.";
+    backupStatus.textContent = "That file isn't a Quiet Shield backup.";
     return;
   }
 

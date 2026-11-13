@@ -1,4 +1,4 @@
-// Builds dist/url-blocker-<version>.zip with only the files the extension
+// Builds dist/quiet-shield-<version>.zip with only the files the extension
 // uses, for the Chrome Web Store. Run with `pnpm run package`.
 // It zips the last commit (git archive), so uncommitted changes are left out
 // and nothing from node_modules or test runs can slip in.
@@ -29,7 +29,7 @@ try {
 }
 // Both the filename and payload use the same committed version.
 const { version } = JSON.parse(execFileSync("git", ["show", "HEAD:manifest.json"], { encoding: "utf8" }));
-const output = `dist/url-blocker-${version}.zip`;
+const output = `dist/quiet-shield-${version}.zip`;
 
 mkdirSync("dist", { recursive: true });
 execFileSync("git", [
@@ -40,7 +40,7 @@ execFileSync("git", [
   ...runtimePaths,
 ]);
 const hash = createHash("sha256").update(readFileSync(output)).digest("hex");
-writeFileSync(`${output}.sha256`, `${hash}  url-blocker-${version}.zip\n`);
+writeFileSync(`${output}.sha256`, `${hash}  quiet-shield-${version}.zip\n`);
 
 // ls-tree doesn't take :(exclude), so filter the same way by hand
 const isDevOnly = (file) =>

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="images/icon128.png" alt="URL Blocker logo" width="96" />
+  <img src="images/icon128.png" alt="Quiet Shield logo" width="96" />
 </p>
 
-# URL Blocker
+# Quiet Shield
 
 **Version 1.9.0** (10-31-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
 
@@ -96,7 +96,7 @@ on every bad ad by hand.
 2. Open `chrome://extensions/`.
 3. Turn on **Developer mode** (top right).
 4. Click **Load unpacked** and pick the repository folder.
-5. URL Blocker shows up in your toolbar.
+5. Quiet Shield shows up in your toolbar.
 
 For this WSL checkout, choose
 `\\wsl.localhost\Debian\home\clj\repo\subtle-browsing` once. After an update,
@@ -116,12 +116,12 @@ published; unpacked folders use the manual Reload step above.
 
 The unpacked route is the current daily-use route. The Web Store account still
 needs developer registration (agreement and registration fee) before upload.
-The prepared package is `dist/url-blocker-1.9.0.zip`; the listing kit is in
+The prepared package is `dist/quiet-shield-1.9.0.zip`; the listing kit is in
 [docs/store/LISTING.md](docs/store/LISTING.md).
 
 ### Incognito
 
-Open `chrome://extensions`, find **URL Blocker**, open **Details**, and turn on
+Open `chrome://extensions`, find **Quiet Shield**, open **Details**, and turn on
 **Allow in Incognito**. Reload your Incognito tabs afterward. Full Settings has
 an **Incognito** section showing current access and an **Extension details**
 button that opens the right entry. Chrome requires this user action; the
@@ -306,7 +306,7 @@ Settings clears the global pause while preserving individual site pauses.
 
 ### Blocking URLs by hand
 
-1. Click the URL Blocker icon in your toolbar.
+1. Click the Quiet Shield icon in your toolbar.
 2. Choose **Domain**, **Exact URL**, or **Advanced pattern**.
    Domain blocks the hostname and its subdomains. Exact URL matches its scheme,
    hostname, case-sensitive path and query; fragments are ignored. Advanced
@@ -323,7 +323,7 @@ Older explicit filter patterns are retained. Backups preserve each rule’s mode
 ### Using the element picker
 
 1. Go to a page with the ad you want gone.
-2. Click the URL Blocker icon in your toolbar.
+2. Click the Quiet Shield icon in your toolbar.
 3. Click **Select element to block**.
 4. Your cursor turns into a crosshair. Hover over things to highlight them.
 5. Click the ad. Ads inside iframes work too, and the click never reaches
@@ -387,7 +387,7 @@ in the header when blocking is off everywhere.
 ### Using the DevTools panel
 
 1. Open Chrome DevTools (F12 or Ctrl+Shift+I).
-2. Click the **URL Blocker** tab.
+2. Click the **Quiet Shield** tab.
 3. From there you can:
    - Change default protections or individual controls for the inspected site
    - Unhide elements and reset site overrides
@@ -424,7 +424,7 @@ in the header when blocking is off everywhere.
 **Backups** are for getting your settings somewhere sync doesn't reach.
 
 - **Export backup** on the settings page saves
-  `url-blocker-backup-MM-DD-YYYY.json` to your downloads.
+  `quiet-shield-backup-MM-DD-YYYY.json` to your downloads.
 - **Import backup** adds the file's URLs and paused sites to what you
   already have. Nothing gets removed. The switches take the file's
   settings. Site overrides merge by hostname and feature; hidden selectors
@@ -475,7 +475,7 @@ The full reasoning is in [ADR-004](docs/adr/004-built-in-rulesets-are-hand-made-
 
 ## Privacy
 
-URL Blocker processes page elements, resource URLs, frame download sizes and
+Quiet Shield processes page elements, resource URLs, frame download sizes and
 playback events on your device to apply your blocking choices and support the
 element picker. The developer receives none of this information. The extension
 has no analytics, advertising of its own, or developer-operated data server.
@@ -607,7 +607,7 @@ pnpm test
 - The setup is in `playwright.config.js`; the tests and their pages are
   in `tests/`.
 - For a Chrome Web Store zip, commit your changes and run
-  `pnpm run package`. It writes `dist/url-blocker-<version>.zip` with only
+  `pnpm run package`. It writes `dist/quiet-shield-<version>.zip` with only
   the files the extension uses: no tests, docs, notes or `node_modules/`.
   Chrome ignores those when you load the folder unpacked, but they don't
   belong in a release.

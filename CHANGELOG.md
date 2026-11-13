@@ -1,6 +1,6 @@
 # Changelog
 
-Every version of URL Blocker, newest first. Dates are MM-DD-YYYY. The
+Every version of Quiet Shield (called URL Blocker through 1.9.0), newest first. Dates are MM-DD-YYYY. The
 version number is the one in `manifest.json`. Versions before 1.6.0 were not
 tagged or published as GitHub releases; they map to the commits listed.
 Version 1.6.0 is identified by the source tag `v1.6.0` on both remotes.
@@ -9,6 +9,11 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
 ## Unreleased
 
+- Rename the extension from URL Blocker to **Quiet Shield**, to match the
+  shield icon and what it actually does. Updating keeps your settings, block
+  list and 90 days of history. Backups now save as
+  `quiet-shield-backup-MM-DD-YYYY.json`; old `url-blocker-backup` files still
+  import. Console lines read "Quiet Shield stopped a redirect to …".
 - Turn **Ad refresh and sync frames** on by default. On Variety it took a tab
   from 3,199 MB in 76 processes to 1,049 MB in 12. Installs that already saved
   their switches keep the choice they had.
