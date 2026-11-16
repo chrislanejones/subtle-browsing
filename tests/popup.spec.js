@@ -185,7 +185,7 @@ test.describe("popup", () => {
       window.close = () => {};
     });
     await page.goto(ext.url("popup.html"));
-    await page.locator("#powerRow summary").click();
+    await page.locator("#powerRow > summary").click();
     await page.locator("#reportButton").click();
     await expect.poll(() => page.evaluate(() => window.reportedUrl ?? null)).not.toBeNull();
     const url = new URL(await page.evaluate(() => window.reportedUrl));

@@ -332,6 +332,47 @@ test("floating video recovery stays in the viewport on a long article", async ({
     .toBe(true);
 });
 
+// LinkedIn-style feed player: a translucent overlay covers the video, the page
+// retries play() on every pause (so the guard unloads it), and the player has
+// its own Play button above the overlay.
+const coveredPlayer = (route) =>
+  route.fulfill({
+    contentType: "text/html",
+    body: `<!doctype html><div style="height:120px">Feed</div>
+<div id="player" style="position:relative;width:480px;height:270px">
+  <video id="v" muted autoplay playsinline src="${FIRST}/clip.webm" style="width:100%;height:100%"></video>
+  <div style="position:absolute;inset:0;z-index:1;background:rgba(0,0,0,.5)"></div>
+  <button id="bigPlay" aria-label="Play video" style="position:absolute;left:220px;top:120px;z-index:2">Play</button>
+</div>
+<script>
+  const v = document.getElementById("v");
+  v.addEventListener("pause", () => v.play().catch(() => {}));
+  document.getElementById("bigPlay").onclick = () => v.play().catch(() => {});
+</script>`,
+  });
+
+test("the paused-video buttons sit above a player's own overlay", async ({ ext, page }) => {
+  await page.route(`${FIRST}/covered-player.html`, coveredPlayer);
+  await page.goto(`${FIRST}/covered-player.html`);
+  await expect(page.locator("subtle-paused-video")).toHaveCount(1);
+  await clickShadowButton(page, "subtle-paused-video", "Play this video");
+  await expect
+    .poll(() => quietEval(page, () => !document.getElementById("v").paused && !!document.getElementById("v").getAttribute("src")))
+    .toBe(true);
+  await expect(page.locator("subtle-paused-video")).toHaveCount(0);
+});
+
+test("the player's own Play button reloads an unloaded video", async ({ ext, page }) => {
+  await page.route(`${FIRST}/covered-player.html`, coveredPlayer);
+  await page.goto(`${FIRST}/covered-player.html`);
+  await expect(page.locator("subtle-paused-video")).toHaveCount(1);
+  await page.locator("#bigPlay").click();
+  await expect
+    .poll(() => quietEval(page, () => !document.getElementById("v").paused && !!document.getElementById("v").getAttribute("src")))
+    .toBe(true);
+  await expect(page.locator("subtle-paused-video")).toHaveCount(0);
+});
+
 test("Always allow video here saves a site control and plays the video", async ({
   ext,
   page,

@@ -51,6 +51,8 @@
       else record.container.style.removeProperty("display");
     }
     if (unloaded.has(video)) {
+      // Cleared first so the play() below isn't taken for a fresh restart
+      unloaded.delete(video);
       if (record.src !== null) video.setAttribute("src", record.src);
       for (const source of record.sources) video.append(source.cloneNode(true));
       video.load();
@@ -81,6 +83,10 @@
       const left = Math.max(8, Math.min(rect.left, innerWidth - 330));
       const top = Math.max(8, Math.min(rect.top, innerHeight - 44));
       placeholder.style.cssText = `position:fixed;left:${left}px;top:${top}px;z-index:2147483647;max-width:calc(100vw - 16px)`;
+    } else {
+      // Feed players (LinkedIn's) lay a poster or overlay over the video box;
+      // without this the buttons sit under it and can't be clicked
+      placeholder.style.cssText = "position:relative;z-index:2147483647;pointer-events:auto";
     }
     const root = placeholder.attachShadow({ mode: "closed" });
     const button = document.createElement("button");
@@ -348,6 +354,9 @@
 
     if (!shouldPause(video)) {
       undock(video);
+      // The player's own Play button on a video that was unloaded: put its
+      // media back, or the click plays nothing
+      if (unloaded.has(video)) restoreVideo(video);
       return;
     }
 
