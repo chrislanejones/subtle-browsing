@@ -336,6 +336,10 @@
     else record.element.style.removeProperty("position");
   }
 
+  // MediaSource players (most streaming and feed players) feed a blob: URL
+  const streamed = (video) =>
+    !!video.srcObject || (video.currentSrc || video.getAttribute("src") || "").startsWith("blob:");
+
   // Unloading doesn't fire a "pause" event, so players that restart on pause stop retrying
   function unload(video) {
     remember(video, video, window.top === window);
@@ -374,7 +378,13 @@
     pauses.push(now);
     recentPauses.set(video, pauses);
 
-    if (pauses.length > RESTART_LIMIT) {
+    if (pauses.length > RESTART_LIMIT && streamed(video)) {
+      // A streamed video can't be unloaded: its blob: address only works
+      // once, so putting it back fails ("The media could not be loaded",
+      // LinkedIn). Keep pausing it and offer the Play button instead.
+      remember(video, video, window.top === window);
+      video.pause();
+    } else if (pauses.length > RESTART_LIMIT) {
       unload(video);
     } else {
       video.pause();

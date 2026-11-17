@@ -28,7 +28,9 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
   on top of **Play this video** and **Always allow video here**, so neither
   could be clicked, and LinkedIn's own Play button played nothing because the
   video had been unloaded. The buttons now sit above the player, and pressing
-  the player's Play puts the video back.
+  the player's Play puts the video back. Streamed videos (LinkedIn's) are no
+  longer unloaded at all, because their address only works once; putting it
+  back gave "The media could not be loaded". They stay paused instead.
 - Paused videos get an **Always allow video here** button next to Play. It
   saves an autoplay site control, so the choice shows up in settings and can
   be undone there.

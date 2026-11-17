@@ -373,6 +373,51 @@ test("the player's own Play button reloads an unloaded video", async ({ ext, pag
   await expect(page.locator("subtle-paused-video")).toHaveCount(0);
 });
 
+// Same player fed through MediaSource, the way LinkedIn's streams are: the
+// blob: address is revoked once attached, so it can't be loaded a second time.
+const streamedPlayer = (route) =>
+  route.fulfill({
+    contentType: "text/html",
+    body: `<!doctype html><div style="height:120px">Feed</div>
+<div id="player" style="position:relative;width:480px;height:270px">
+  <video id="v" muted playsinline style="width:100%;height:100%"></video>
+  <div style="position:absolute;inset:0;z-index:1;background:rgba(0,0,0,.5)"></div>
+  <button id="bigPlay" aria-label="Play video" style="position:absolute;left:220px;top:120px;z-index:2">Play</button>
+</div>
+<script>
+  const v = document.getElementById("v");
+  const ms = new MediaSource();
+  v.src = URL.createObjectURL(ms);
+  ms.addEventListener("sourceopen", async () => {
+    URL.revokeObjectURL(v.src);
+    const buffer = ms.addSourceBuffer('video/webm; codecs="vp8, vorbis"');
+    buffer.addEventListener("updateend", () => { ms.endOfStream(); v.play().catch(() => {}); }, { once: true });
+    buffer.appendBuffer(await (await fetch("${FIRST}/clip.webm")).arrayBuffer());
+  }, { once: true });
+  v.addEventListener("pause", () => v.play().catch(() => {}));
+  document.getElementById("bigPlay").onclick = () => v.play().catch(() => {});
+</script>`,
+  });
+
+for (const [name, play] of [
+  ["Play this video", (page) => clickShadowButton(page, "subtle-paused-video", "Play this video")],
+  ["the player's own Play", (page) => page.locator("#bigPlay").click()],
+]) {
+  test(`a streamed video that restarts itself still plays from ${name}`, async ({ ext, page }) => {
+    await page.route(`${FIRST}/streamed-player.html`, streamedPlayer);
+    await page.goto(`${FIRST}/streamed-player.html`);
+    await expect(page.locator("subtle-paused-video")).toHaveCount(1);
+    await expect.poll(() => quietEval(page, () => document.getElementById("v").paused)).toBe(true);
+    await play(page);
+    await expect
+      .poll(() => quietEval(page, () => {
+        const v = document.getElementById("v");
+        return { playing: !v.paused && v.currentTime > 0, error: v.error?.code ?? null };
+      }))
+      .toEqual({ playing: true, error: null });
+  });
+}
+
 test("Always allow video here saves a site control and plays the video", async ({
   ext,
   page,
