@@ -26,11 +26,11 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
   page and popup show "Stopped today" instead of "Unavailable".
 - Fix LinkedIn feed videos you couldn't start. The player's own overlay sat
   on top of **Play this video** and **Always allow video here**, so neither
-  could be clicked, and LinkedIn's own Play button played nothing because the
-  video had been unloaded. The buttons now sit above the player, and pressing
-  the player's Play puts the video back. Streamed videos (LinkedIn's) are no
-  longer unloaded at all, because their address only works once; putting it
-  back gave "The media could not be loaded". They stay paused instead.
+  could be clicked. Pressing Play then gave "The media could not be loaded",
+  because a video that kept restarting itself had its source taken away and
+  LinkedIn's player couldn't take it back. Videos on the page itself are now
+  frozen in place instead: nothing plays or decodes, the source stays, and
+  either Play button starts them. Unloading is kept only for ad frames.
 - Paused videos get an **Always allow video here** button next to Play. It
   saves an autoplay site control, so the choice shows up in settings and can
   be undone there.

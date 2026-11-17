@@ -14,6 +14,10 @@
   const saved = new WeakMap();
   const waiting = new Set();
   const counted = new WeakSet();
+  // Frozen videos and the playback speed they had before
+  const frozen = new Map();
+  const FREEZE_RETRIES = 10;
+  const refrozen = new WeakMap();
 
   // These dedicated streaming and social-video apps start the selected or
   // visible video as part of normal navigation. This also covers video-backed
@@ -41,6 +45,11 @@
     if (!record) return;
     restored.add(video);
     waiting.delete(video);
+    const wasFrozen = frozen.has(video);
+    if (wasFrozen) {
+      video.playbackRate = frozen.get(video);
+      frozen.delete(video);
+    }
     if (record.container) {
       if (record.display)
         record.container.style.setProperty(
@@ -58,7 +67,8 @@
       video.load();
     }
     record.placeholder?.remove();
-    video.controls = true;
+    // A frozen video still has its own player; native controls would double it
+    if (!wasFrozen) video.controls = true;
     video.play().catch(() => {});
   }
   function remember(video, container, showButton = true) {
@@ -155,7 +165,7 @@
       for (const video of document.querySelectorAll("video"))
         if (performance.now() - (stoppedAt.get(video) ?? -Infinity) < CLICK_WINDOW_MS && startedByUser(video)) {
           recentPauses.delete(video);
-          if (unloaded.has(video)) restoreVideo(video);
+          if (unloaded.has(video) || frozen.has(video)) restoreVideo(video);
           else video.play().catch(() => {});
         }
       if (window !== parent && result.token)
@@ -191,6 +201,12 @@
           playControl: control ? /^(play|watch|resume|start)(\b|\s)/i.test(controlLabel(control).trim()) : false,
           time: performance.now(),
         };
+        // A frozen video never fires "play" again, so the player's own Play
+        // can't reach checkVideo. Restore after the page's handlers have run,
+        // in case they toggled it to paused.
+        if (event.type !== "pointerdown")
+          for (const video of frozen.keys())
+            if (startedByUser(video)) setTimeout(() => restoreVideo(video));
         if (lastGesture.playControl && !(type === "click" && lastRelay?.target === target &&
             performance.now() - lastRelay.time < CLICK_WINDOW_MS)) {
           lastRelay = { target, time: performance.now() };
@@ -340,6 +356,34 @@
   const streamed = (video) =>
     !!video.srcObject || (video.currentSrc || video.getAttribute("src") || "").startsWith("blob:");
 
+  // Unloading a site's own player breaks it: LinkedIn's feed shows "The media
+  // could not be loaded" once the source is put back, and a streamed (blob:)
+  // source only works once. So videos in the top page, and streamed ones
+  // anywhere, are frozen at speed 0 instead: the media stays loaded, nothing
+  // decodes, and with no "pause" event the page has nothing to answer with
+  // play(). Unloading stays for plain-file players in ad frames, whose box
+  // frame-collapse.js can then hide.
+  function freeze(video) {
+    remember(video, video, window.top === window);
+    if (!frozen.has(video)) frozen.set(video, video.playbackRate || 1);
+    video.playbackRate = 0;
+  }
+  // A player that resets its speed gets frozen again, up to a limit; past
+  // that it's paused like any other video
+  subtlePolicy.listen(document, "ratechange", (event) => {
+    const video = event.target;
+    if (!frozen.has(video) || video.playbackRate === 0) return;
+    const count = (refrozen.get(video) ?? 0) + 1;
+    refrozen.set(video, count);
+    if (count <= FREEZE_RETRIES) video.playbackRate = 0;
+    else {
+      const rate = frozen.get(video);
+      frozen.delete(video);
+      video.playbackRate = rate;
+      video.pause();
+    }
+  }, true);
+
   // Unloading doesn't fire a "pause" event, so players that restart on pause stop retrying
   function unload(video) {
     remember(video, video, window.top === window);
@@ -360,7 +404,12 @@
       undock(video);
       // The player's own Play button on a video that was unloaded: put its
       // media back, or the click plays nothing
-      if (unloaded.has(video)) restoreVideo(video);
+      if (unloaded.has(video) || frozen.has(video)) restoreVideo(video);
+      return;
+    }
+
+    if (frozen.has(video)) {
+      video.playbackRate = 0;
       return;
     }
 
@@ -378,12 +427,8 @@
     pauses.push(now);
     recentPauses.set(video, pauses);
 
-    if (pauses.length > RESTART_LIMIT && streamed(video)) {
-      // A streamed video can't be unloaded: its blob: address only works
-      // once, so putting it back fails ("The media could not be loaded",
-      // LinkedIn). Keep pausing it and offer the Play button instead.
-      remember(video, video, window.top === window);
-      video.pause();
+    if (pauses.length > RESTART_LIMIT && (window.top === window || streamed(video))) {
+      freeze(video);
     } else if (pauses.length > RESTART_LIMIT) {
       unload(video);
     } else {

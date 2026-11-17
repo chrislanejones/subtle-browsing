@@ -44,3 +44,4 @@ for a new one.
 | [029](029-page-script-stops-count-in-the-daily-history.md) | What the page scripts stop counts in the same daily history as network blocks | Draft (unreleased); amends ADR-008 | 2026-11-13 |
 | [030](030-autoplay-stopper-lets-the-main-video-play.md) | The autoplay stopper lets a page's main video play, and a paused video can allow its site | Draft (unreleased); amends ADR-005 | 2026-11-13 |
 | [031](031-unlimitedstorage-and-webrequest-stay.md) | `unlimitedStorage` and `webRequest` stay in the manifest | Draft (rejected change, no code) | 2026-11-13 |
+| [032](032-restart-looping-players-are-frozen-at-speed-0-not-unloaded.md) | Restart-looping players are frozen at speed 0, not unloaded | Draft (unreleased); amends ADR-005 | 2026-11-17 |

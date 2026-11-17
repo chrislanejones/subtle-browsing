@@ -34,7 +34,11 @@ test.describe("performance guard", () => {
     await page.waitForTimeout(2000);
     expect(await quietEval(page, () => window.playEvents)).toBe(settled);
     expect(settled).toBeLessThanOrEqual(5);
-    expect(await quietEval(page, () => document.getElementById("pingpong").networkState)).toBe(0); // unloaded
+    // Frozen at speed 0 with its media kept (a top-page player isn't unloaded)
+    expect(await quietEval(page, () => {
+      const v = document.getElementById("pingpong");
+      return { rate: v.playbackRate, loaded: v.networkState !== 0 };
+    })).toEqual({ rate: 0, loaded: true });
     expect(await longTasks(page)).toEqual([]);
   });
 

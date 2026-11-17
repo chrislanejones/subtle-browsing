@@ -362,7 +362,7 @@ test("the paused-video buttons sit above a player's own overlay", async ({ ext, 
   await expect(page.locator("subtle-paused-video")).toHaveCount(0);
 });
 
-test("the player's own Play button reloads an unloaded video", async ({ ext, page }) => {
+test("the player's own Play button starts a stopped video", async ({ ext, page }) => {
   await page.route(`${FIRST}/covered-player.html`, coveredPlayer);
   await page.goto(`${FIRST}/covered-player.html`);
   await expect(page.locator("subtle-paused-video")).toHaveCount(1);
@@ -407,7 +407,13 @@ for (const [name, play] of [
     await page.route(`${FIRST}/streamed-player.html`, streamedPlayer);
     await page.goto(`${FIRST}/streamed-player.html`);
     await expect(page.locator("subtle-paused-video")).toHaveCount(1);
-    await expect.poll(() => quietEval(page, () => document.getElementById("v").paused)).toBe(true);
+    // Stopped in place: paused, or frozen at speed 0 with its media loaded
+    await expect
+      .poll(() => quietEval(page, () => {
+        const v = document.getElementById("v");
+        return (v.paused || v.playbackRate === 0) && v.readyState > 0;
+      }))
+      .toBe(true);
     await play(page);
     await expect
       .poll(() => quietEval(page, () => {

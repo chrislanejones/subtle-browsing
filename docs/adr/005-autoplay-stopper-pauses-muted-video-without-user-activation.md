@@ -4,6 +4,10 @@ Date: 2026-10-26   Backfilled: 2026-10-26   Status: draft (shipped in 1.2.0, `f4
 > Amended by [ADR-030](030-autoplay-stopper-lets-the-main-video-play.md):
 > a page's main video may play, and a paused video can allow its site.
 
+> Amended by [ADR-032](032-restart-looping-players-are-frozen-at-speed-0-not-unloaded.md):
+> past the restart limit, top-page and streamed videos are frozen at
+> speed 0, not unloaded; only plain-file players in child frames unload.
+
 ## Context
 Video ads start muted, because Chrome won't autoplay sound, and a vendor
 list can't name every player. In the `812ccbf` stress test a player

@@ -86,6 +86,17 @@
 - **Existing installs keep Ad refresh off:** a saved settings object holds the
   old `false`. Turn it on by hand on computers that already had the extension.
 
+## Follow-ups from the LinkedIn video fix (11-17-2026, ADR-032)
+
+- **Check the logged-in LinkedIn feed:** tested on a public LinkedIn post with
+  a simulated restart loop, not the logged-in feed. Reload a Promoted video post
+  and press both Play buttons.
+- **Streamed ads in child frames keep their box:** a looping `blob:` ad in a
+  frame is now frozen, not unloaded, so it never asks frame-collapse.js to hide
+  its box. ADR-014 still describes the unload path.
+- **Frozen videos keep their buffer:** an unloaded video released its media;
+  a frozen one keeps what it already downloaded.
+
 ## Completed in 1.9.0 (10-31-2026)
 
 - **Child frames:** popup checks run in every frame. Verified labeled playback
