@@ -424,6 +424,65 @@ for (const [name, play] of [
   });
 }
 
+// A live stream: MediaSource with no end that gains 3 more seconds every 3
+// seconds, so the live point keeps moving while the video is frozen.
+const livePlayer = (route) =>
+  route.fulfill({
+    contentType: "text/html",
+    body: `<!doctype html><div style="height:120px">Feed</div>
+<div id="player" style="position:relative;width:480px;height:270px">
+  <video id="v" muted playsinline style="width:100%;height:100%"></video>
+  <button id="bigPlay" aria-label="Play video" style="position:absolute;left:220px;top:120px;z-index:2">Play</button>
+</div>
+<script>
+  const v = document.getElementById("v");
+  const ms = new MediaSource();
+  v.src = URL.createObjectURL(ms);
+  ms.addEventListener("sourceopen", async () => {
+    URL.revokeObjectURL(v.src);
+    ms.duration = Infinity;
+    const buffer = ms.addSourceBuffer('video/webm; codecs="vp8, vorbis"');
+    buffer.mode = "sequence";
+    const clip = await (await fetch("${FIRST}/clip.webm")).arrayBuffer();
+    buffer.addEventListener("updateend", () => v.play().catch(() => {}), { once: true });
+    buffer.appendBuffer(clip);
+    setInterval(() => { if (!buffer.updating) buffer.appendBuffer(clip); }, 3000);
+  }, { once: true });
+  v.addEventListener("pause", () => v.play().catch(() => {}));
+  document.getElementById("bigPlay").onclick = () => v.play().catch(() => {});
+</script>`,
+  });
+
+for (const [name, play] of [
+  ["Play this video", (page) => clickShadowButton(page, "subtle-paused-video", "Play this video")],
+  ["the player's own Play", (page) => page.locator("#bigPlay").click()],
+]) {
+  test(`a frozen live stream rejoins the live point from ${name}`, async ({ ext, page }) => {
+    await page.route(`${FIRST}/live-player.html`, livePlayer);
+    await page.goto(`${FIRST}/live-player.html`);
+    await expect(page.locator("subtle-paused-video")).toHaveCount(1);
+    const state = () => quietEval(page, () => {
+      const v = document.getElementById("v");
+      const end = v.seekable.length ? v.seekable.end(v.seekable.length - 1) : 0;
+      return { rate: v.playbackRate, paused: v.paused, time: v.currentTime, end, error: v.error?.code ?? null };
+    });
+    // Frozen near the start while the live point moves at least 6 s past it
+    await expect.poll(async () => {
+      const s = await state();
+      return s.rate === 0 && s.end - s.time >= 8;
+    }, { timeout: 15000 }).toBe(true);
+    await play(page);
+    // Back where the player had it: 3 s behind the live point, not 8+
+    await expect.poll(async () => {
+      const s = await state();
+      return { playing: !s.paused && s.rate === 1, near: s.end - s.time < 5, error: s.error };
+    }).toEqual({ playing: true, near: true, error: null });
+    const before = (await state()).time;
+    await page.waitForTimeout(1000);
+    expect((await state()).time).toBeGreaterThan(before + 0.5);
+  });
+}
+
 test("Always allow video here saves a site control and plays the video", async ({
   ext,
   page,

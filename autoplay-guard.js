@@ -47,6 +47,7 @@
     waiting.delete(video);
     const wasFrozen = frozen.has(video);
     if (wasFrozen) {
+      rejoinLive(video);
       video.playbackRate = frozen.get(video);
       frozen.delete(video);
     }
@@ -206,7 +207,8 @@
         // in case they toggled it to paused.
         if (event.type !== "pointerdown")
           for (const video of frozen.keys())
-            if (startedByUser(video)) setTimeout(() => restoreVideo(video));
+            if (startedByUser(video))
+              setTimeout(() => frozen.has(video) && restoreVideo(video));
         if (lastGesture.playControl && !(type === "click" && lastRelay?.target === target &&
             performance.now() - lastRelay.time < CLICK_WINDOW_MS)) {
           lastRelay = { target, time: performance.now() };
@@ -367,6 +369,34 @@
     remember(video, video, window.top === window);
     if (!frozen.has(video)) frozen.set(video, video.playbackRate || 1);
     video.playbackRate = 0;
+    noteLiveLag(video);
+  }
+
+  // A live stream keeps moving while it's frozen, so Play would pick it up as
+  // far behind as the wait was (a minute's wait, a minute behind). Note how
+  // far behind its live point the player had it once it had a picture, and on
+  // Play put it back that far behind the live point. A recording's end never
+  // moves, so only a stream whose end moved while it was frozen jumps.
+  const liveLag = new WeakMap(); // video -> { lag, end }
+  const liveEnd = (video) => {
+    const seekable = video.seekable;
+    return seekable.length ? seekable.end(seekable.length - 1) : NaN;
+  };
+  function noteLiveLag(video) {
+    if (!frozen.has(video) || liveLag.has(video) || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA)
+      return;
+    const end = liveEnd(video);
+    if (end >= video.currentTime) liveLag.set(video, { lag: end - video.currentTime, end });
+  }
+  for (const type of ["loadeddata", "canplay", "playing"])
+    subtlePolicy.listen(document, type, (event) => noteLiveLag(event.target), true);
+  function rejoinLive(video) {
+    const live = liveLag.get(video);
+    liveLag.delete(video);
+    const end = liveEnd(video);
+    if (!live || !(end > live.end + 1)) return;
+    const target = Math.max(video.seekable.start(video.seekable.length - 1), end - live.lag);
+    if (target > video.currentTime + 1) video.currentTime = target;
   }
   // A player that resets its speed gets frozen again, up to a limit; past
   // that it's paused like any other video
@@ -379,6 +409,7 @@
     else {
       const rate = frozen.get(video);
       frozen.delete(video);
+      liveLag.delete(video);
       video.playbackRate = rate;
       video.pause();
     }

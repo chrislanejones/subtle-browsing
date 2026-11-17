@@ -96,6 +96,15 @@
   its box. ADR-014 still describes the unload path.
 - **Frozen videos keep their buffer:** an unloaded video released its media;
   a frozen one keeps what it already downloaded.
+- **Check a logged-in LinkedIn Live:** live pages show no video logged out.
+  Rejoining the live point was tested on a public live HLS stream
+  (demo.unified-streaming.com) in video.js 8 and hls.js 1, not on LinkedIn.
+- **Chrome's own video controls can't restore a frozen video:** a click on the
+  built-in controls bar fires no event the page can see, so a frozen video
+  with plain `controls` (hls.js on a bare `<video controls>`) only comes back
+  through **Play this video**. Its bar shows it as playing, so its Pause/Play
+  toggles a pause the page answers with play(). Option: drop the `controls`
+  attribute while frozen and put it back on restore.
 
 ## Completed in 1.9.0 (10-31-2026)
 

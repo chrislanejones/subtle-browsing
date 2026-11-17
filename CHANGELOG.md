@@ -30,7 +30,9 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
   because a video that kept restarting itself had its source taken away and
   LinkedIn's player couldn't take it back. Videos on the page itself are now
   frozen in place instead: nothing plays or decodes, the source stays, and
-  either Play button starts them. Unloading is kept only for ad frames.
+  either Play button starts them. A live stream picks up back at the live
+  point, not as far behind as you waited (it used to come back a minute late
+  after a minute's wait). Unloading is kept only for ad frames.
 - Paused videos get an **Always allow video here** button next to Play. It
   saves an autoplay site control, so the choice shows up in settings and can
   be undone there.
