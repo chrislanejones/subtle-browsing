@@ -4,40 +4,55 @@
 
 # URL Blocker
 
-**Version 1.9.0** (10-31-2026) &nbsp;·&nbsp; Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
+**Blocks the ads people hate. Keeps the ones that pay for the site.**
 
-A Chrome extension that goes after the ads people actually hate (autoplay
-video, pop-ups, ads that spin up your fan) and leaves normal banner ads
-alone. You can also block any URL yourself, or click an ad on the page to
-block where it came from. Your list and switches follow your Chrome sign-in
-to every computer.
+Chrome 121+ &nbsp;·&nbsp; Manifest V3 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Design decisions](docs/adr/README.md)
 
-## Latest update: 1.9.0
+Most ad blockers block everything, and a lot of sites ask you to turn them
+off. URL Blocker goes after the parts that make browsing miserable and leaves
+ordinary banner ads alone:
 
-**Stop ad redirects** also checks popups opened inside child frames, including
-same-site, cross-site, `srcdoc` and rewritten empty frames. Trusted Play controls
-inside an iframe can start their parent player; ordinary iframe clicks and
-forged messages cannot grant playback.
+- **Autoplay video, paused.** Muted or with sound, in the article or floating
+  in the corner. Videos you start play normally. If a site's own player needs
+  autoplay, one click in the toolbar lets it.
+- **Video ads, scam ads and heavy ads, blocked.** Video ad companies, fake
+  virus warnings and popunder hosts are stopped at the network. An ad that
+  downloads over 4 MB or keeps your CPU busy is unloaded, with a Restore button.
+- **Pop-ups and hijacked clicks, stopped** (optional). An article click or a
+  Play button can't send the tab to another site.
 
-**Larger saved lists** span multiple Chrome sync items, covering blocked URLs,
-paused sites, site overrides and hidden elements. Incomplete sync keeps the
-last complete rules available. Chrome's overall sync quota still applies.
+On a Variety article, the optional ad-churn switches took the tab from
+**3.2 GB in 76 processes to 1.0 GB in 12**, and it showed four banners instead
+of three. [How that was measured](PARKING_LOT.md#follow-ups-from-ad-refresh-and-sync-frames--slow-ad-refresh--stop-ad-redirects).
 
-**90 days of local history** now live in IndexedDB, with safe migration of
-existing counts and a 14/30/90-day chart selector. Tables stack into labeled
-rows on narrow windows. Updating the existing unpacked folder keeps your
-extension ID, settings and history; use Chrome's reload arrow afterward.
+The toolbar popup shows what was stopped on the page you're on. Your block
+list and switches follow your Chrome sign-in to every computer, and nothing is
+sent to the developer.
 
-Detailed changes: [Changelog](CHANGELOG.md#190--10-31-2026).
-Verification and practical limits: [Testing and compatibility](docs/Testing.md).
+## Install
+
+**Chrome Web Store:** not published yet.
+
+**From source:**
+
+1. Download or clone this repository.
+2. Open `chrome://extensions/` and turn on **Developer mode** (top right).
+3. Click **Load unpacked** and pick the repository folder.
+
+To update, replace the files in the same folder (for a clone,
+`git pull --ff-only`), click the extension's reload arrow at
+`chrome://extensions/`, then reload open pages. Keeping the same folder keeps
+your extension ID, settings and history. More on updates, Incognito and the
+Web Store package: [Install details](#install-details).
 
 ## Contents
 
 | Chapter | What's in it |
 | --- | --- |
+| [Install](#install) | Load it into Chrome |
 | [Why not a regular ad blocker](#why-not-a-regular-ad-blocker) | The point of this thing |
 | [Features](#features) | Everything it does, and what's on when you install |
-| [Install](#install) | Load it into Chrome |
+| [Install details](#install-details) | Updates, Incognito, the Web Store package |
 | [How to use](#how-to-use) | The switches, pausing a site, the counter, blocking by hand, the picker, the shortcut, the right-click menu, the settings page, DevTools |
 | [Sync and backups](#sync-and-backups) | What follows you between computers, and how to save a copy |
 | [Ad lists](#ad-lists) | The lists and standards it's built around |
@@ -62,6 +77,7 @@ on every bad ad by hand.
 
 | Feature | What it does | On at install |
 | --- | --- | --- |
+| Scam ads | Blocks fake virus warnings, scam landing pages and popunder ad hosts on every site | Yes |
 | Video ad blocking | Blocks the companies that serve video ads (Connatix, Primis, AnyClip, Teads, Celtra and others), and swaps Google's video ad engine for a stand-in that says "no ads". Banner ads still show | Yes |
 | Autoplay stopper | Pauses videos that start without a play gesture, including audible ads after unrelated clicks. A site's own video that floats into the corner goes back into the article, paused; a floating ad with no place on the page is hidden. Videos you start play normally; core playback on Pluto TV, Plex, Tubi, Xumo Play, Instagram, TikTok and X is left alone | Yes |
 | Heavy ad removal | Stops identified third-party ads at 4 MB or 5 seconds of long tasks in 30 seconds; offers Restore | Yes |
@@ -76,6 +92,7 @@ on every bad ad by hand.
 | Site controls | Override individual protections for a site and its subdomains | Inherit defaults |
 | Hide on this site | Hide a picked element only on its hostname; undo in settings or DevTools | — |
 | On / Off on site / Off / 10 min off | The Blocking card at the bottom of the popup. Turns everything off for one site in case it breaks, for every site at once, or for one site for 10 minutes | On |
+| On this page | The popup lists the videos paused, redirects and popups stopped, and heavy ads unloaded in the current tab, with **Let videos autoplay on (site)** when videos were paused | — |
 | Blocked-today counter | The toolbar icon shows how many requests were blocked today, for the first 7 minutes of each hour | — |
 | Block a URL | Type a URL to block it on every site | — |
 | Element picker | Click an ad to see the domains and URLs inside it, then block one | — |
@@ -85,23 +102,9 @@ on every bad ad by hand.
 | Settings sync | Your list, paused sites and switches follow your Chrome sign-in | — |
 | DevTools panel | Your block list, a log of blocked requests, and the picker | — |
 
-## Install
+## Install details
 
-**Chrome Web Store:** not published yet.
-
-**Load it unpacked:**
-
-1. Download or clone this repository.
-2. Open `chrome://extensions/`.
-3. Turn on **Developer mode** (top right).
-4. Click **Load unpacked** and pick the repository folder.
-5. URL Blocker shows up in your toolbar.
-
-For this WSL checkout, choose
-`\\wsl.localhost\Debian\home\clj\repo\subtle-browsing` once. After an update,
-update the files in that same folder (for a clone, `git pull --ff-only`),
-then click the extension's reload arrow at `chrome://extensions/`, then reload the
-webpages you want to check. Open Settings to confirm **Version 1.9.0**. Disable
+After an update, open Settings to confirm the version number. Disable
 an older duplicate installation so only one copy is active; export its backup
 first if you need to transfer rules to a different extension ID.
 
@@ -110,7 +113,7 @@ Chrome profile preserves this installation's data. Reload existing webpages
 so their content scripts update too. [Chrome's reload instructions](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#reload_the_extension).
 
 Web Store installations receive automatic updates after a new version is
-published; unpacked folders use the manual Reload step above.
+published; unpacked folders use the manual reload step in [Install](#install).
 [Chrome's update lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/extensions-update-lifecycle).
 
 The unpacked route is the current daily-use route. The Web Store account still
@@ -144,6 +147,7 @@ Settings and is on by default.
 
 | Switch | How it works |
 | --- | --- |
+| **Scam ads** | Uses [`rules/scam-ads.json`](rules/scam-ads.json): fake virus-warning and scam landing pages, and the popunder hosts seen on movie and torrent mirrors. Blocked on every site. |
 | **Video ad companies** | Uses the list in [`rules/video-ads.json`](rules/video-ads.json). Blocks whole video-ad companies, plus only the video parts of bigger networks (Taboola's video player, Amazon's video ads), so their regular ads still show. Also swaps in the Google IMA stand-in. |
 | **Autoplay videos** | Pauses videos that start without a play gesture, muted or audible. Click Play or use the player’s playback keys to watch. Core playback on Pluto TV, Plex, Tubi, Xumo Play, Instagram, TikTok and X is exempt so their normal feeds and channels can start. X's video-backed GIFs are included. |
 | **Heavy ads** | Stops an identified third-party ad frame at 4 MB of declared downloads or 5 seconds of long tasks in 30 seconds. |
@@ -238,7 +242,8 @@ More on each:
 | Switch | List | Rules |
 | --- | --- | --- |
 | Video ad companies | [`rules/video-ads.json`](rules/video-ads.json) | 20 |
-| Newsletter offers | [`rules/annoyances.json`](rules/annoyances.json) | 35 |
+| Scam ads | [`rules/scam-ads.json`](rules/scam-ads.json) | 17 |
+| Newsletter offers | [`rules/annoyances.json`](rules/annoyances.json) | 18 |
 | Notification requests | [`rules/notifications.json`](rules/notifications.json) | 7 |
 | Ad refresh and sync frames | [`rules/ad-churn.json`](rules/ad-churn.json) | 30 |
 | Block intrusive torrent-site ads | [`rules/torrent-ads.json`](rules/torrent-ads.json) | 3 |
@@ -299,9 +304,22 @@ Settings clears the global pause while preserving individual site pauses.
   goes back to plain. The popup shows the count any time.
 - It clears at midnight, your local time.
 - The daily count only works when the extension is loaded unpacked. A Web
-  Store install continuously shows each tab's own count instead. Settings marks
-  network totals and charts **Unavailable**, and DevTools shows observed
-  heavy-content removals rather than an empty network log.
+  Store install continuously shows each tab's own count instead: Chrome's count
+  of blocked requests plus the videos, redirects, popups and heavy ads the
+  extension stopped itself. Settings marks network totals and charts
+  **Unavailable**, and DevTools shows only what the extension stopped itself.
+
+### On this page
+
+The popup's first card lists what the extension's own scripts did in the
+current tab since it loaded: autoplay videos paused, redirects and popups
+stopped, heavy ads unloaded. It works on every install, including the Web
+Store. It's hidden when nothing happened.
+
+When videos were paused, **Let videos autoplay on (site)** turns **Autoplay
+videos** off for that site and its subdomains and reloads the tab. That's the
+same choice as **Autoplay videos → Off** under **Controls for (site)**, where
+you can undo it.
 
 ### Blocking URLs by hand
 
@@ -444,8 +462,8 @@ EasyList blocks everything, which is the opposite of the point.
 | [Better Ads Standards](https://www.betterads.org/standards/) (Coalition for Better Ads) | Not a blocklist. It defines the formats people hate: autoplay video with sound, pop-ups, countdown screens, large sticky ads | The best spec for what counts as "annoying" |
 | [`@adguard/dnr-rulesets`](https://www.npmjs.com/package/@adguard/dnr-rulesets) (npm) | AdGuard's lists already converted to Chrome's built-in blocking format (Manifest V3 rules) | The easiest way in, but GPL-3.0-only, so it isn't bundled here |
 
-None of these ship inside the extension. The five built-in lists
-([`rules/video-ads.json`](rules/video-ads.json), [`rules/annoyances.json`](rules/annoyances.json),
+None of these ship inside the extension. The six built-in lists
+([`rules/video-ads.json`](rules/video-ads.json), [`rules/scam-ads.json`](rules/scam-ads.json), [`rules/annoyances.json`](rules/annoyances.json),
 [`rules/notifications.json`](rules/notifications.json), [`rules/ad-churn.json`](rules/ad-churn.json),
 [`rules/torrent-ads.json`](rules/torrent-ads.json)) are small and hand-made:
 
@@ -487,9 +505,13 @@ They are not sent to the developer, advertisers or data brokers.
 Where Chrome exposes blocking feedback, the extension stores the last 100 blocked
 request URLs with timestamps and page domains locally, plus up to 90 days of
 aggregated counts by domain, page and type. Older history is pruned when history
-is updated. This activity never syncs or leaves
-the device through the extension. Store installations cannot use Chrome's
-unpacked-only request feedback and show the affected statistics as unavailable.
+is updated. Every install also records, the same way, the videos it paused,
+the redirects and popups it stopped (with their destination's origin) and the
+heavy ads it unloaded, and keeps a per-tab count of them in session storage
+that clears when the tab loads a new page or the browser closes. This activity
+never syncs or leaves the device through the extension. Store installations
+cannot use Chrome's unpacked-only request feedback and show the affected
+network statistics as unavailable.
 Incognito uses the same settings and local activity storage as regular windows.
 
 You can remove saved rules in Settings and clear the recent log in DevTools.
