@@ -71,6 +71,7 @@ for (let sample = 1; sample <= repeats; sample++) {
           const expectedRules = Object.entries({ video_ads: settings.videoAdRules,
             annoyances: settings.annoyanceRules, notifications: settings.notificationRules,
             ad_churn: settings.adChurnRules, torrent_ads: settings.torrentAds,
+            scam_ads: settings.scamAds,
           }).filter(([, on]) => on).map(([id]) => id).sort();
           const expectedScripts = ["cosmetic",
             settings.autoplayGuard && "autoplay-guard", settings.heavyAds && "heavy-ad-guard",

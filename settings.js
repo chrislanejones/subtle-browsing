@@ -8,6 +8,7 @@ const PAUSED_SITES_KEY = "pausedSites";
 const PAUSED_EVERYWHERE_KEY = "pausedEverywhere";
 export const DEFAULTS = {
   videoAdRules: true, // rules/video-ads.json
+  scamAds: true, // rules/scam-ads.json
   autoplayGuard: true, // autoplay-guard.js
   annoyanceRules: false, // newsletter offers
   notificationRules: false,
@@ -134,6 +135,7 @@ export function normalizeSettings(settings = {}) {
 }
 export const FEATURES = {
   videoAdRules: "Video ad companies",
+  scamAds: "Scam ads",
   autoplayGuard: "Autoplay videos",
   heavyAds: "Heavy ads",
   annoyanceRules: "Newsletter offers",

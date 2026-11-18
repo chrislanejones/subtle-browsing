@@ -15,6 +15,14 @@
       }),
     );
   subtlePolicy.listen(window, "subtle-page-policy-request", send);
+  // The page world can't message the worker. The page could fake this event
+  // too, which would only inflate its own count.
+  subtlePolicy.listen(window, "subtle-stopped", (event) => {
+    if (typeof event.detail !== "string") return;
+    const [kind, origin] = event.detail.split(" ");
+    if (kind !== "redirect" && kind !== "popup") return;
+    chrome.runtime.sendMessage({ action: "stopped", kind, url: origin }).catch(() => {});
+  });
   send();
   subtlePolicy.subscribe(send);
 })();

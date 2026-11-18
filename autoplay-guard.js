@@ -290,6 +290,15 @@
     video.load();
   }
 
+  // Counted once per video for the popup's "on this page" line, however
+  // many times a restarting player has to be paused again
+  const reported = new WeakSet();
+  function report(video) {
+    if (reported.has(video)) return;
+    reported.add(video);
+    chrome.runtime.sendMessage({ action: "stopped", kind: "autoplay" }).catch(() => {});
+  }
+
   function checkVideo(video) {
     if (!(video instanceof HTMLVideoElement) || video.paused) return;
 
@@ -318,6 +327,7 @@
       video.pause();
     }
     if (pauses.length === 1) hideFloatingPlayer(video);
+    report(video);
   }
   subtlePolicy.listen(document, "play", (event) => checkVideo(event.target), true);
   const checkExisting = () => {

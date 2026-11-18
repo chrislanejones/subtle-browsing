@@ -78,7 +78,11 @@
     if (consume) intent.used = true;
     return true;
   }
-  const stopped = (kind, url) => console.info(`Subtle stopped a ${kind} to ${url.origin}`);
+  const stopped = (kind, url) => {
+    console.info(`Subtle stopped a ${kind} to ${url.origin}`);
+    // page-world-policy.js passes this on to the worker's per-tab count
+    window.dispatchEvent(new CustomEvent("subtle-stopped", { detail: `${kind} ${url.origin}` }));
+  };
 
   const originalOpen = window.open;
   window.open = function (...args) {

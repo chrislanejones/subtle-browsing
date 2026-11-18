@@ -61,6 +61,7 @@ for (const [name, id] of [
 // Blocking switches, saved as soon as they change
 const toggles = {
   videoAdRules: document.getElementById("videoAdRulesToggle"),
+  scamAds: document.getElementById("scamAdsToggle"),
   autoplayGuard: document.getElementById("autoplayGuardToggle"),
   heavyAds: document.getElementById("heavyAdsToggle"),
   notificationRules: document.getElementById("notificationRulesToggle"),
@@ -179,6 +180,59 @@ async function changePower(mode) {
 }
 for (const input of powerInputs)
   input.addEventListener("change", () => changePower(input.value));
+
+// What the page scripts stopped in this tab since it loaded. Works on every
+// install, unlike the network count below.
+const pageActivity = document.getElementById("pageActivity");
+const pageActivityText = document.getElementById("pageActivityText");
+const allowAutoplay = document.getElementById("allowAutoplay");
+const pageActivityStatus = document.getElementById("pageActivityStatus");
+const STOP_LABELS = [
+  ["autoplay", "autoplay video", "paused"],
+  ["redirect", "redirect", "stopped"],
+  ["popup", "popup", "stopped"],
+  ["heavy", "heavy ad", "unloaded"],
+];
+async function renderPageActivity() {
+  if (!site) return;
+  const response = await chrome.runtime
+    .sendMessage({ action: "getPageCounts", tabId: activeTab.id })
+    .catch(() => null);
+  const counts = response?.counts ?? {};
+  const parts = STOP_LABELS.filter(([key]) => counts[key] > 0).map(
+    ([key, noun, verb]) => `${plural(counts[key], noun)} ${verb}`,
+  );
+  pageActivity.hidden = parts.length === 0;
+  pageActivityText.textContent = parts.length
+    ? `On this page: ${parts.join(" · ")}`
+    : "";
+  // A site whose own player keeps getting paused can opt out in one click
+  allowAutoplay.hidden = !(counts.autoplay > 0);
+  allowAutoplay.textContent = `Let videos autoplay on ${site}`;
+}
+allowAutoplay.addEventListener("click", async () => {
+  allowAutoplay.disabled = true;
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: "setSiteSetting",
+      site,
+      key: "autoplayGuard",
+      value: false,
+      tabId: activeTab.id,
+    });
+    if (!response?.ok)
+      throw new Error(response?.error ?? "Could not change this site.");
+    allowAutoplay.hidden = true;
+    pageActivityStatus.textContent = `Videos can autoplay on ${site}. Undo under Controls for ${site}.`;
+  } catch (error) {
+    allowAutoplay.disabled = false;
+    pageActivityStatus.textContent = error.message;
+  }
+});
+await renderPageActivity();
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "session" && changes[`page:${activeTab?.id}`]) renderPageActivity();
+});
 
 // The daily count needs the debug event, which only unpacked installs have
 const blockedToday = document.getElementById("blockedToday");

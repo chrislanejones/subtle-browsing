@@ -119,7 +119,8 @@ test("all listed hosts match loader rules; unrelated sites, shared CDN assets an
   const result = await ext.sw.evaluate(async ({ hosts, domains }) => {
     const matches = async (url, initiator, type = "script") =>
       (await chrome.declarativeNetRequest.testMatchOutcome({ url, initiator, type }))
-        .matchedRules.some((r) => r.rulesetId === "torrent_ads");
+        // portalfluently.com is also on the everywhere scam list, which wins
+        .matchedRules.some((r) => r.rulesetId === "torrent_ads" || r.rulesetId === "scam_ads");
     return {
       hosts: await Promise.all(hosts.map((host) => matches("https://www.cdn4ads.com/loader.css", `https://${host}`))),
       domains: await Promise.all(domains.map((host) => matches(`https://${host}/loader.js`, "https://filemood.com"))),

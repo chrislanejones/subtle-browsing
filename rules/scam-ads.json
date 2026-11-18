@@ -1,0 +1,19 @@
+[
+  {"id": 1, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||doomsarchaic.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "other"]}},
+  {"id": 2, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||indowedammu.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "other"]}},
+  {"id": 3, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||secutorlunts.cfd^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "ping", "other"]}},
+  {"id": 4, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||oceanpoet.com^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "other"]}},
+  {"id": 5, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||opera.com/partner", "resourceTypes": ["main_frame", "sub_frame"]}},
+  {"id": 6, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||proadblocker.pro^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "other"]}},
+  {"id": 7, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||individualism.boats^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "ping", "other"]}},
+  {"id": 8, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||accurseionizes.qpon^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "ping", "other"]}},
+  {"id": 9, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||enzymesairthed.qpon^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "ping", "other"]}},
+  {"id": 10, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||discussioncomperesteel.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 11, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||portalfluently.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 12, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||mamshirt.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 13, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||flushpersist.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 14, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||kettledroopingcontinuation.com^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 15, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||grop.net^", "resourceTypes": ["script", "sub_frame", "xmlhttprequest", "image", "ping", "other"]}},
+  {"id": 16, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||lstgddss.com^", "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest", "ping", "other"]}},
+  {"id": 17, "priority": 1, "action": {"type": "block"}, "condition": {"urlFilter": "||chaturbate.com/*campaign=", "resourceTypes": ["main_frame", "sub_frame"]}}
+]

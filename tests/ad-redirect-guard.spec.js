@@ -24,6 +24,18 @@ test.describe("stop ad redirects", () => {
     expect((await stopped).text()).toBe(`Subtle stopped a redirect to ${THIRD}`);
   });
 
+  test("a stopped redirect is counted for the tab and kept in history", async ({ ext, page }) => {
+    await ext.setSettings({ adRedirectGuard: true });
+    await page.goto(adPage(away));
+    const tabId = await ext.tabIdOf(page);
+    await expect
+      .poll(async () => (await ext.sendMessage({ action: "getPageCounts", tabId })).counts.redirect)
+      .toBe(1);
+    await expect
+      .poll(async () => ((await ext.getLocal("blockedUrlLogs")).blockedUrlLogs ?? []).find((e) => e.type === "redirect"))
+      .toMatchObject({ url: `Redirect stopped: ${THIRD}`, host: "localhost", page: "127.0.0.1" });
+  });
+
   test("a click on a link still goes to another site", async ({ ext, page }) => {
     await ext.setSettings({ adRedirectGuard: true });
     await page.goto(`${FIRST}/redirect.html?to=${encodeURIComponent(away)}`);

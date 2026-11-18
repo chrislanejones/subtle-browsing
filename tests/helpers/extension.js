@@ -87,11 +87,13 @@ export function expectedRulesets({
   notificationRules,
   adChurnRules,
   torrentAds = true,
+  scamAds = true,
 }) {
   return [
     adChurnRules && "ad_churn",
     annoyanceRules && "annoyances",
     (notificationRules ?? annoyanceRules) && "notifications",
+    scamAds && "scam_ads",
     torrentAds && "torrent_ads",
     videoAdRules && "video_ads",
   ].filter(Boolean);
@@ -138,12 +140,16 @@ function makeHelpers(context, sw, id) {
       ),
     registeredScripts: () => registeredScripts(sw),
     badgeWindow: (open) => setBadgeWindow(sw, open),
+    // Blocked requests and heavy-ad removals. The autoplay and redirect
+    // guards log too; tests of those read blockedUrlLogs directly.
     logUrls: () =>
       sw.evaluate(async () =>
         (
           (await chrome.storage.local.get("blockedUrlLogs")).blockedUrlLogs ??
           []
-        ).map((l) => l.url),
+        )
+          .filter((l) => l.type !== "autoplay" && l.type !== "redirect")
+          .map((l) => l.url),
       ),
 
     // Writes the block list the way the UI does and waits for the rules

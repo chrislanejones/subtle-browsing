@@ -61,6 +61,7 @@ $("resumeBlocking").addEventListener("click", async () => {
 // Blocking switches, kept in step with the popup
 const toggles = {
   videoAdRules: $("videoAdRulesToggle"),
+  scamAds: $("scamAdsToggle"),
   autoplayGuard: $("autoplayGuardToggle"),
   heavyAds: $("heavyAdsToggle"),
   notificationRules: document.getElementById("notificationRulesToggle"),

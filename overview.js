@@ -11,16 +11,21 @@ import {
 
 const $ = (id) => document.getElementById(id);
 
-// Fixed order: the colors in the options page follow it (--type-1 … --type-6)
+// Fixed order: the colors in the options page follow it (--type-<key>)
 export const TYPES = [
   { key: "video_ads", label: "Video ads" },
   { key: "personal", label: "Your list" },
+  { key: "scam_ads", label: "Scam ads" },
   { key: "ad_churn", label: "Ad refresh and sync" },
   { key: "annoyances", label: "Newsletter offers" },
   { key: "notifications", label: "Notification requests" },
   { key: "heavy", label: "Heavy ads" },
+  { key: "autoplay", label: "Autoplay paused" },
+  { key: "redirect", label: "Redirects and popups" },
   { key: "other", label: "Other" },
 ];
+// Recorded by the page scripts themselves, so every install has them
+const LOCAL_TYPES = new Set(["heavy", "autoplay", "redirect"]);
 const color = (key) => `var(--type-${key})`;
 
 // Every kind of blocking, for the "What gets blocked" table
@@ -31,6 +36,13 @@ const KINDS = [
     name: "Video ad companies",
     what: "Connatix, Primis, Teads and similar, plus Google's video ad engine",
     rules: "rules/video-ads.json",
+  },
+  {
+    type: "scam_ads",
+    setting: "scamAds",
+    name: "Scam ads",
+    what: "Fake virus warnings, scam landing pages and popunder ad hosts",
+    rules: "rules/scam-ads.json",
   },
   {
     type: "personal",
@@ -67,6 +79,7 @@ const KINDS = [
     rule: "Size and CPU limit",
   },
   {
+    type: "autoplay",
     setting: "autoplayGuard",
     name: "Autoplay videos",
     what: "Paused, even with sound; videos you start still play",
@@ -79,6 +92,7 @@ const KINDS = [
     rule: "Page script",
   },
   {
+    type: "redirect",
     setting: "adRedirectGuard",
     name: "Stop ad redirects",
     what: "Unwanted redirects and click-triggered popups",
@@ -449,7 +463,7 @@ async function renderData() {
 
   // Recent blocks, newest first
   const recent = blockedUrlLogs
-    .filter((entry) => canCount || entry.type === "heavy")
+    .filter((entry) => canCount || LOCAL_TYPES.has(entry.type))
     .slice(-12)
     .reverse();
   $("recent").replaceChildren(
@@ -504,7 +518,7 @@ async function renderData() {
       : empty(
           canCount
             ? "Nothing blocked yet."
-            : "No heavy-content removals observed. Network logs are unavailable.",
+            : "No paused videos, stopped redirects or heavy-content removals yet. Network logs are unavailable.",
         ),
   );
 
@@ -550,7 +564,7 @@ async function renderData() {
           { className: "num", "data-label": "Last 7 days" },
           count === null
             ? "—"
-            : !canCount && kind.type !== "heavy"
+            : !canCount && !LOCAL_TYPES.has(kind.type)
               ? "Unavailable"
               : fmt(count),
         ),

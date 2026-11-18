@@ -82,6 +82,53 @@ test("actual toolbar popup shows site controls and saves an autoplay exception",
   });
 });
 
+test("the toolbar popup counts paused videos and lets the site autoplay in one click", async ({
+  ext,
+  page,
+  context,
+}) => {
+  await page.goto(`${FIRST}/autoplay.html`);
+  await page.bringToFront();
+  const tabId = await ext.tabIdOf(page);
+  const counts = () => ext.sendMessage({ action: "getPageCounts", tabId });
+  await expect.poll(async () => (await counts()).counts.autoplay ?? 0).toBeGreaterThan(0);
+  await expect
+    .poll(async () => ((await ext.getLocal("blockedUrlLogs")).blockedUrlLogs ?? []).some((e) => e.type === "autoplay" && e.page === "127.0.0.1"))
+    .toBe(true);
+
+  // ext.sendMessage opens a helper tab; the popup reads the active one
+  await page.bringToFront();
+  await ext.sw.evaluate(() => chrome.action.openPopup());
+  const session = await context.newCDPSession(page);
+  let target;
+  await expect
+    .poll(async () => {
+      target = (await session.send("Target.getTargets")).targetInfos.find(
+        (t) => t.url === ext.url("popup.html"),
+      );
+      return Boolean(target);
+    })
+    .toBe(true);
+  const send = await attachTarget(session, target.targetId);
+  const evaluate = async (expression) =>
+    (await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true })).result.value;
+  await expect
+    .poll(() => evaluate('document.querySelector("#pageActivityText")?.textContent'))
+    .toMatch(/^On this page: \d+ autoplay videos? paused$/);
+  expect(await evaluate('document.querySelector("#allowAutoplay").textContent')).toBe(
+    "Let videos autoplay on 127.0.0.1",
+  );
+  const reloaded = page.waitForEvent("load");
+  await evaluate('document.querySelector("#allowAutoplay").click()');
+  await expect
+    .poll(() => ext.getSync("siteSettings"))
+    .toEqual({ siteSettings: { "127.0.0.1": { autoplayGuard: false } } });
+  await reloaded;
+  // The reload starts a fresh count, and the site's own autoplay now runs
+  await expect.poll(() => page.evaluate(() => !document.getElementById("mutedAuto").paused)).toBe(true);
+  expect((await counts()).counts.autoplay).toBeUndefined();
+});
+
 // Exercise a real DevTools extension panel, rather than a normal tab that
 // happens to load panel.html. The inspectedWindow API must point at the site.
 import { launchExtension, waitForInstall } from "./helpers/extension.js";

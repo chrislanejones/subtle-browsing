@@ -2,7 +2,7 @@ import { test, expect } from "./helpers/extension.js";
 
 test.describe("fresh install", () => {
   test("turns on the video ad list and leaves the annoyances list off", async ({ ext }) => {
-    expect(await ext.enabledRulesets()).toEqual(["torrent_ads", "video_ads"]);
+    expect(await ext.enabledRulesets()).toEqual(["scam_ads", "torrent_ads", "video_ads"]);
   });
 
   test("registers the frame scripts", async ({ ext }) => {

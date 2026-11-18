@@ -80,6 +80,7 @@ test.describe("popup", () => {
       .poll(async () => (await ext.getSync("settings")).settings)
       .toEqual({
         videoAdRules: true,
+        scamAds: true,
         autoplayGuard: false,
         heavyAds: false,
         annoyanceRules: true,
@@ -94,7 +95,7 @@ test.describe("popup", () => {
     // The worker applies them
     await expect
       .poll(() => ext.enabledRulesets())
-      .toEqual(["annoyances", "torrent_ads", "video_ads"]);
+      .toEqual(["annoyances", "scam_ads", "torrent_ads", "video_ads"]);
     await expect.poll(() => ext.registeredScripts()).toEqual(["ad-redirect-guard", "cosmetic", "page-world-policy"]);
   });
 

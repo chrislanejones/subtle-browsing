@@ -182,6 +182,15 @@
         margin-top: 0;
       }
 
+      /* What the page scripts stopped on this tab, and the one-click way out
+         when the autoplay stopper gets in the way of a site's own player */
+      .page-activity {
+        padding: var(--space-sm) var(--space-md);
+      }
+      .page-activity .row-desc {
+        margin: 0;
+      }
+
       kbd {
         margin-left: auto;
         padding: 1px 6px;
@@ -201,6 +210,12 @@
       <p id="blockedToday" class="stat" hidden></p>
     </header>
 
+    <section id="pageActivity" class="card page-activity" aria-labelledby="pageActivityText" hidden>
+      <p id="pageActivityText" class="row-desc"></p>
+      <button id="allowAutoplay" class="btn btn-secondary" hidden></button>
+      <p id="pageActivityStatus" class="status" role="status"></p>
+    </section>
+
     <fieldset class="group">
       <legend class="section-label">
         Block by default
@@ -212,6 +227,13 @@
             <span class="row-desc">Connatix, Primis, Teads and similar</span>
           </span>
           <input type="checkbox" id="videoAdRulesToggle" class="switch" />
+        </label>
+        <label class="row">
+          <span class="row-text">
+            <span class="row-title">Scam ads</span>
+            <span class="row-desc">Fake virus warnings and scam pages</span>
+          </span>
+          <input type="checkbox" id="scamAdsToggle" class="switch" />
         </label>
         <label class="row">
           <span class="row-text">

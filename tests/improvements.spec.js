@@ -160,6 +160,7 @@ test("newsletter and notification switches are independent, including legacy mig
   expect(await ext.enabledRulesets()).toEqual([
     "annoyances",
     "notifications",
+    "scam_ads",
     "torrent_ads",
     "video_ads",
   ]);
@@ -167,25 +168,25 @@ test("newsletter and notification switches are independent, including legacy mig
   await page.locator("#notificationRulesToggle").uncheck();
   await expect
     .poll(() => ext.enabledRulesets())
-    .toEqual(["annoyances", "torrent_ads", "video_ads"]);
+    .toEqual(["annoyances", "scam_ads", "torrent_ads", "video_ads"]);
   await page.locator("#annoyanceRulesToggle").uncheck();
   await page.locator("#notificationRulesToggle").check();
   await expect
     .poll(() => ext.enabledRulesets())
-    .toEqual(["notifications", "torrent_ads", "video_ads"]);
+    .toEqual(["notifications", "scam_ads", "torrent_ads", "video_ads"]);
 });
 
 test("ad refresh and sync frames switch is off by default and only blocks sync frames", async ({
   ext,
   page,
 }) => {
-  expect(await ext.enabledRulesets()).toEqual(["torrent_ads", "video_ads"]);
+  expect(await ext.enabledRulesets()).toEqual(["scam_ads", "torrent_ads", "video_ads"]);
   await page.goto(ext.url("options.html"));
   await expect(page.locator("#adChurnRulesToggle")).not.toBeChecked();
   await page.locator("#adChurnRulesToggle").check();
   await expect
     .poll(() => ext.enabledRulesets())
-    .toEqual(["ad_churn", "torrent_ads", "video_ads"]);
+    .toEqual(["ad_churn", "scam_ads", "torrent_ads", "video_ads"]);
 
   // Browsi is blocked outright; every other rule is a hidden sync frame, so
   // the same hosts can still serve scripts, bids and visible ads

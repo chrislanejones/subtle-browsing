@@ -42,6 +42,7 @@ const MAX_LOG_ENTRIES = 100;
 // by the site it was blocked on
 const STATS_TYPES = {
   video_ads: "video_ads",
+  scam_ads: "scam_ads",
   annoyances: "annoyances",
   notifications: "notifications",
   ad_churn: "ad_churn",
@@ -219,6 +220,7 @@ async function syncDynamicRules() {
 
 async function applySettings({
   videoAdRules,
+  scamAds,
   autoplayGuard,
   annoyanceRules,
   notificationRules,
@@ -232,6 +234,7 @@ async function applySettings({
   heavyAdsOn = heavyAds || overrides.some((s) => s.heavyAds);
   const rulesets = {
     [VIDEO_AD_RULESET_ID]: videoAdRules,
+    scam_ads: scamAds,
     [ANNOYANCES_RULESET_ID]: annoyanceRules,
     notifications: notificationRules,
     ad_churn: adChurnRules,
@@ -444,6 +447,43 @@ async function flushLogs() {
     flushTimer ??= setTimeout(() => queue(flushLogs), LOG_FLUSH_DELAY_MS);
 }
 
+// What the page scripts stopped in each tab since it last loaded. Session
+// storage survives the worker sleeping and clears when the browser closes.
+const STOP_KINDS = {
+  autoplay: { type: "autoplay", log: "Autoplay video paused" },
+  redirect: { type: "redirect", log: "Redirect stopped" },
+  popup: { type: "redirect", log: "Popup stopped" },
+};
+const pageKey = (tabId) => `page:${tabId}`;
+async function pageCounts(tabId) {
+  if (!Number.isInteger(tabId)) return {};
+  const key = pageKey(tabId);
+  return (await chrome.storage.session.get(key))[key] ?? {};
+}
+function countOnPage(sender, kind) {
+  const tabId = sender.tab?.id;
+  if (!Number.isInteger(tabId) || tabId < 0) return;
+  queue(async () => {
+    const counts = await pageCounts(tabId);
+    counts[kind] = (counts[kind] ?? 0) + 1;
+    await chrome.storage.session.set({ [pageKey(tabId)]: counts });
+  }).catch(() => {});
+  // Store installs show Chrome's per-tab count of network blocks on the icon;
+  // add these so a paused video or stopped redirect shows up there too
+  if (!canCountBlocks)
+    chrome.declarativeNetRequest
+      .setExtensionActionOptions({ tabUpdate: { tabId, increment: 1 } })
+      .catch(() => {});
+}
+// A new page starts a new count. Only top-level loads change the tab's status.
+chrome.tabs.onUpdated.addListener((tabId, { status }) => {
+  if (status === "loading")
+    queue(() => chrome.storage.session.remove(pageKey(tabId))).catch(() => {});
+});
+chrome.tabs.onRemoved.addListener((tabId) => {
+  queue(() => chrome.storage.session.remove(pageKey(tabId))).catch(() => {});
+});
+
 function hostOf(url) {
   try {
     return new URL(url).hostname.replace(/^www\./, "") || null;
@@ -533,6 +573,7 @@ async function removeHeavyFrame(tabId, frameId, bytes) {
 let sessionAllowIds = new Set();
 const categoryFiles = {
   videoAdRules: "video-ads",
+  scamAds: "scam-ads",
   annoyanceRules: "annoyances",
   notificationRules: "notifications",
   adChurnRules: "ad-churn",
@@ -843,7 +884,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         host: message.url,
         page: sender.tab?.url,
       });
+      countOnPage(sender, "heavy");
       return;
+
+    // The page scripts' own actions. Unlike network blocks, these are counted
+    // on every install, including the Web Store where the debug event is absent.
+    case "stopped": {
+      const kind = STOP_KINDS[message.kind];
+      if (!kind) return;
+      const where = message.kind === "autoplay" ? sender.url : message.url;
+      logBlockedUrl(`${kind.log}: ${where ?? "page"}`, {
+        type: kind.type,
+        host: where,
+        page: sender.tab?.url,
+      });
+      countOnPage(sender, message.kind);
+      return;
+    }
+
+    case "getPageCounts":
+      pageCounts(message.tabId)
+        .then((counts) => sendResponse({ counts }))
+        .catch((error) => sendResponse({ error: error.message }));
+      return true;
 
     case "setPower":
       queue(() => setPower(message.mode, message.site, message.tabId))

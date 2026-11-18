@@ -7,14 +7,18 @@
     <link rel="stylesheet" href="controls.css" />
     <style>
       /* Chart colors, in the fixed order of TYPES in overview.js. Validated
-         with the dataviz palette checker on both surfaces. */
+         with the dataviz palette checker on both surfaces, except scam_ads,
+         autoplay and redirect, added later and only checked by eye. */
       :root {
         --type-video_ads: #2a78d6;
         --type-personal: #eb6834;
+        --type-scam_ads: #8a5cd6;
         --type-ad_churn: #1baf7a;
         --type-annoyances: #eda100;
         --type-notifications: #e87ba4;
         --type-heavy: #008300;
+        --type-autoplay: #7a5a2e;
+        --type-redirect: #0e7490;
         --type-other: oklch(62% 0.01 250);
         --type-single: #2a78d6;
       }
@@ -22,10 +26,13 @@
         :root {
           --type-video_ads: #3987e5;
           --type-personal: #d95926;
+          --type-scam_ads: #9b74e3;
           --type-ad_churn: #199e70;
           --type-annoyances: #c98500;
           --type-notifications: #d55181;
           --type-heavy: #008300;
+          --type-autoplay: #b8915a;
+          --type-redirect: #22a6c3;
           --type-other: oklch(58% 0.01 250);
           --type-single: #3987e5;
         }
@@ -553,6 +560,15 @@
                 >
               </span>
               <input type="checkbox" id="videoAdRulesToggle" class="switch" />
+            </label>
+            <label class="row">
+              <span class="row-text">
+                <span class="row-title">Scam ads</span>
+                <span class="row-desc"
+                  >Fake virus warnings, scam landing pages and popunder ad hosts</span
+                >
+              </span>
+              <input type="checkbox" id="scamAdsToggle" class="switch" />
             </label>
             <label class="row">
               <span class="row-text">

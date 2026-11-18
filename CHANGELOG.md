@@ -9,6 +9,17 @@ Why things work the way they do: [docs/adr/](docs/adr/README.md).
 
 ## Unreleased
 
+- Add default-on **Scam ads**. The fake-warning, scam-landing and popunder
+  hosts previously filed under the off-by-default **Newsletter offers** list
+  move to their own list, `rules/scam-ads.json`, so new installs are protected
+  from them. Newsletter offers now holds only newsletter tools.
+- Count what the page scripts stop, on every install. Paused autoplay videos,
+  stopped redirects and popups join heavy-ad removals in local history and the
+  recent log. Web Store installs add them to the toolbar's per-tab count, and
+  the settings page shows them where network statistics are unavailable.
+- The toolbar popup shows **On this page** with what was paused, stopped or
+  unloaded in the current tab. When videos were paused, **Let videos autoplay
+  on (site)** turns the autoplay stopper off for that site and reloads it.
 - Restore normal Instagram, TikTok and X feed playback. Their core video feeds
   and X's video-backed GIFs join the explicit autoplay compatibility list used
   for free streaming apps; autoplay protection remains active on other sites.
